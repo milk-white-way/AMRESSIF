@@ -1,1 +1,1 @@
-# zig_newton_krylov
+# Fractional Step Method with Adaptive Mesh Refinement
