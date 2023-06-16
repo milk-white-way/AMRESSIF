@@ -4,32 +4,15 @@
 #include <AMReX_FArrayBox.H>
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void init_phi (int i, int j, int k,
-               amrex::Array4<amrex::Real> const& phi,
+void init_userCtx (int i, int j, int k,
+               amrex::Array4<amrex::Real> const& userCtx,
                amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dx,
-               amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& prob_lo,
-               amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& prob_hi)
+               amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& prob_lo)
 {
-    using amrex::Real;;
+    using amrex::Real;
 
-    Real x = prob_lo[0] + (i+Real(0.5)) * dx[0];
-    Real y = prob_lo[1] + (j+Real(0.5)) * dx[1];
-
-    Real x_2 = prob_hi[0] + (i+Real(0.5)) * dx[0];
-    Real y_2 = prob_hi[1] + (j+Real(0.5)) * dx[1];
-
-#if (AMREX_SPACEDIM > 2)
-    Real z = prob_lo[2] + (k+Real(0.5)) * dx[2];
-    Real z_2 = prob_hi[2] + (k+Real(0.5)) * dx[2];
-    Real r2 = ((x-Real(0.25))*(x-Real(0.25))+(y-Real(0.25))*(y-Real(0.25))+(z-Real(0.25))*(z-Real(0.25)))/Real(0.01);
-    Real r2_2 = ((x_2-Real(0.25))*(x_2-Real(0.25))+(y_2-Real(0.25))*(y_2-Real(0.25))+(z_2-Real(0.25))*(z_2-Real(0.25)))/Real(0.01);
-#else
-    Real z = Real(0.);
-    Real r2 = ((x-Real(0.25))*(x-Real(0.25))+(y-Real(0.25))*(y-Real(0.25)))/Real(0.01);
-    Real r2_2 = ((x_2-Real(0.25))*(x_2-Real(0.25))+(y_2-Real(0.25))*(y_2-Real(0.25)))/Real(0.01);
-#endif
-    phi(i,j,k,0) = Real(1.) + std::exp(-r2);
-    phi(i,j,k,1) = Real(3.) + std::exp(-r2_2);
+    userCtx(i,j,k,0) = Real(0.0);
+    userCtx(i,j,k,1) = Real(0.0);
 }
 
 
