@@ -1,0 +1,9 @@
+nsteps = 1000
+plot_int = 100
+n_cell = 128
+max_grid_size = 64
+
+ren = 10
+vis = 1
+amrex.v = 1
+amrex.async_out = 0  # If we use more than 64 processes, async_out will require MPI_THREAD_MULTIPLE
