@@ -16,4 +16,6 @@ void init_userCTX (amrex::MultiFab& userCtx, amrex::Geometry const& geom);
 
 void init_velocity (amrex::MultiFab& userCtx, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velocity, amrex::Geometry const& geom);
 
+void viscous_flux_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& viscous_flux, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velocity, amrex::Geometry const& geom, amrex::Real const& ren);
+
 #endif

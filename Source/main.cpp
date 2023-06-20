@@ -5,6 +5,7 @@
 #include <AMReX_Print.H>
 #include <AMReX_BCRec.H>
 #include <AMReX_BCUtil.H>
+#include <AMReX_MultiFabUtil.H>
 
 #include "myfunc.H"
 
@@ -188,20 +189,36 @@ void main_main ()
 
     // ========================================
 
+    MultiFab velocityCC(ba, dm, AMREX_SPACEDIM, Nghost);
+
+    average_face_to_cellcenter(velocityCC, amrex::GetArrOfConstPtrs(velocity), geom);
+
     // Write a plotfile of the initial data if plot_int > 0 (plot_int was defined in the inputs file)
     if (plot_int > 0)
     {
         int n = 0;
-        const std::string& pltfile = amrex::Concatenate("plt",n,5);
-        WriteSingleLevelPlotfile(pltfile, userCtx, {"pressure", "phi"}, geom, time, 0);
+        const std::string& pltfile1 = amrex::Concatenate("pltPressue",n,5);
+        const std::string& pltfile2 = amrex::Concatenate("pltVelocity",n,5);
+        WriteSingleLevelPlotfile(pltfile1, userCtx, {"pressure", "phi"}, geom, time, 0);
+        WriteSingleLevelPlotfile(pltfile2, velocityCC, {"U", "V"}, geom, time, 0);
     }
-/*
 
+    viscous_flux_calc(viscous_flux, velocity, geom, ren);
+
+    // What I want:
+    //    First, solve the ODE
+    //    Second, solve the Poisson equation
+    //    Then, update the solution
+    //    Finally, enforce the boundary condition
+    //    Rinse and Repeat
+    //    ???
+    //    Profit?
+/*
     for (int n = 1; n <= nsteps; ++n)
     {
         MultiFab::Copy(userCtxOld, userCtx, 0, 0, 1, 0);
 
-        // new_phi = old_phi + dt * (something)
+        // advance will do all above steps
         advance(userCtxOld, userCtx, flux, dt, geom);
         time = time + dt;
 
@@ -215,7 +232,7 @@ void main_main ()
             WriteSingleLevelPlotfile(pltfile, userCtx, {"pressure", "phi"}, geom, time, n);
         }
     }
-
+*/
     // Call the timer again and compute the maximum difference between the start time and stop time
     //   over all processors
     auto stop_time = ParallelDescriptor::second() - strt_time;
@@ -224,5 +241,4 @@ void main_main ()
 
     // Tell the I/O Processor to write out the "run time"
     amrex::Print() << "Run time = " << stop_time << std::endl;
-*/
 }
