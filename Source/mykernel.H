@@ -11,10 +11,23 @@ void init_userCtx (int i, int j, int k,
 {
     using amrex::Real;
 
-    userCtx(i,j,k,0) = Real(0.0);
-    userCtx(i,j,k,1) = Real(0.0);
+    Real x = i*dx[0];
+    Real y = j*dx[1];
+
+    userCtx(i,j,k,0) = - 0.25*( std::cos(2.0*M_PI*x) + std::cos(2.0*M_PI*y) );
+    userCtx(i,j,k,1) = 0.0;
+#if (AMREX_SPACEDIM > 2)
+    // Do 3D things
+    Real z = k*dx[2];
+
+    userCtx(i,j,k,0) = - 0.25*( std::cos(2.0*M_PI*x) + std::cos(2.0*M_PI*y) );
+    userCtx(i,j,k,1) = 0.0;
+#endif
 }
 
+void face_center_to_cell_center_velocity (int i, int j, int k,
+                                          amrex::MultiFab& velCart,
+                                          amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont);
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void compute_flux_x (int i, int j, int k,
