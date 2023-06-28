@@ -1,3 +1,4 @@
+// ============================== LISTING KERNEL HEADERS ==============================
 #include <AMReX_Gpu.H>
 #include <AMReX_Utility.H>
 #include <AMReX_PlotFileUtil.H>
@@ -11,16 +12,20 @@
 
 using namespace amrex;
 
+// ============================== MAIN SECTION ==============================
 int main (int argc, char* argv[])
 {
+    // Initialization
     amrex::Initialize(argc,argv);
-
+    // Solver
     main_main();
-
+    // Finalization
     amrex::Finalize();
+    // Error handeling
     return 0;
 }
 
+// ============================== SOLVER SECTION ==============================
 void main_main ()
 {
     // What time is it now?  We'll use this to compute total run time.
@@ -37,7 +42,7 @@ void main_main ()
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> bc_hi(AMREX_SPACEDIM, 0);
 
-    // inputs parameters
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Parsing Inputs =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     {
         // ParmParse is way of reading inputs from the inputs file
         ParmParse pp;
@@ -77,6 +82,8 @@ void main_main ()
         }
     }
 
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Defining System's Variables =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
     // make BoxArray and Geometry
     BoxArray ba;
     Geometry geom;
@@ -101,7 +108,7 @@ void main_main ()
     }
 
     // Nghost = number of ghost cells for each array
-    int Nghost = 1;
+    int Nghost = 2;
 
     // Ncomp = number of components for each array
     // The userCtx has 2 components: phi and pressure
@@ -110,34 +117,33 @@ void main_main ()
     // How Boxes are distrubuted among MPI processes
     DistributionMapping dm(ba);
 
-    MultiFab userCtx(ba, dm, Ncomp, Nghost);
+    MultiFab userCtx(ba, dm, Ncomp, Nghost); // Pressure and intermediate scalar field Phi (cell center)
     MultiFab userCtxOld(ba, dm, Ncomp, Nghost);
 
-    // build the velocity and flux multifabs
-    Array<MultiFab, AMREX_SPACEDIM> velocity;
-    Array<MultiFab, AMREX_SPACEDIM> diff_vel;
+    MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost); // Cartesian velocities (cell center)
+    MultiFab velCartOld(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab velCartDif(ba, dm, AMREX_SPACEDIM, Nghost);
 
-    Array<MultiFab, AMREX_SPACEDIM> convective_flux;
-    Array<MultiFab, AMREX_SPACEDIM> viscous_flux;
-    Array<MultiFab, AMREX_SPACEDIM> pressure_gradient;
+    Array<MultiFab, AMREX_SPACEDIM> velCont; // Contravariant velocities (face center)
+    Array<MultiFab, AMREX_SPACEDIM> velBcs; // Boundary velocities (face center)
+
+    Array<MultiFab, AMREX_SPACEDIM> fluxConvect; //Flux from the Convective terms (face center)
+    Array<MultiFab, AMREX_SPACEDIM> fluxViscous; //Flux from the Viscous terms (face center)
+    Array<MultiFab, AMREX_SPACEDIM> fluxPrsGrad; //Flux from the Pressure Gradient terms (face center)
     for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
     {
         // flux(dir) has one component, zero ghost cells, and is nodal in direction dir
         BoxArray edge_ba = ba;
         edge_ba.surroundingNodes(dir);
-        velocity[dir].define(edge_ba, dm, 1, 0);
-        diff_vel[dir].define(edge_ba, dm, 1, 0);
+        velCont[dir].define(edge_ba, dm, 1, 0);
+        velBcs[dir].define(edge_ba, dm, 1, 0);
 
-        convective_flux[dir].define(edge_ba, dm, 1, 0);
-        viscous_flux[dir].define(edge_ba, dm, 1, 0);
-        pressure_gradient[dir].define(edge_ba, dm, 1, 0);
+        fluxConvect[dir].define(edge_ba, dm, 1, 0);
+        fluxViscous[dir].define(edge_ba, dm, 1, 0);
+        fluxPrsGrad[dir].define(edge_ba, dm, 1, 0);
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-
-    init_userCTX(userCtx, geom);
-    init_velocity(userCtx, velocity, geom);
-    // init_diff_vel(userCtx, geom);
 
     Vector<BCRec> bc(userCtxOld.nComp());
     for (int n = 0; n < userCtxOld.nComp(); ++n)
@@ -177,7 +183,22 @@ void main_main ()
             }
         }
     }
+    // Print desired variables for debugging
+    amrex::Print() << "CHECK| number of dimensions: " << AMREX_SPACEDIM << "\n";
+    amrex::Print() << "CHECK| number of ghost cells for each array: " << Nghost << "\n";
+    amrex::Print() << "CHECK| number of components for each array: " << Ncomp << "\n";
 
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+    // Should I group all the 'init_<module>' into only one 'init_everything'
+    //enforce_boundary_conditions()
+    init_userCTX(userCtx, geom);
+    init_velocity(velCont, geom);
+    //init_diff_vel(userCtx, geom);
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ 
     Real cfl = 0.9;
     Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
                                + 1./(dx[1]*dx[1]),
@@ -188,10 +209,13 @@ void main_main ()
     Real time = 0.0;
 
     // ========================================
+    amrex::Print() << "CHECK| cfl number is set to: " << cfl << "\n";
+    amrex::Print() << "CHECK| dt from above cfl: " << dt << "\n";
 
-    MultiFab velocityCC(ba, dm, AMREX_SPACEDIM, Nghost);
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Plotting =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Initial state
 
-    average_face_to_cellcenter(velocityCC, amrex::GetArrOfConstPtrs(velocity), geom);
+    average_face_to_cellcenter(velCart, amrex::GetArrOfConstPtrs(velCont), geom);
 
     // Write a plotfile of the initial data if plot_int > 0 (plot_int was defined in the inputs file)
     if (plot_int > 0)
@@ -200,9 +224,9 @@ void main_main ()
         const std::string& pltfile1 = amrex::Concatenate("pltPressue",n,5);
         const std::string& pltfile2 = amrex::Concatenate("pltVelocity",n,5);
         WriteSingleLevelPlotfile(pltfile1, userCtx, {"pressure", "phi"}, geom, time, 0);
-        WriteSingleLevelPlotfile(pltfile2, velocityCC, {"U", "V"}, geom, time, 0);
+        WriteSingleLevelPlotfile(pltfile2, velCart, {"U", "V"}, geom, time, 0);
     }
-
+/*
     viscous_flux_calc(viscous_flux, velocity, geom, ren);
 
     // What I want:
@@ -213,7 +237,7 @@ void main_main ()
     //    Rinse and Repeat
     //    ???
     //    Profit?
-/*
+
     for (int n = 1; n <= nsteps; ++n)
     {
         MultiFab::Copy(userCtxOld, userCtx, 0, 0, 1, 0);
