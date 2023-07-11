@@ -25,10 +25,6 @@ void init_userCtx (int i, int j, int k,
 #endif
 }
 
-void face_center_to_cell_center_velocity (int i, int j, int k,
-                                          amrex::MultiFab& velCart,
-                                          amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont);
-
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void compute_flux_x (int i, int j, int k,
                      amrex::Array4<amrex::Real> const& fluxx,

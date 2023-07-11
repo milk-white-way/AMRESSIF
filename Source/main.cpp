@@ -38,10 +38,16 @@ void main_main ()
     // Porting extra params from Julian code
     Real ren, vis;
 
+    // Physical boundary condition mapping
+    // 0 is periodic
+    // -1 is non-slip
+    // 1 is slip
+    Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
+    Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
+
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> bc_hi(AMREX_SPACEDIM, 0);
-
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Parsing Inputs =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     {
         // ParmParse is way of reading inputs from the inputs file
@@ -50,6 +56,7 @@ void main_main ()
         // We need to get n_cell from the inputs file - this is the number of cells on each side of
         //   a square (or cubic) domain.
         pp.get("n_cell", n_cell);
+        amrex::Print() << "CHECK| number of cells in each side of the domain: " << n_cell << "\n";
 
         // The domain is broken into boxes of size max_grid_size
         pp.get("max_grid_size", max_grid_size);
@@ -68,6 +75,9 @@ void main_main ()
         pp.get("vis", vis);
 
         // Parsing boundary condition from input file
+        pp.queryarr("phy_bc_lo", phy_bc_lo);
+        pp.queryarr("phy_bc_hi", phy_bc_hi);
+
         pp.queryarr("bc_lo", bc_lo);
         pp.queryarr("bc_hi", bc_hi);
     }
@@ -77,9 +87,10 @@ void main_main ()
     Vector<int> is_periodic(AMREX_SPACEDIM, 0);
     // BCType::int_dir = 0
     for (int idim=0; idim < AMREX_SPACEDIM; ++idim) {
-        if (bc_lo[idim] == BCType::int_dir && bc_hi[idim] == BCType::int_dir){
+        if (phy_bc_lo[idim] == 0 && phy_bc_hi[idim] == 0) {
             is_periodic[idim] = 1;
         }
+        amrex::Print() << "CHECK| periodicity in " << idim << "th dimension: " << is_periodic[idim] << "\n";
     }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Defining System's Variables =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -108,7 +119,7 @@ void main_main ()
     }
 
     // Nghost = number of ghost cells for each array
-    int Nghost = 2;
+    int Nghost = 1;
 
     // Ncomp = number of components for each array
     // The userCtx has 2 components: phi and pressure
@@ -117,36 +128,40 @@ void main_main ()
     // How Boxes are distrubuted among MPI processes
     DistributionMapping dm(ba);
 
-    MultiFab userCtx(ba, dm, Ncomp, Nghost); // Pressure and intermediate scalar field Phi (cell center)
-    MultiFab userCtxOld(ba, dm, Ncomp, Nghost);
+    // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
+    MultiFab userCtx(ba, dm, Ncomp, Nghost);
+    MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
 
-    MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost); // Cartesian velocities (cell center)
-    MultiFab velCartOld(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartDif(ba, dm, AMREX_SPACEDIM, Nghost);
+    // Cartesian velocities have SPACEDIM as number of components, live in the cell center
+    MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab velCartPrev(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab velCartPrevPrev(ba, dm, AMREX_SPACEDIM, Nghost);
 
-    Array<MultiFab, AMREX_SPACEDIM> velCont; // Contravariant velocities (face center)
-    Array<MultiFab, AMREX_SPACEDIM> velBcs; // Boundary velocities (face center)
+    // Three type of fluxes contributing the the total flux live in the cell center
+    MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab fluxViscous(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, Nghost);
 
-    Array<MultiFab, AMREX_SPACEDIM> fluxConvect; //Flux from the Convective terms (face center)
-    Array<MultiFab, AMREX_SPACEDIM> fluxViscous; //Flux from the Viscous terms (face center)
-    Array<MultiFab, AMREX_SPACEDIM> fluxPrsGrad; //Flux from the Pressure Gradient terms (face center)
+    // Contravariant velocities live in the face center
+    Array<MultiFab, AMREX_SPACEDIM> velCont;
+    // Right-Hand-Side terms of the Momentum equation have SPACEDIM as number of components, live in the face center
+    Array<MultiFab, AMREX_SPACEDIM> rhs;
+
+    // The physical quantities living at the face center need to be blowed out one once in the respective direction
     for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
     {
         // flux(dir) has one component, zero ghost cells, and is nodal in direction dir
         BoxArray edge_ba = ba;
         edge_ba.surroundingNodes(dir);
         velCont[dir].define(edge_ba, dm, 1, 0);
-        velBcs[dir].define(edge_ba, dm, 1, 0);
-
-        fluxConvect[dir].define(edge_ba, dm, 1, 0);
-        fluxViscous[dir].define(edge_ba, dm, 1, 0);
-        fluxPrsGrad[dir].define(edge_ba, dm, 1, 0);
+        rhs[dir].define(edge_ba, dm, 1, 0);
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
-    Vector<BCRec> bc(userCtxOld.nComp());
-    for (int n = 0; n < userCtxOld.nComp(); ++n)
+    Vector<BCRec> bc(userCtxPrev.nComp());
+    for (int n = 0; n < userCtxPrev.nComp(); ++n)
     {
         for(int idim = 0; idim < AMREX_SPACEDIM; ++idim)
         {
@@ -191,10 +206,13 @@ void main_main ()
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-    // Should I group all the 'init_<module>' into only one 'init_everything'
+    // --Update the ghost components.
+    fill_physical_ghost_cells (velCart, Nghost, n_cell, phy_bc_lo, phy_bc_hi);
+    // --Convert the contravariant from Cartesian velocities
+
     //enforce_boundary_conditions()
     init_userCTX(userCtx, geom);
-    init_velocity(velCont, geom);
+    //init_velocity(velCont, velCart, geom);
     //init_diff_vel(userCtx, geom);
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -215,8 +233,6 @@ void main_main ()
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Plotting =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // Initial state
 
-    average_face_to_cellcenter(velCart, amrex::GetArrOfConstPtrs(velCont), geom);
-
     // Write a plotfile of the initial data if plot_int > 0 (plot_int was defined in the inputs file)
     if (plot_int > 0)
     {
@@ -224,9 +240,12 @@ void main_main ()
         const std::string& pltfile1 = amrex::Concatenate("pltPressue",n,5);
         const std::string& pltfile2 = amrex::Concatenate("pltVelocity",n,5);
         WriteSingleLevelPlotfile(pltfile1, userCtx, {"pressure", "phi"}, geom, time, 0);
-        WriteSingleLevelPlotfile(pltfile2, velCart, {"U", "V"}, geom, time, 0);
+        //WriteSingleLevelPlotfile(pltfile2, velCart, {"U", "V"}, geom, time, 0);
     }
 /*
+    // Momentum solver.
+    // --Viscous + Pressure Gradient
+    // --Runge-Kutta time integration
     viscous_flux_calc(viscous_flux, velocity, geom, ren);
 
     // What I want:

@@ -12,10 +12,26 @@ void main_main ();
 //               amrex::Real dt,
 //               amrex::Geometry const& geom);
 
-void init_userCTX (amrex::MultiFab& userCtx, amrex::Geometry const& geom);
+void init_userCTX (amrex::MultiFab& userCtx,
+                   amrex::Geometry const& geom);
 
-void init_velocity (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont, amrex::Geometry const& geom);
+void init_velocity (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+                    amrex::MultiFab& velCart,
+                    amrex::Geometry const& geom);
 
-void viscous_flux_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& viscous_flux, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velocity, amrex::Geometry const& geom, amrex::Real const& ren);
+void cartesian_velocity_interpolation (amrex::MultiFab& velCart,
+                                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+                                       amrex::MultiFab& velBcs,
+                                       amrex::Geometry const& geom);
 
+void viscous_flux_calc (amrex::MultiFab& fluxViscous,
+                        amrex::MultiFab& velCart,
+                        amrex::Geometry const& geom,
+                        amrex::Real const& ren);
+
+void fill_physical_ghost_cells (amrex::MultiFab& velCart,
+                                int const& Nghost,
+                                int const& n_cell,
+                                amrex::Vector<int> const& bc_lo,
+                                amrex::Vector<int> const& bc_hi);
 #endif
