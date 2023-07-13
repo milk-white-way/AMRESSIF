@@ -169,8 +169,8 @@ void main_main ()
         fluxHalfN2[dir].define(edge_ba, dm, 1, 0);
         // fluxHalfN1[0] is flux_xcont_xface
         // fluxHalfN1[1] is flux_xcont_yface
-        // fluxHalfN2[0] is Fpx2
-        // fluxHalfN2[1] is Fpy2
+        // fluxHalfN2[0] is flux_ycont_xface
+        // fluxHalfN2[1] is flux_ycont_yface
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
@@ -221,7 +221,7 @@ void main_main ()
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
     fill_physical_ghost_cells (velCart, Nghost, n_cell, phy_bc_lo, phy_bc_hi);
-    cart2cont(velCart, velCont, geom);
+    cart2cont(velCart, velCont);
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  

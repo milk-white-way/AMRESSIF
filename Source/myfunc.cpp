@@ -97,7 +97,7 @@ void advance (MultiFab& phi_old,
 void init(MultiFab& userCtx,
           MultiFab& velCart,
           MultiFab& velCartDiff,
-          Array<MultiFab, AMREX_SPACEDIM> velContDiff,
+          Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
           Geometry const& geom)
 {
 
@@ -260,8 +260,7 @@ void cont2cart (MultiFab& velCart,
 }
 
 void cart2cont (MultiFab& velCart,
-                Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                const Geometry& geom)
+                Array<MultiFab, AMREX_SPACEDIM>& velCont)
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

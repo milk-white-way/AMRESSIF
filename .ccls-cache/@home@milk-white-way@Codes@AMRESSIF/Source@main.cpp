@@ -167,10 +167,10 @@ void main_main ()
 
         fluxHalfN1[dir].define(edge_ba, dm, 1, 0);
         fluxHalfN2[dir].define(edge_ba, dm, 1, 0);
-        // fluxHalfN1[0] is Fpx1
-        // fluxHalfN1[1] is Fpy1
-        // fluxHalfN2[0] is Fpx2
-        // fluxHalfN2[1] is Fpy2
+        // fluxHalfN1[0] is flux_xcont_xface
+        // fluxHalfN1[1] is flux_xcont_yface
+        // fluxHalfN2[0] is flux_ycont_xface
+        // fluxHalfN2[1] is flux_ycont_yface
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
@@ -218,11 +218,10 @@ void main_main ()
     amrex::Print() << "CHECK| number of ghost cells for each array: " << Nghost << "\n";
     amrex::Print() << "CHECK| number of components for each array: " << Ncomp << "\n";
 
-
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
     fill_physical_ghost_cells (velCart, Nghost, n_cell, phy_bc_lo, phy_bc_hi);
-    cart2cont(velCart, velCont, geom);
+    cart2cont(velCart, velCont);
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  
@@ -252,7 +251,11 @@ void main_main ()
         WriteSingleLevelPlotfile(pltfile2, velCart, {"U", "V"}, geom, time, 0);
     }
 
-    // Momentum solver.
+    // Moving the flux calculations to a seperate subroutine
+    // press_gradient_flux_calc
+    // ++ Compare it to the hand calculation
+
+    // Momentum solver
     //momentum_km_runge_kutta(rhs, fluxConvect, fluxViscous, fluxPrsGrad, fluxHalfN1, fluxHalfN2, userCtx, velCart, velCont, velContDiff, dt, geom, n_cell, ren);
 
 /*

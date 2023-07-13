@@ -23,8 +23,7 @@ void cont2cart (amrex::MultiFab& velCart,
                 amrex::Geometry const& geom);
 
 void cart2cont (amrex::MultiFab& velCart,
-                amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-                amrex::Geometry const& geom);
+                amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont);
 
 void righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
                           amrex::MultiFab& fluxConvect,
