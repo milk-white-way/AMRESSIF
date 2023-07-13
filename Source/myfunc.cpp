@@ -94,7 +94,11 @@ void advance (MultiFab& phi_old,
     }
 }
 
-void init_userCTX(MultiFab& userCtx, Geometry const& geom){
+void init(MultiFab& userCtx,
+          MultiFab& velCart,
+          MultiFab& velCartDiff,
+          Geometry const& geom)
+{
 
     GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
     GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
@@ -104,74 +108,15 @@ void init_userCTX(MultiFab& userCtx, Geometry const& geom){
 #endif
     for (MFIter mfi(userCtx); mfi.isValid(); ++mfi)
     {
-        const Box& vbx = mfi.validbox();
-        auto const& userCtxNow = userCtx.array(mfi);
-        amrex::ParallelFor(vbx,
+        const Box& cbx = mfi.validbox();
+        auto const& ctx = userCtx.array(mfi);
+        auto const& ucart = velCart.array(mfi);
+        auto const& udiff = velCartDiff.array(mfi);
+        amrex::ParallelFor(cbx,
         [=] AMREX_GPU_DEVICE(int i, int j, int k)
         {
-            init_userCtx(i, j, k, userCtxNow, dx, prob_lo);
+            init_init(i, j, k, ctx, ucart, udiff, dx, prob_lo);
         });
-    }
-}
-
-void init_velocity (Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                    MultiFab& velCart,
-                    Geometry const& geom)
-{
-    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
-    {
-
-        Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-        Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-        auto const& ucont_x = velCont[0].array(mfi);
-        auto const& ucont_y = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-
-        auto const& ubcs_z = velBcs[2].array(mfi);
-        auto const& ucon_z = velCont[2].array(mfi);
-#endif
-        amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            Real x = i*dx[0];
-            Real y = ( j+0.5 )*dx[1];
-
-            ucont_x(i,j,k) = - std::cos(2.0 * M_PI * x)*std::sin(2.0 * M_PI * y);
-#if (AMREX_SPACEDIM > 2)
-            Real z = k*dx[2];
-
-            ubcs_x(i,j,k) = 0;
-            vel_x(i,j,k) = vel_x(i,j,k)*std::sin( 2.0*M_PI*z );
-#endif
-        });
-
-        amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            Real x = (i + 0.5)*dx[0];
-            Real y = j*dx[1];
-
-            ucont_y(i,j,k) = std::sin( 2.0*M_PI*x )*std::cos( 2.0*M_PI*y );
-#if (AMREX_SPACEDIM > 2)
-            Real z = k*dx[2];
-
-            ucon_y(i,j,k) = vel_y(i,j,k)*std::sin( 2.0*M_PI*z )
-#endif
-        });
-
-#if (AMREX_SPACEDIM > 2)
-        amrex::ParallelFor(zbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            // 3D stuffs
-        });
-#endif
     }
 }
 
@@ -236,10 +181,10 @@ void fill_physical_ghost_cells (MultiFab& velCart,
                }
                else if ( bc_lo[1] == 1 ) // slip wall
                {
-                   ucart(i, j, k, 0) = - ucart(i, j+1, k, 0);
-                   ucart(i, j, k, 1) = ucart(i, j+1, k, 1);
+                   ucart(i, j, k, 0) = ucart(i, j+1, k, 0);
+                   ucart(i, j, k, 1) = - ucart(i, j+1, k, 1);
 #if (AMREX_SPACEDIM > 2)
-                   velCart(i, j, k, 2) = velCart(i, j+1, k, 2);
+                   ucart(i, j, k, 2) = ucart(i, j+1, k, 2);
 #endif
                }
            }
@@ -254,8 +199,8 @@ void fill_physical_ghost_cells (MultiFab& velCart,
                }
                else if ( bc_hi[1] == 1 ) // slip wall
                {
-                   ucart(i, j, k, 0) = - ucart(i, j-1, k, 0);
-                   ucart(i, j, k, 1) = ucart(i, j-1, k, 1);
+                   ucart(i, j, k, 0) = ucart(i, j-1, k, 0);
+                   ucart(i, j, k, 1) = - ucart(i, j-1, k, 1);
 #if (AMREX_SPACEDIM > 2)
                    ucart(i, j, k, 2) = ucart(i, j-1, k, 2);
 #endif
@@ -265,10 +210,9 @@ void fill_physical_ghost_cells (MultiFab& velCart,
    }
 }
 
-void cartesian_velocity_interpolation (MultiFab& velCart,
-                                       Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                                       MultiFab& velBcs,
-                                       const Geometry& geom)
+void cont2cart (MultiFab& velCart,
+                Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                const Geometry& geom)
 {
     // Step one: Each cell center is avaraged from the face center components.
     // AMReX has a function for this task:
@@ -282,108 +226,316 @@ void cartesian_velocity_interpolation (MultiFab& velCart,
     // Not really needed now!
 }
 
-void viscous_flux_calc (MultiFab& fluxViscous,
-                        MultiFab& velCart,
-                        Geometry const& geom,
-                        Real const& ren){
-
-    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-
+void cart2cont (MultiFab& velCart,
+                Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                const Geometry& geom)
+{
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-    for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
+    for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
     {
-        const Box& cbx = mfi.validbox();
 
-        auto const& ucart = velCart.array(mfi);
-        auto const& visc_flux = fluxViscous.array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const& ucart_z = velocity[2].array(mfi);
-        auto const& visc_flux_z = fluxViscous[2].array(mfi);
-#endif
-
-        amrex::ParallelFor(cbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
-            {
-                auto const& centerMAC = ucart(i, j, k, dir);
-                auto const& northMAC = ucart(i, j+1, k, dir);
-                auto const& southMAC = ucart(i, j-1, k, dir);
-                auto const& westMAC = ucart(i-1, j, k, dir);
-                auto const& eastMAC = ucart(i+1, j, k, dir);
-
-                visc_flux(i, j, k, dir) = ((westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]))/ren;
-            }
-        });
-    }
-}
-/*
-void convective_flux_calc (Array<MultiFab, AMREX_SPACEDIM>& convective_flux, Array<MultiFab, AMREX_SPACEDIM>& velocity, Geometry const& geom, Real const& ren){
-
-    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(velocity[0]); mfi.isValid(); ++mfi )
-    {
         Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
         Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+        auto const& ucont_x = velCont[0].array(mfi);
+        auto const& ucont_y = velCont[1].array(mfi);
 
-        auto const& vel_x = velocity[0].array(mfi);
-        auto const& vel_y = velocity[1].array(mfi);
-
-        auto const& conv_flux_x = viscous_flux[0].array(mfi);
-        auto const& conv_flux_y = viscous_flux[1].array(mfi);
+        auto const& ucart = velCart.array(mfi);
 #if (AMREX_SPACEDIM > 2)
+        auto const& vel_z = velCont[2].array(mfi);
         Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-        auto const& vel_z = velocity[2].array(mfi);
-        auto const& visc_flux_z = viscous_flux[2].array(mfi);
 #endif
-
         amrex::ParallelFor(xbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            auto const& eastQUICK = 0.5*(vel_x(i+1, j, k) + vel_x(i, j, k)) - 0.125*(vel_x(i+1, j, k) - 2*vel_x(i, j, k) + vel_x(i-1, j, kl));
-            auto const& westQUICK = 0.5*(vel_x(i, j, k) + vel_x(i-1, j, k)) - 0.125*(vel_x(i, j, k) - 2*vel_x(i-1, j, k) + vel_x(i-2, j, kl));
-
-
-            visc_flux_x(i, j, k) = ((westmac - 2*centermac + eastmac)/(dx[0]*dx[0]) + (southmac - 2*centermac + northmac)/(dx[1]*dx[1]))/ren;
+            ucont_x(i, j, k) = Real(0.5) * (ucart(i-1, j, k, 0) + ucart(i, j, k, 0)) ;
         });
 
         amrex::ParallelFor(ybx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            // y-stencils
-            auto const& northmac = vel_y(i, j+1, k);
-            auto const& southmac = vel_y(i, j-1, k);
-
-            auto const& westmac = vel_y(i-1, j, k);
-            auto const& eastmac = vel_y(i+1, j, k);
-
-            auto const& centermac = vel_y(i, j, k);
-
-            visc_flux_y(i, j, k) = ((westmac - 2*centermac + eastmac)/(dx[0]*dx[0]) + (southmac - 2*centermac + northmac)/(dx[1]*dx[1]))/ren;
+            ucont_y(i, j, k) = Real(0.5) * (ucart(i, j-1, k, 1) + ucart(i, j, k, 1)) ;
         });
-
-#if (AMREX_SPACEDIM > 2)
-        amrex::ParallelFor(zbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            // dummy code
-            auto const& northmac = vel_z(i, j+1, k);
-            auto const& southmac = vel_z(i, j-1, k);
-
-            auto const& westmac = vel_z(i-1, j, k);
-            auto const& eastmac = vel_z(i+1, j, k);
-
-            auto const& centermac = vel_z(i, j, k);
-
-            visc_flux_z(i, j, k) = ((westmac - 2*centermac + eastmac)/(dx[0]*dx[0]) + (southmac - 2*centermac + northmac)/(dx[1]*dx[1]))/ren;
-        });
-#endif
     }
 }
-*/
+
+void righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
+                           MultiFab& fluxConvect,
+                           MultiFab& fluxViscous,
+                           MultiFab& fluxPrsGrad,
+                           Array<MultiFab, AMREX_SPACEDIM>& fluxHalfN1,
+                           Array<MultiFab, AMREX_SPACEDIM>& fluxHalfN2,
+                           MultiFab& userCtx,
+                           MultiFab& velCart,
+                           Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                           Geometry const& geom,
+                           int const& n_cell,
+                           Real const& ren ){
+    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
+
+    const Real& coef = Real(0.125);
+    // ++++++++++++++++++++++++++++++ Convective Flux ++++++++++++++++++++++++++++++
+    // QUICK scheme: Calculation of the half-node fluxes
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
+    {
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+        auto const& xcont = velCont[0].array(mfi);
+        auto const& ycont = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& ucont_z = velCont[2].array(mfi);
+#endif
+        auto const& fpx1 = fluxHalfN1[0].array(mfi);
+        auto const& fpx2 = fluxHalfN2[0].array(mfi);
+        auto const& fpy1 = fluxHalfN1[1].array(mfi);
+        auto const& fpy2 = fluxHalfN2[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& fpz1 = fluxHalfN1[2].array(mfi);
+        auto const& fpz2 = fluxHalfN2[2].array(mfi);
+#endif
+        auto const& vcart = velCart.array(mfi);
+
+        amrex::ParallelFor(xbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            // Contribution of x-directional terms: fpx1, fpx2
+            if ( xcont(i, j, k) < 0 ) { // down stream
+                if ( i==0 ) { // west wall (if any)
+                    fpx1(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i+2, j, k, 0) - Real(2.0) * vcart(i+1, j, k, 0) + Real(3.0) * vcart(i, j, k, 0) ) + vcart(i+1, j, k, 0) );
+
+                    fpx2(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i+2, j, k, 1) - Real(2.0) * vcart(i+1, j, k, 1) + Real(3.0) * vcart(i, j, k, 1) ) + vcart(i+1, j, k, 1) );
+                }
+                else if ( i==(n_cell-1) ) { // east wall (if any)
+                    fpx1(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i+1, j, k, 0) - Real(2.0) * vcart(i+1, j, k, 0) + Real(3.0) * vcart(i, j, k, 0) ) + vcart(i+1, j, k, 0) );
+
+                    fpx2(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i+1, j, k, 1) - Real(2.0) * vcart(i+1, j, k, 1) + Real(3.0) * vcart(i, j, k, 1) ) + vcart(i+1, j, k, 1) );
+                }
+                else { // inner domain
+                    fpx1(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i+2, j, k, 0) - 2 * vcart(i+1, j, k, 0) + 3 * vcart(i, j, k, 0) ) + vcart(i+1, j, k, 0) );
+
+                    fpx2(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i+2, j, k, 1) - Real(2.0) * vcart(i+1, j, k, 1) + Real(3.0) * vcart(i, j, k, 1) ) + vcart(i+1, j, k, 1) );
+                }
+            }
+            else if ( xcont(i, j, k) > 0) { // up stream
+                if ( i==0 ) { // west wall (if any)
+                    fpx1(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i, j, k, 0) - Real(2.0) * vcart(i, j, k, 0) + Real(3.0) * vcart(i+1, j, k, 0) ) + vcart(i, j, k, 0) );
+
+                    fpx2(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i, j, k, 1) - Real(2.0) * vcart(i, j, k, 1) + Real(3.0) * vcart(i+1, j, k, 1) ) + vcart(i, j, k, 1) );
+                }
+                else if ( i==(n_cell-1) ) { // east wall (if any)
+                    fpx1(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i-1, j, k, 0) - Real(2.0) * vcart(i, j, k, 0) + Real(3.0) * vcart(i+1, j, k, 0) ) + vcart(i, j, k, 0) );
+
+                    fpx2(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i-1, j, k, 1) - Real(2.0) * vcart(i, j, k, 1) + Real(3.0) * vcart(i+1, j, k, 1) ) + vcart(i, j, k, 1) );
+                }
+                else { // inner domain
+                    fpx1(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i-1, j, k, 0) - Real(2.0) * vcart(i, j, k, 0) + Real(3.0) * vcart(i+1, j, k, 0) ) + vcart(i, j, k, 0) );
+
+                    fpx2(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart(i-1, j, k, 1) - Real(2.0) * vcart(i, j, k, 1) + Real(3.0) * vcart(i+1, j, k, 1) ) + vcart(i, j, k, 1) );
+                }
+            }
+            else { // zero
+                fpx1(i, j, k) = Real(0.0);
+                fpx2(i, j, k) = Real(0.0);
+            }
+        });
+
+        amrex::ParallelFor(ybx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            // Contribution of y-directional terms: fpy1, fpy2
+            if ( ycont(i, j, k) < 0 ) { // down stream
+                if ( j==0 ) { // south wall (if any)
+                    fpy1(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j+2, k, 0) - Real(2.0) * vcart(i, j+1, k, 0) + Real(3.0) * vcart(i, j, k, 0) ) + vcart(i, j+1, k, 0) );
+
+                    fpy2(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j+2, k, 1) - Real(2.0) * vcart(i, j+1, k, 1) + Real(3.0) * vcart(i, j, k, 1) ) + vcart(i, j, k, 1) );
+                }
+                else if ( j==(n_cell-1) ) { // north wall (if any)
+                    fpy1(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j+1, k, 0) - Real(2.0) * vcart(i, j+1, k, 0) + Real(3.0) * vcart(i, j, k, 0) ) + vcart(i, j+1, k, 0) );
+
+                    fpy2(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j+1, k, 1) - Real(2.0) * vcart(i, j+1, k, 1) + Real(3.0) * vcart(i, j, k, 1) ) + vcart(i, j+1, k, 1) );
+                }
+                else { // inner domain
+                    fpy1(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j+2, k, 0) - 2 * vcart(i, j+1, k, 0) + 3 * vcart(i, j, k, 0) ) + vcart(i, j+1, k, 0) );
+
+                    fpy2(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j+2, k, 1) - Real(2.0) * vcart(i, j+1, k, 1) + Real(3.0) * vcart(i, j, k, 1) ) + vcart(i, j+1, k, 1) );
+                }
+            }
+            else if ( ycont(i, j, k) > 0) { // up stream
+                if ( j==0 ) { // south wall (if any)
+                    fpy1(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j, k, 0) - Real(2.0) * vcart(i, j, k, 0) + Real(3.0) * vcart(i, j+1, k, 0) ) + vcart(i, j, k, 0) );
+
+                    fpy2(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j, k, 1) - Real(2.0) * vcart(i, j, k, 1) + Real(3.0) * vcart(i, j+1, k, 1) ) + vcart(i, j, k, 1) );
+                }
+                else if ( j==(n_cell-1) ) { // north wall (if any)
+                    fpy1(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j-1, k, 0) - Real(2.0) * vcart(i, j, k, 0) + Real(3.0) * vcart(i, j+1, k, 0) ) + vcart(i, j, k, 0) );
+
+                    fpy2(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j-1, k, 1) - Real(2.0) * vcart(i, j, k, 1) + Real(3.0) * vcart(i, j+1, k, 1) ) + vcart(i, j, k, 1) );
+                }
+                else { // inner domain
+                    fpy1(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j-1, k, 0) - Real(2.0) * vcart(i, j, k, 0) + Real(3.0) * vcart(i, j+1, k, 0) ) + vcart(i, j, k, 0) );
+
+                    fpy2(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, j-1, k, 1) - Real(2.0) * vcart(i, j, k, 1) + Real(3.0) * vcart(i, j+1, k, 1) ) + vcart(i, j, k, 1) );
+                }
+            }
+            else { // zero
+                fpy1(i, j, k) = Real(0.0);
+                fpy2(i, j, k) = Real(0.0);
+            }
+        });
+    }
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(fluxConvect); mfi.isValid(); ++mfi ) {
+        const Box& vbx = mfi.validbox();
+        auto const& conv_flux = fluxConvect.array(mfi);
+
+        auto const& fpx1 = fluxHalfN1[0].array(mfi);
+        auto const& fpx2 = fluxHalfN2[0].array(mfi);
+        auto const& fpy1 = fluxHalfN1[1].array(mfi);
+        auto const& fpy2 = fluxHalfN2[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& fpz1 = fluxHalfN1[2].array(mfi);
+        auto const& fpz2 = fluxHalfN2[2].array(mfi);
+#endif
+        amrex::ParallelFor(vbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){
+           conv_flux(i, j, k, 0) = (fpx1(i+1, j, k) - fpx1(i, j, k))/(dx[0]) + (fpy1(i, j+1, k) - fpy1(i, j, k))/(dx[1]);
+           conv_flux(i, j, k, 1) = (fpx2(i+1, j, k) - fpx2(i, j, k))/(dx[0]) + (fpy2(i, j+1, k) - fpy2(i, j, k))/(dx[1]);
+#if (AMREX_SPACEDIM > 2)
+           conv_flux(i, j, k, 2) = Real(0.0);
+#endif
+        });
+    }
+
+    // ++++++++++++++++++++++++++++++ Viscous Flux ++++++++++++++++++++++++++++++
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(fluxViscous); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& vcart = velCart.array(mfi);
+        auto const& visc_flux = fluxViscous.array(mfi);
+        amrex::ParallelFor(vbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                auto const& centerMAC = vcart(i, j, k, dir);
+                auto const& northMAC = vcart(i, j+1, k, dir);
+                auto const& southMAC = vcart(i, j-1, k, dir);
+                auto const& westMAC = vcart(i-1, j, k, dir);
+                auto const& eastMAC = vcart(i+1, j, k, dir);
+
+                visc_flux(i, j, k, dir) = ((westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]))/ren;
+            }
+        });
+    }
+    // +++++++++++++++++++++++++ Presure Gradient Flux  +++++++++++++++++++++++++
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(fluxPrsGrad); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& prs_field = userCtx.array(mfi);
+        auto const& prsgrad_flux = fluxPrsGrad.array(mfi);
+        amrex::ParallelFor(vbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            if ( i==0 ) {
+                prsgrad_flux(i, j, k, 0) = Real(0.0);
+            }
+            else if ( i==(n_cell-1) ) {
+                prsgrad_flux(i, j, k, 0) = Real(0.0);
+            }
+            else if ( i==1 ) {
+                prsgrad_flux(i, j, k, 0) = (prs_field(i+1, j, k, 0) - prs_field(i, j, k, 0))/(dx[0]);
+            }
+            else if ( i==(n_cell-2) ) {
+                prsgrad_flux(i, j, k, 0) = (prs_field(i, j, k, 0) - prs_field(i-1, j, k, 0))/(dx[0]);
+            }
+            else {
+                prsgrad_flux(i, j, k, 0) = (prs_field(i+1, j, k, 0) - prs_field(i-1, j, k, 0))/(Real(2.0)*dx[0]);
+            }
+
+            if ( i==0 ) {
+                prsgrad_flux(i, j, k, 1) = Real(0.0);
+            }
+            else if ( i==(n_cell-1) ) {
+                prsgrad_flux(i, j, k, 1) = Real(0.0);
+            }
+            else if ( i==1 ) {
+                prsgrad_flux(i, j, k, 1) = (prs_field(i, j+1, k, 1) - prs_field(i, j, k, 1))/(dx[1]);
+            }
+            else if ( i==(n_cell-2) ) {
+                prsgrad_flux(i, j, k, 1) = (prs_field(i, j, k, 1) - prs_field(i, j-1, k, 1))/(dx[1]);
+            }
+            else {
+                prsgrad_flux(i, j, k, 1) = (prs_field(i, j+1, k, 1) - prs_field(i, j-1, k, 1))/(Real(2.0)*dx[1]);
+            }
+        });
+    }
+
+    // +++++++++++++++++++++++++ Total Flux and the RHS  +++++++++++++++++++++++++
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(rhs[0]); mfi.isValid(); ++mfi )
+    {
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+        auto const& xrhs = rhs[0].array(mfi);
+        auto const& yrhs = rhs[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& zrhs = rhs[2].array(mfi);
+#endif
+        auto const& conv_flux = fluxConvect.array(mfi);
+        auto const& visc_flux = fluxViscous.array(mfi);
+        auto const& prsgrad_flux = fluxPrsGrad.array(mfi);
+
+        amrex::ParallelFor(xbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            if ( i==0 ) {
+                xrhs(i, j, k) = Real(0.0);
+            }
+            else if ( i==(n_cell-1) ) {
+                xrhs(i, j, k) = Real(0.0);
+            }
+            else {
+                auto const& total_flux_my_volume = conv_flux(i, j, k, 0) + visc_flux(i, j, k, 0) + prsgrad_flux(i, j, k, 0);
+                auto const& total_flux_pr_volume = conv_flux(i-1, j, k, 0) + visc_flux(i-1, j, k, 0) + prsgrad_flux(i-1, j, k, 0);
+                xrhs(i, j, k) = Real(0.5)*(total_flux_my_volume + total_flux_pr_volume);
+            }
+        });
+
+        amrex::ParallelFor(ybx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            if ( j==0 ) {
+                yrhs(i, j, k) = Real(0.0);
+            }
+            else if ( j==(n_cell-1) ) {
+                yrhs(i, j, k) = Real(0.0);
+            }
+            else {
+                auto const& total_flux_my_volume = conv_flux(i, j, k, 1) + visc_flux(i, j, k, 1) + prsgrad_flux(i, j, k, 1);
+                auto const& total_flux_pr_volume = conv_flux(i, j-1, k, 0) + visc_flux(i, j-1, k, 0) + prsgrad_flux(i, j-1, k, 0);
+                yrhs(i, j, k) = Real(0.5)*(total_flux_my_volume + total_flux_pr_volume);
+            }
+        });
+    }
+}

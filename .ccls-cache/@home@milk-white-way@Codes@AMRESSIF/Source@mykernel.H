@@ -4,24 +4,33 @@
 #include <AMReX_FArrayBox.H>
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void init_userCtx (int i, int j, int k,
-               amrex::Array4<amrex::Real> const& userCtx,
-               amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dx,
-               amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& prob_lo)
+void init_init (int i, int j, int k,
+                amrex::Array4<amrex::Real> const& ctx,
+                amrex::Array4<amrex::Real> const& ucart,
+                amrex::Array4<amrex::Real> const& udiff,
+                amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dx,
+                amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& prob_lo)
 {
     using amrex::Real;
 
-    Real x = i*dx[0];
-    Real y = j*dx[1];
+    Real x = prob_lo[0] + (i+Real(0.5)) * dx[0];
+    Real y = prob_lo[1] + (j+Real(0.5)) * dx[1];
 
-    userCtx(i,j,k,0) = - 0.25*( std::cos(2.0*M_PI*x) + std::cos(2.0*M_PI*y) );
-    userCtx(i,j,k,1) = 0.0;
+    ctx(i, j, k, 0) = - 0.25 * ( std::cos(Real(2.0) * M_PI * x) + std::cos(Real(2.0) * M_PI * y) );
+    ctx(i, j, k, 1) = 0.0;
+
+    ucart(i, j, k, 0) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y);
+    ucart(i, j, k, 1) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y);
+
+    udiff(i, j, k, 0) = Real(0.0);
+    udiff(i, j, k, 1) = Real(0.0);
 #if (AMREX_SPACEDIM > 2)
     // Do 3D things
-    Real z = k*dx[2];
-
-    userCtx(i,j,k,0) = - 0.25*( std::cos(2.0*M_PI*x) + std::cos(2.0*M_PI*y) );
-    userCtx(i,j,k,1) = 0.0;
+    Real z = prob_lo[2] + (k+Real(0.5))*dx[2];
+    ucart(i, j, k, 0) = ucart(i, j, k, 0) * std::sin(Real(2.0) * M_PI * z);
+    ucart(i, j, k, 1) = ucart(i, j, k, 1) * std::sin(Real(2.0) * M_PI * z);
+    ucart(i, j, k, 2) = Real(0.0);
+    udiff(i, j, k, 2) = Real(0.0);
 #endif
 }
 
