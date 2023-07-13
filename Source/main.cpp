@@ -9,6 +9,7 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "myfunc.H"
+#include "momentum.H"
 
 using namespace amrex;
 
@@ -145,6 +146,7 @@ void main_main ()
 
     // Contravariant velocities live in the face center
     Array<MultiFab, AMREX_SPACEDIM> velCont;
+    Array<MultiFab, AMREX_SPACEDIM> velContDiff;
     // Right-Hand-Side terms of the Momentum equation have SPACEDIM as number of components, live in the face center
     Array<MultiFab, AMREX_SPACEDIM> rhs;
     // Half-node fluxes contribute to implementation of QUICK scheme in calculating the convective flux
@@ -214,7 +216,7 @@ void main_main ()
 
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    init(userCtx, velCart, velCartDiff, geom);
+    init(userCtx, velCart, velCartDiff, velContDiff, geom);
     fill_physical_ghost_cells (velCart, Nghost, n_cell, phy_bc_lo, phy_bc_hi);
     cart2cont(velCart, velCont, geom);
 
@@ -247,53 +249,8 @@ void main_main ()
     }
 
     // Momentum solver.
-    // --Viscous + Pressure Gradient
-    // --Runge-Kutta time integration
-    int iternum = 0;
-/*
-    // Original 2-step Runge-Kutta of Fractional Time Step method (in MATLAB)
-    alpha = [1/4; 1/3; 1/2; 1];
+    momentum_km_runge_kutta(rhs, fluxConvect, fluxViscous, fluxPrsGrad, fluxHalfN1, fluxHalfN2, userCtx, velCart, velCont, velContDiff, dt, geom, n_cell, ren);
 
-    // Assign first guess
-    U_p_x = Ucont_x;
-    U_p_y = Ucont_y;
-
-    tol = 1e-8;
-    e   = 1;
-
-    while (pseudot < 16 && e > tol) {
-        U_im_x = U_p_x;
-        U_im_y = U_p_y;
-
-        for stage=1:4;
-        {
-            [RHS_x RHS_y] = RHS_Calculation(U_im_x, U_im_y, Ucat_x, Ucat_y, Pressure,Re,dx,dy);
-            RHS_x = RHS_x -(1.5/dt) * (U_im_x  - Ucont_x) + (0.5/dt) * dU_old_x;
-            RHS_y = RHS_y -(1.5/dt) * (U_im_y  - Ucont_y) + (0.5/dt) * dU_old_y;
-
-            U_im_x = U_p_x + alpha(stage) * dt * 0.4 * RHS_x;
-            U_im_y = U_p_y + alpha(stage) * dt * 0.4 * RHS_y;
-
-            // Forming BCSs
-            [Ucat_x Ucat_y U_im_x U_im_y] = FormBCS(U_im_x, U_im_y, Ubcs_x, Ubcs_y,dx,dy,Re,time);
-        }
-
-        e = norm(U_p_x - U_im_x,inf);
-        U_p_x = U_im_x;
-        U_p_y = U_im_y;
-
-        pseudot = pseudot+1;
-        fprintf('subitr = %d, Momentum convergence e = %8.6f \n',pseudot,e);
-        if (e > 1e-1) {
-            fprintf('time = %d, Momentum solver does not converge e = %8.6f \n',time,e);
-        }
-    }
-*/
-    righthand_side_calc(rhs,
-                        fluxConvect, fluxViscous, fluxPrsGrad,
-                        fluxHalfN1, fluxHalfN2,
-                        userVtx, velCart, velCont,
-                        n_cell, geom, ren);
 /*
     for (int n = 1; n <= nsteps; ++n)
     {

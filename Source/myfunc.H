@@ -15,6 +15,7 @@ void main_main ();
 void init (amrex::MultiFab& userCtx,
            amrex::MultiFab& velCart,
            amrex::MultiFab& velCartDiff,
+           amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
            amrex::Geometry const& geom);
 
 void cont2cart (amrex::MultiFab& velCart,
