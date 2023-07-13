@@ -9,7 +9,7 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "myfunc.H"
-#include "momentum.H"
+//#include "momentum.H"
 
 using namespace amrex;
 
@@ -159,12 +159,16 @@ void main_main ()
         // flux(dir) has one component, zero ghost cells, and is nodal in direction dir
         BoxArray edge_ba = ba;
         edge_ba.surroundingNodes(dir);
+
         velCont[dir].define(edge_ba, dm, 1, 0);
+        velContDiff[dir].define(edge_ba, dm, 1, 0);
+
         rhs[dir].define(edge_ba, dm, 1, 0);
+
         fluxHalfN1[dir].define(edge_ba, dm, 1, 0);
         fluxHalfN2[dir].define(edge_ba, dm, 1, 0);
-        // fluxHalfN1[0] is Fpx1
-        // fluxHalfN1[1] is Fpy1
+        // fluxHalfN1[0] is flux_xcont_xface
+        // fluxHalfN1[1] is flux_xcont_yface
         // fluxHalfN2[0] is Fpx2
         // fluxHalfN2[1] is Fpy2
     }
@@ -214,7 +218,6 @@ void main_main ()
     amrex::Print() << "CHECK| number of ghost cells for each array: " << Nghost << "\n";
     amrex::Print() << "CHECK| number of components for each array: " << Ncomp << "\n";
 
-
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
     fill_physical_ghost_cells (velCart, Nghost, n_cell, phy_bc_lo, phy_bc_hi);
@@ -248,8 +251,12 @@ void main_main ()
         WriteSingleLevelPlotfile(pltfile2, velCart, {"U", "V"}, geom, time, 0);
     }
 
-    // Momentum solver.
-    momentum_km_runge_kutta(rhs, fluxConvect, fluxViscous, fluxPrsGrad, fluxHalfN1, fluxHalfN2, userCtx, velCart, velCont, velContDiff, dt, geom, n_cell, ren);
+    // Moving the flux calculations to a seperate subroutine
+    // press_gradient_flux_calc
+    // ++ Compare it to the hand calculation
+
+    // Momentum solver
+    //momentum_km_runge_kutta(rhs, fluxConvect, fluxViscous, fluxPrsGrad, fluxHalfN1, fluxHalfN2, userCtx, velCart, velCont, velContDiff, dt, geom, n_cell, ren);
 
 /*
     for (int n = 1; n <= nsteps; ++n)

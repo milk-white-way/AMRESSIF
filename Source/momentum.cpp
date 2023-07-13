@@ -1,5 +1,5 @@
 #include "myfunc.H"
-#include "momentum.H"
+//#include "momentum.H"
 
 #include <AMReX_MultiFabUtil.H>
 
@@ -52,9 +52,9 @@ void momentum_km_runge_kutta ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
             for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi  )
             {
                 const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-                const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
-                const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
                 auto const& xcont = velCont[0].array(mfi);
                 auto const& ycont = velCont[1].array(mfi);

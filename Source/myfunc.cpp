@@ -177,7 +177,8 @@ void fill_physical_ghost_cells (MultiFab& velCart,
                }
                else if ( bc_lo[0] == 1 ) // slip wall
                {
-                   ucart(i, j, k, 0) = - ucart(i+1, j, k, 0);
+                   // Modified for >= 2 layer of ghost cells
+                   ucart(i, j, k, 0) = - ucart(-i-1, j, k, 0);
                    ucart(i, j, k, 1) = ucart(i+1, j, k, 1);
 #if (AMREX_SPACEDIM > 2)
                    ucart(i, j, k, 2) = ucart(i+1, j, k, 2);
@@ -549,6 +550,7 @@ void righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
                 xrhs(i, j, k) = Real(0.0);
             }
             else {
+                // total_flux_my_volume and total_flux_pr_volume live in volume center
                 auto const& total_flux_my_volume = conv_flux(i, j, k, 0) + visc_flux(i, j, k, 0) + prsgrad_flux(i, j, k, 0);
                 auto const& total_flux_pr_volume = conv_flux(i-1, j, k, 0) + visc_flux(i-1, j, k, 0) + prsgrad_flux(i-1, j, k, 0);
                 xrhs(i, j, k) = Real(0.5)*(total_flux_my_volume + total_flux_pr_volume);
@@ -590,10 +592,10 @@ void momentum_km_runge_kutta ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 {
     //--Runge-Kutta time integration
     Real Tol = 1.0e-8;
+    int IterNumCycle = 50;
     // Setup stopping conditions
     Real normError = 1.0e8;
     int countIter = 0;
-    int IterNumCycle = 50;
     // Setup Runge-Kutta intermediate coefficients
     int RungeKuttaOrder = 4;
     Vector<Real> rk(RungeKuttaOrder, 0);
@@ -601,7 +603,7 @@ void momentum_km_runge_kutta ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
         rk[0] = Real(0.25);
         rk[1] = Real(1.0)/Real(3.0);
         rk[2] = Real(0.5);
-        rk[4] = Real(1.0);
+        rk[3] = Real(1.0);
     }
     // Runge-Kutta time integration to update the contravariant velocity components
     // Loop over stopping condition
@@ -620,9 +622,9 @@ void momentum_km_runge_kutta ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
             for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi  )
             {
                 const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-                const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
-                const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
                 auto const& xcont = velCont[0].array(mfi);
                 auto const& ycont = velCont[1].array(mfi);
@@ -642,7 +644,7 @@ void momentum_km_runge_kutta ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
                 amrex::ParallelFor(xbx,
                 [=] AMREX_GPU_DEVICE (int i, int j, int k)
                 {
-                    // Immediate velocity
+                    // Itermidiate velocity
                     Real xhat = xcont(i, j, k);
                     // Corection for right-hand-side term
                     xrhs(i, j, k) = xrhs(i, j, k) - (Real(0.5)/dt)*(xhat - xrhs(i, j, k)) + (Real(0.5)/dt)*(xdiff(i, j, k));
@@ -653,7 +655,7 @@ void momentum_km_runge_kutta ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
                 amrex::ParallelFor(ybx,
                 [=] AMREX_GPU_DEVICE(int i, int j, int k)
                 {
-                    Real yhat = ycont(i, k, k);
+                    Real yhat = ycont(i, j, k);
                     yrhs(i, j, k) = yrhs(i, j, k) - (Real(0.5)/dt)*(yhat - yrhs(i, j, k)) + (Real(0.5)/dt)*(ydiff(i, j, k));
                     yhat = ycont(i, j, k) + rk[n]*dt*yrhs(i,j,k);
                     ycont(i, j, k) = yhat;

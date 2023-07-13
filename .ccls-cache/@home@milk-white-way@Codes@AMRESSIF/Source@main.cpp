@@ -9,7 +9,7 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "myfunc.H"
-#include "momentum.H"
+//#include "momentum.H"
 
 using namespace amrex;
 
@@ -159,8 +159,12 @@ void main_main ()
         // flux(dir) has one component, zero ghost cells, and is nodal in direction dir
         BoxArray edge_ba = ba;
         edge_ba.surroundingNodes(dir);
+
         velCont[dir].define(edge_ba, dm, 1, 0);
+        velContDiff[dir].define(edge_ba, dm, 1, 0);
+
         rhs[dir].define(edge_ba, dm, 1, 0);
+
         fluxHalfN1[dir].define(edge_ba, dm, 1, 0);
         fluxHalfN2[dir].define(edge_ba, dm, 1, 0);
         // fluxHalfN1[0] is Fpx1
@@ -249,7 +253,7 @@ void main_main ()
     }
 
     // Momentum solver.
-    momentum_km_runge_kutta(rhs, fluxConvect, fluxViscous, fluxPrsGrad, fluxHalfN1, fluxHalfN2, userCtx, velCart, velCont, velContDiff, dt, geom, n_cell, ren);
+    //momentum_km_runge_kutta(rhs, fluxConvect, fluxViscous, fluxPrsGrad, fluxHalfN1, fluxHalfN2, userCtx, velCart, velCont, velContDiff, dt, geom, n_cell, ren);
 
 /*
     for (int n = 1; n <= nsteps; ++n)

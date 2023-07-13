@@ -39,6 +39,21 @@ void righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
                           int const& n_cell,
                           amrex::Real const& ren);
 
+void momentum_km_runge_kutta ( amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
+                               amrex::MultiFab& fluxConvect,
+                               amrex::MultiFab& fluxViscous,
+                               amrex::MultiFab& fluxPrsGrad,
+                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& fluxHalfN1,
+                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& fluxHalfN2,
+                               amrex::MultiFab& userCtx,
+                               amrex::MultiFab& velCart,
+                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
+                               amrex::Real const& dt,
+                               amrex::Geometry const& geom,
+                               int const& n_cell,
+                               amrex::Real const& ren);
+
 void fill_physical_ghost_cells (amrex::MultiFab& velCart,
                                 int const& Nghost,
                                 int const& n_cell,
