@@ -9,8 +9,15 @@ vis = 1
 # 0 - periodic
 # 2 - homogeneous Neumann (zero flux)
 # 3 - Diriclet (prescribed value)
-bc_lo = 3 3
-bc_hi = 3 3
+bc_lo = 0 0
+bc_hi = 0 0
+
+# phy_bc params declare the type of wall
+# 0 - periodic
+# -1 - non-slip
+# 1 - slip
+phy_bc_lo = -1 -1
+phy_bc_hi = -1 -1
 
 amrex.v = 1
 amrex.async_out = 0  # If we use more than 64 processes, async_out will require MPI_THREAD_MULTIPLE
