@@ -28,11 +28,13 @@ void convective_flux_calc (amrex::MultiFab& fluxConvect,
 void viscous_flux_calc (amrex::MultiFab& fluxViscous,
                         amrex::MultiFab& velCart,
                         amrex::Geometry const& geom,
-                        amrex::Real const& ren);
+                        amrex::Real const& ren,
+                        int const& n_cell);
 
 void pressure_gradient_calc (amrex::MultiFab& fluxPrsGrad,
                              amrex::MultiFab& userCtx,
-                             amrex::Geometry const& geom);
+                             amrex::Geometry const& geom,
+                             int const& n_cell);
 
 // +++++++++++++++++++++++++ Subroutine | Kim and Moine's RHS Term  ++++++++++++++++++++++++
 void righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,

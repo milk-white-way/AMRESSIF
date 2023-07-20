@@ -199,7 +199,8 @@ void convective_flux_calc ( MultiFab& fluxConvect,
 void viscous_flux_calc ( MultiFab& fluxViscous,
                          MultiFab& velCart,
                          Geometry const& geom,
-                         Real const& ren )
+                         Real const& ren,
+                         int const& n_cell )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
@@ -215,15 +216,26 @@ void viscous_flux_calc ( MultiFab& fluxViscous,
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
-            {
-                auto const& centerMAC = vcart(i, j, k, dir);
-                auto const& northMAC = vcart(i, j+1, k, dir);
-                auto const& southMAC = vcart(i, j-1, k, dir);
-                auto const& westMAC = vcart(i-1, j, k, dir);
-                auto const& eastMAC = vcart(i+1, j, k, dir);
+            if ( i >= 0 && i <= (n_cell-1) ) {
+                if ( j >= 0 && j <= (n_cell-1) ) {
+                    if (k >= 0 && k <= (n_cell-1) ) {
+                        for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
+                        {
+                            auto const& centerMAC = vcart(i, j, k, dir);
+                            auto const& northMAC = vcart(i, j+1, k, dir);
+                            auto const& southMAC = vcart(i, j-1, k, dir);
+                            auto const& westMAC = vcart(i-1, j, k, dir);
+                            auto const& eastMAC = vcart(i+1, j, k, dir);
 
-                visc_flux(i, j, k, dir) = ((westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]))/ren;
+                            visc_flux(i, j, k, dir) = ((westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]))/ren;
+                        }
+                    }
+                }
+            } else {
+                for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+                {
+                    visc_flux(i, j, k, dir) = Real(0.0);
+                }
             }
         });
     }
@@ -231,7 +243,8 @@ void viscous_flux_calc ( MultiFab& fluxViscous,
 
 void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
                               MultiFab& userCtx,
-                              Geometry const& geom)
+                              Geometry const& geom,
+                              int const& n_cell )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
@@ -248,11 +261,22 @@ void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            prsgrad_flux(i, j, k, 0) = (prs_field(i+1, j, k, 0) - prs_field(i-1, j, k, 0))/(Real(2.0)*dx[0]);
-            prsgrad_flux(i, j, k, 1) = (prs_field(i, j+1, k, 0) - prs_field(i, j-1, k, 0))/(Real(2.0)*dx[1]);
+            if ( i >= 0 && i <= (n_cell-1) ) {
+                if ( j >= 0 && j <= (n_cell-1) ) {
+                    if (k >= 0 && k <= (n_cell-1) ) {
+                        prsgrad_flux(i, j, k, 0) = (prs_field(i+1, j, k, 0) - prs_field(i-1, j, k, 0))/(Real(2.0)*dx[0]);
+                        prsgrad_flux(i, j, k, 1) = (prs_field(i, j+1, k, 0) - prs_field(i, j-1, k, 0))/(Real(2.0)*dx[1]);
 #if (AMREX_SPACEDIM > 2)
-            prsgrad_flux(i, j, k, 2) = (prs_field(i, j, k+1, 0) - prs_field(i, j, k-1, 0))/(Real(2.0)*dx[2]);
+                        prsgrad_flux(i, j, k, 2) = (prs_field(i, j, k+1, 0) - prs_field(i, j, k-1, 0))/(Real(2.0)*dx[2]);
 #endif
+                    }
+                }
+            } else {
+                for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+                {
+                    prsgrad_flux(i, j, k, dir) = Real(0.0);
+                }
+            }
         });
     }
 }
