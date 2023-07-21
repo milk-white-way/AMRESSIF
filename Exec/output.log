@@ -1,0 +1,2977 @@
+MPI initialized with 1 MPI processes
+MPI initialized with thread support level 0
+AMReX (23.07-13-gb41f85ab36ac) initialized
+INFO| number of cells in each side of the domain: 8
+INFO| periodicity in 0th dimension: 0
+INFO| periodicity in 1th dimension: 0
+INFO| number of dimensions: 2
+INFO| box array: (BoxArray maxbox(1)
+       m_ref->m_hash_sig(0)
+       ((0,0) (7,7) (0,0)) )
+
+INFO| geometry: (0 (0,0)(0.125,0.125) 1)
+(RealBox 0 1 0 1 )((0,0) (7,7) (0,0))P(0,0)
+PARAMS| number of ghost cells for each array: 2
+PARAMS| number of components for each array: 2
+===================== INITIALIZATION STEP ===================== 
+PARAMS| cfl number is set to: 0.9
+PARAMS| dt from above cfl: 0.003515625
+======================= ADVANCING STEP  ======================= 
+========================== west wall  ========================= 
+========================== east wall  ========================= 
+========================= south wall  ========================= 
+========================= north wall  ========================= 
+SOLVING| Momentum | performing Runge-Kutta at iteration: 1
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| printing xdiff -0.25
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff 2.016616041e-17
+DEBUGGING| printing xdiff -7.589415207e-18
+DEBUGGING| printing xdiff -2.775557562e-17
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| printing xdiff 0.25
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.2568786354
+DEBUGGING| printing xdiff 0.09667475524
+DEBUGGING| printing xdiff 0.3535533906
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| printing xdiff 0.25
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff -5.041540102e-17
+DEBUGGING| printing xdiff 1.897353802e-17
+DEBUGGING| printing xdiff 6.938893904e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| printing xdiff -0.25
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.1767766953
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff -0.1767766953
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.408337214
+DEBUGGING| printing xdiff 0.8047838232
+DEBUGGING| printing xdiff -0.6035533906
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff 3.652595804e-16
+DEBUGGING| printing xdiff 3.097484292e-16
+DEBUGGING| printing xdiff -5.551115123e-17
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff -3.74968487
+DEBUGGING| printing xdiff -3.146131479
+DEBUGGING| printing xdiff 0.6035533906
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff -5.302855198
+DEBUGGING| printing xdiff -4.449301807
+DEBUGGING| printing xdiff 0.8535533906
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff -3.74968487
+DEBUGGING| printing xdiff -3.146131479
+DEBUGGING| printing xdiff 0.6035533906
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.209969624e-16
+DEBUGGING| printing xdiff 4.553649124e-17
+DEBUGGING| printing xdiff 1.665334537e-16
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.4385192604
+DEBUGGING| printing xdiff -0.1650341302
+DEBUGGING| printing xdiff -0.6035533906
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.408337214
+DEBUGGING| printing xdiff 0.8047838232
+DEBUGGING| printing xdiff -0.6035533906
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff 3.652595804e-16
+DEBUGGING| printing xdiff 3.097484292e-16
+DEBUGGING| printing xdiff -5.551115123e-17
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff -3.74968487
+DEBUGGING| printing xdiff -3.146131479
+DEBUGGING| printing xdiff 0.6035533906
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff -5.302855198
+DEBUGGING| printing xdiff -4.449301807
+DEBUGGING| printing xdiff 0.8535533906
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff -3.74968487
+DEBUGGING| printing xdiff -3.146131479
+DEBUGGING| printing xdiff 0.6035533906
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff -4.45924222e-16
+DEBUGGING| printing xdiff -2.793907683e-16
+DEBUGGING| printing xdiff 1.665334537e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.4385192604
+DEBUGGING| printing xdiff -0.1650341302
+DEBUGGING| printing xdiff -0.6035533906
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.5833523744
+DEBUGGING| printing xdiff 0.3333523744
+DEBUGGING| printing xdiff -0.25
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff 9.13148951e-17
+DEBUGGING| printing xdiff 7.743710729e-17
+DEBUGGING| printing xdiff -1.387778781e-17
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff -1.553170328
+DEBUGGING| printing xdiff -1.303170328
+DEBUGGING| printing xdiff 0.25
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff -2.196514542
+DEBUGGING| printing xdiff -1.842961152
+DEBUGGING| printing xdiff 0.3535533906
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff -1.553170328
+DEBUGGING| printing xdiff -1.303170328
+DEBUGGING| printing xdiff 0.25
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff -4.033232082e-17
+DEBUGGING| printing xdiff 1.517883041e-17
+DEBUGGING| printing xdiff 5.551115123e-17
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| printing xdiff -0.25
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.5833523744
+DEBUGGING| printing xdiff -0.3333523744
+DEBUGGING| printing xdiff 0.25
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff 7.114873469e-17
+DEBUGGING| printing xdiff 8.50265225e-17
+DEBUGGING| printing xdiff 1.387778781e-17
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.553170328
+DEBUGGING| printing xdiff 1.303170328
+DEBUGGING| printing xdiff -0.25
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff 2.196514542
+DEBUGGING| printing xdiff 1.842961152
+DEBUGGING| printing xdiff -0.3535533906
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.553170328
+DEBUGGING| printing xdiff 1.303170328
+DEBUGGING| printing xdiff -0.25
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff -4.089949408e-17
+DEBUGGING| printing xdiff -9.641064531e-17
+DEBUGGING| printing xdiff -5.551115123e-17
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| printing xdiff 0.25
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.408337214
+DEBUGGING| printing xdiff -0.8047838232
+DEBUGGING| printing xdiff 0.6035533906
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff -3.652595804e-16
+DEBUGGING| printing xdiff -3.097484292e-16
+DEBUGGING| printing xdiff 5.551115123e-17
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff 3.74968487
+DEBUGGING| printing xdiff 3.146131479
+DEBUGGING| printing xdiff -0.6035533906
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff 5.302855198
+DEBUGGING| printing xdiff 4.449301807
+DEBUGGING| printing xdiff -0.8535533906
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff 3.74968487
+DEBUGGING| printing xdiff 3.146131479
+DEBUGGING| printing xdiff -0.6035533906
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff 5.882216914e-16
+DEBUGGING| printing xdiff 4.494438133e-16
+DEBUGGING| printing xdiff -1.387778781e-16
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.4385192604
+DEBUGGING| printing xdiff 0.1650341302
+DEBUGGING| printing xdiff 0.6035533906
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.408337214
+DEBUGGING| printing xdiff -0.8047838232
+DEBUGGING| printing xdiff 0.6035533906
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff -3.652595804e-16
+DEBUGGING| printing xdiff -3.097484292e-16
+DEBUGGING| printing xdiff 5.551115123e-17
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff 3.74968487
+DEBUGGING| printing xdiff 3.146131479
+DEBUGGING| printing xdiff -0.6035533906
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff 5.302855198
+DEBUGGING| printing xdiff 4.449301807
+DEBUGGING| printing xdiff -0.8535533906
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff 3.74968487
+DEBUGGING| printing xdiff 3.146131479
+DEBUGGING| printing xdiff -0.6035533906
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff 2.632944318e-16
+DEBUGGING| printing xdiff 1.245165538e-16
+DEBUGGING| printing xdiff -1.387778781e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.4385192604
+DEBUGGING| printing xdiff 0.1650341302
+DEBUGGING| printing xdiff 0.6035533906
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| printing xdiff 0.25
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff -1.00830802e-17
+DEBUGGING| printing xdiff 3.794707604e-18
+DEBUGGING| printing xdiff 1.387778781e-17
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| printing xdiff -0.25
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.2568786354
+DEBUGGING| printing xdiff -0.09667475524
+DEBUGGING| printing xdiff -0.3535533906
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| printing xdiff -0.25
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff 4.033232082e-17
+DEBUGGING| printing xdiff -1.517883041e-17
+DEBUGGING| printing xdiff -5.551115123e-17
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| printing xdiff 0.25
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 15.94169057
+DEBUGGING| printing yerror 15.94169057
+SOLVING| Momentum | performing Runge-Kutta at iteration: 2
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff 2.016616041e-17
+DEBUGGING| printing xdiff 1.25767452e-17
+DEBUGGING| printing xdiff -7.589415207e-18
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.2568786354
+DEBUGGING| printing xdiff -0.1602038801
+DEBUGGING| printing xdiff 0.09667475524
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff -5.041540102e-17
+DEBUGGING| printing xdiff -3.1441863e-17
+DEBUGGING| printing xdiff 1.897353802e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.408337214
+DEBUGGING| printing xdiff 2.213121037
+DEBUGGING| printing xdiff 0.8047838232
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff 3.652595804e-16
+DEBUGGING| printing xdiff 6.750080096e-16
+DEBUGGING| printing xdiff 3.097484292e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff -3.74968487
+DEBUGGING| printing xdiff -6.89581635
+DEBUGGING| printing xdiff -3.146131479
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff -5.302855198
+DEBUGGING| printing xdiff -9.752157005
+DEBUGGING| printing xdiff -4.449301807
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff -3.74968487
+DEBUGGING| printing xdiff -6.89581635
+DEBUGGING| printing xdiff -3.146131479
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.209969624e-16
+DEBUGGING| printing xdiff -7.54604712e-17
+DEBUGGING| printing xdiff 4.553649124e-17
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.4385192604
+DEBUGGING| printing xdiff 0.2734851301
+DEBUGGING| printing xdiff -0.1650341302
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.408337214
+DEBUGGING| printing xdiff 2.213121037
+DEBUGGING| printing xdiff 0.8047838232
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff 3.652595804e-16
+DEBUGGING| printing xdiff 6.750080096e-16
+DEBUGGING| printing xdiff 3.097484292e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff -3.74968487
+DEBUGGING| printing xdiff -6.89581635
+DEBUGGING| printing xdiff -3.146131479
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff -5.302855198
+DEBUGGING| printing xdiff -9.752157005
+DEBUGGING| printing xdiff -4.449301807
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff -3.74968487
+DEBUGGING| printing xdiff -6.89581635
+DEBUGGING| printing xdiff -3.146131479
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff -4.45924222e-16
+DEBUGGING| printing xdiff -7.253149904e-16
+DEBUGGING| printing xdiff -2.793907683e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.4385192604
+DEBUGGING| printing xdiff 0.2734851301
+DEBUGGING| printing xdiff -0.1650341302
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.5833523744
+DEBUGGING| printing xdiff 0.9167047487
+DEBUGGING| printing xdiff 0.3333523744
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff 9.13148951e-17
+DEBUGGING| printing xdiff 1.687520024e-16
+DEBUGGING| printing xdiff 7.743710729e-17
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff -1.553170328
+DEBUGGING| printing xdiff -2.856340656
+DEBUGGING| printing xdiff -1.303170328
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff -2.196514542
+DEBUGGING| printing xdiff -4.039475694
+DEBUGGING| printing xdiff -1.842961152
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff -1.553170328
+DEBUGGING| printing xdiff -2.856340656
+DEBUGGING| printing xdiff -1.303170328
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff -4.033232082e-17
+DEBUGGING| printing xdiff -2.51534904e-17
+DEBUGGING| printing xdiff 1.517883041e-17
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.5833523744
+DEBUGGING| printing xdiff -0.9167047487
+DEBUGGING| printing xdiff -0.3333523744
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff 7.114873469e-17
+DEBUGGING| printing xdiff 1.561752572e-16
+DEBUGGING| printing xdiff 8.50265225e-17
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.553170328
+DEBUGGING| printing xdiff 2.856340656
+DEBUGGING| printing xdiff 1.303170328
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff 2.196514542
+DEBUGGING| printing xdiff 4.039475694
+DEBUGGING| printing xdiff 1.842961152
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.553170328
+DEBUGGING| printing xdiff 2.856340656
+DEBUGGING| printing xdiff 1.303170328
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff -4.089949408e-17
+DEBUGGING| printing xdiff -1.373101394e-16
+DEBUGGING| printing xdiff -9.641064531e-17
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.408337214
+DEBUGGING| printing xdiff -2.213121037
+DEBUGGING| printing xdiff -0.8047838232
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff -3.652595804e-16
+DEBUGGING| printing xdiff -6.750080096e-16
+DEBUGGING| printing xdiff -3.097484292e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff 3.74968487
+DEBUGGING| printing xdiff 6.89581635
+DEBUGGING| printing xdiff 3.146131479
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff 5.302855198
+DEBUGGING| printing xdiff 9.752157005
+DEBUGGING| printing xdiff 4.449301807
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff 3.74968487
+DEBUGGING| printing xdiff 6.89581635
+DEBUGGING| printing xdiff 3.146131479
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff 5.882216914e-16
+DEBUGGING| printing xdiff 1.037665505e-15
+DEBUGGING| printing xdiff 4.494438133e-16
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.4385192604
+DEBUGGING| printing xdiff -0.2734851301
+DEBUGGING| printing xdiff 0.1650341302
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.408337214
+DEBUGGING| printing xdiff -2.213121037
+DEBUGGING| printing xdiff -0.8047838232
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff -3.652595804e-16
+DEBUGGING| printing xdiff -6.750080096e-16
+DEBUGGING| printing xdiff -3.097484292e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff 3.74968487
+DEBUGGING| printing xdiff 6.89581635
+DEBUGGING| printing xdiff 3.146131479
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff 5.302855198
+DEBUGGING| printing xdiff 9.752157005
+DEBUGGING| printing xdiff 4.449301807
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff 3.74968487
+DEBUGGING| printing xdiff 6.89581635
+DEBUGGING| printing xdiff 3.146131479
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff 2.632944318e-16
+DEBUGGING| printing xdiff 3.878109856e-16
+DEBUGGING| printing xdiff 1.245165538e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.4385192604
+DEBUGGING| printing xdiff -0.2734851301
+DEBUGGING| printing xdiff 0.1650341302
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff -1.00830802e-17
+DEBUGGING| printing xdiff -6.2883726e-18
+DEBUGGING| printing xdiff 3.794707604e-18
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.2568786354
+DEBUGGING| printing xdiff 0.1602038801
+DEBUGGING| printing xdiff -0.09667475524
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.181640625
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| printing xdiff -0.068359375
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff 4.033232082e-17
+DEBUGGING| printing xdiff 2.51534904e-17
+DEBUGGING| printing xdiff -1.517883041e-17
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.181640625
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| printing xdiff 0.068359375
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 15.94071041
+DEBUGGING| printing yerror 15.94071041
+SOLVING| Momentum | performing Runge-Kutta at iteration: 3
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.0496673584
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff 5.514184487e-18
+DEBUGGING| printing xdiff 1.809092969e-17
+DEBUGGING| printing xdiff 1.25767452e-17
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.0496673584
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.07024025185
+DEBUGGING| printing xdiff -0.230444132
+DEBUGGING| printing xdiff -0.1602038801
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.0496673584
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff -1.378546122e-17
+DEBUGGING| printing xdiff -4.522732422e-17
+DEBUGGING| printing xdiff -3.1441863e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.0496673584
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.3850922069
+DEBUGGING| printing xdiff 2.598213244
+DEBUGGING| printing xdiff 2.213121037
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff 9.987566651e-17
+DEBUGGING| printing xdiff 7.748836761e-16
+DEBUGGING| printing xdiff 6.750080096e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.025304457
+DEBUGGING| printing xdiff -7.921120806
+DEBUGGING| printing xdiff -6.89581635
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.449999468
+DEBUGGING| printing xdiff -11.20215647
+DEBUGGING| printing xdiff -9.752157005
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.025304457
+DEBUGGING| printing xdiff -7.921120806
+DEBUGGING| printing xdiff -6.89581635
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff -3.308510692e-17
+DEBUGGING| printing xdiff -1.085455781e-16
+DEBUGGING| printing xdiff -7.54604712e-17
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.1199076103
+DEBUGGING| printing xdiff 0.3933927404
+DEBUGGING| printing xdiff 0.2734851301
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.3850922069
+DEBUGGING| printing xdiff 2.598213244
+DEBUGGING| printing xdiff 2.213121037
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff 9.987566651e-17
+DEBUGGING| printing xdiff 7.748836761e-16
+DEBUGGING| printing xdiff 6.750080096e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.025304457
+DEBUGGING| printing xdiff -7.921120806
+DEBUGGING| printing xdiff -6.89581635
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.449999468
+DEBUGGING| printing xdiff -11.20215647
+DEBUGGING| printing xdiff -9.752157005
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.025304457
+DEBUGGING| printing xdiff -7.921120806
+DEBUGGING| printing xdiff -6.89581635
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.219324045e-16
+DEBUGGING| printing xdiff -8.472473948e-16
+DEBUGGING| printing xdiff -7.253149904e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.1199076103
+DEBUGGING| printing xdiff 0.3933927404
+DEBUGGING| printing xdiff 0.2734851301
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.1595104149
+DEBUGGING| printing xdiff 1.076215164
+DEBUGGING| printing xdiff 0.9167047487
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff 2.496891663e-17
+DEBUGGING| printing xdiff 1.93720919e-16
+DEBUGGING| printing xdiff 1.687520024e-16
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.4246950115
+DEBUGGING| printing xdiff -3.281035667
+DEBUGGING| printing xdiff -2.856340656
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.6006094451
+DEBUGGING| printing xdiff -4.640085139
+DEBUGGING| printing xdiff -4.039475694
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.4246950115
+DEBUGGING| printing xdiff -3.281035667
+DEBUGGING| printing xdiff -2.856340656
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff -1.102836897e-17
+DEBUGGING| printing xdiff -3.618185937e-17
+DEBUGGING| printing xdiff -2.51534904e-17
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.0496673584
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.1595104149
+DEBUGGING| printing xdiff -1.076215164
+DEBUGGING| printing xdiff -0.9167047487
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.945473214e-17
+DEBUGGING| printing xdiff 1.756299893e-16
+DEBUGGING| printing xdiff 1.561752572e-16
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.4246950115
+DEBUGGING| printing xdiff 3.281035667
+DEBUGGING| printing xdiff 2.856340656
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.6006094451
+DEBUGGING| printing xdiff 4.640085139
+DEBUGGING| printing xdiff 4.039475694
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.4246950115
+DEBUGGING| printing xdiff 3.281035667
+DEBUGGING| printing xdiff 2.856340656
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff -1.118345541e-17
+DEBUGGING| printing xdiff -1.484935948e-16
+DEBUGGING| printing xdiff -1.373101394e-16
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.0496673584
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.3850922069
+DEBUGGING| printing xdiff -2.598213244
+DEBUGGING| printing xdiff -2.213121037
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff -9.987566651e-17
+DEBUGGING| printing xdiff -7.748836761e-16
+DEBUGGING| printing xdiff -6.750080096e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.025304457
+DEBUGGING| printing xdiff 7.921120806
+DEBUGGING| printing xdiff 6.89581635
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.449999468
+DEBUGGING| printing xdiff 11.20215647
+DEBUGGING| printing xdiff 9.752157005
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.025304457
+DEBUGGING| printing xdiff 7.921120806
+DEBUGGING| printing xdiff 6.89581635
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.608418687e-16
+DEBUGGING| printing xdiff 1.198507373e-15
+DEBUGGING| printing xdiff 1.037665505e-15
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.1199076103
+DEBUGGING| printing xdiff -0.3933927404
+DEBUGGING| printing xdiff -0.2734851301
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.3850922069
+DEBUGGING| printing xdiff -2.598213244
+DEBUGGING| printing xdiff -2.213121037
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff -9.987566651e-17
+DEBUGGING| printing xdiff -7.748836761e-16
+DEBUGGING| printing xdiff -6.750080096e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.025304457
+DEBUGGING| printing xdiff 7.921120806
+DEBUGGING| printing xdiff 6.89581635
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.449999468
+DEBUGGING| printing xdiff 11.20215647
+DEBUGGING| printing xdiff 9.752157005
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.025304457
+DEBUGGING| printing xdiff 7.921120806
+DEBUGGING| printing xdiff 6.89581635
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff 7.19945712e-17
+DEBUGGING| printing xdiff 4.598055568e-16
+DEBUGGING| printing xdiff 3.878109856e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.1199076103
+DEBUGGING| printing xdiff -0.3933927404
+DEBUGGING| printing xdiff -0.2734851301
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.0496673584
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff -2.757092243e-18
+DEBUGGING| printing xdiff -9.045464844e-18
+DEBUGGING| printing xdiff -6.2883726e-18
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.0496673584
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.07024025185
+DEBUGGING| printing xdiff 0.230444132
+DEBUGGING| printing xdiff 0.1602038801
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.0496673584
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| printing xdiff 0.11328125
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff 1.102836897e-17
+DEBUGGING| printing xdiff 3.618185937e-17
+DEBUGGING| printing xdiff 2.51534904e-17
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.0496673584
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| printing xdiff -0.11328125
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 4.358788003
+DEBUGGING| printing yerror 4.358788003
+SOLVING| Momentum | performing Runge-Kutta at iteration: 4
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.0823059082
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff -9.137791435e-18
+DEBUGGING| printing xdiff 8.953138252e-18
+DEBUGGING| printing xdiff 1.809092969e-17
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.0823059082
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.1163981316
+DEBUGGING| printing xdiff -0.1140460003
+DEBUGGING| printing xdiff -0.230444132
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.0823059082
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff 2.284447859e-17
+DEBUGGING| printing xdiff -2.238284563e-17
+DEBUGGING| printing xdiff -4.522732422e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.0823059082
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.6381528
+DEBUGGING| printing xdiff 1.960060444
+DEBUGGING| printing xdiff 2.598213244
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.655082474e-16
+DEBUGGING| printing xdiff 6.093754287e-16
+DEBUGGING| printing xdiff 7.748836761e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.699075957
+DEBUGGING| printing xdiff -6.222044849
+DEBUGGING| printing xdiff -7.921120806
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff 2.402856262
+DEBUGGING| printing xdiff -8.799300212
+DEBUGGING| printing xdiff -11.20215647
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.699075957
+DEBUGGING| printing xdiff -6.222044849
+DEBUGGING| printing xdiff -7.921120806
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff 5.482674861e-17
+DEBUGGING| printing xdiff -5.371882951e-17
+DEBUGGING| printing xdiff -1.085455781e-16
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.1987040398
+DEBUGGING| printing xdiff 0.1946887005
+DEBUGGING| printing xdiff 0.3933927404
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.6381528
+DEBUGGING| printing xdiff 1.960060444
+DEBUGGING| printing xdiff 2.598213244
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.655082474e-16
+DEBUGGING| printing xdiff 6.093754287e-16
+DEBUGGING| printing xdiff 7.748836761e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.699075957
+DEBUGGING| printing xdiff -6.222044849
+DEBUGGING| printing xdiff -7.921120806
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff 2.402856262
+DEBUGGING| printing xdiff -8.799300212
+DEBUGGING| printing xdiff -11.20215647
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.699075957
+DEBUGGING| printing xdiff -6.222044849
+DEBUGGING| printing xdiff -7.921120806
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff 2.020594131e-16
+DEBUGGING| printing xdiff -6.451879817e-16
+DEBUGGING| printing xdiff -8.472473948e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.1987040398
+DEBUGGING| printing xdiff 0.1946887005
+DEBUGGING| printing xdiff 0.3933927404
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.2643315446
+DEBUGGING| printing xdiff 0.8118836189
+DEBUGGING| printing xdiff 1.076215164
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff -4.137706184e-17
+DEBUGGING| printing xdiff 1.523438572e-16
+DEBUGGING| printing xdiff 1.93720919e-16
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.7037803048
+DEBUGGING| printing xdiff -2.577255362
+DEBUGGING| printing xdiff -3.281035667
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.995295652
+DEBUGGING| printing xdiff -3.644789487
+DEBUGGING| printing xdiff -4.640085139
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.7037803048
+DEBUGGING| printing xdiff -2.577255362
+DEBUGGING| printing xdiff -3.281035667
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff 1.827558287e-17
+DEBUGGING| printing xdiff -1.79062765e-17
+DEBUGGING| printing xdiff -3.618185937e-17
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.0823059082
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.2643315446
+DEBUGGING| printing xdiff -0.8118836189
+DEBUGGING| printing xdiff -1.076215164
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff -3.223927041e-17
+DEBUGGING| printing xdiff 1.433907189e-16
+DEBUGGING| printing xdiff 1.756299893e-16
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.7037803048
+DEBUGGING| printing xdiff 2.577255362
+DEBUGGING| printing xdiff 3.281035667
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.995295652
+DEBUGGING| printing xdiff 3.644789487
+DEBUGGING| printing xdiff 4.640085139
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.7037803048
+DEBUGGING| printing xdiff 2.577255362
+DEBUGGING| printing xdiff 3.281035667
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.853258325e-17
+DEBUGGING| printing xdiff -1.299610115e-16
+DEBUGGING| printing xdiff -1.484935948e-16
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.0823059082
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.6381528
+DEBUGGING| printing xdiff -1.960060444
+DEBUGGING| printing xdiff -2.598213244
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.655082474e-16
+DEBUGGING| printing xdiff -6.093754287e-16
+DEBUGGING| printing xdiff -7.748836761e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.699075957
+DEBUGGING| printing xdiff 6.222044849
+DEBUGGING| printing xdiff 7.921120806
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff -2.402856262
+DEBUGGING| printing xdiff 8.799300212
+DEBUGGING| printing xdiff 11.20215647
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.699075957
+DEBUGGING| printing xdiff 6.222044849
+DEBUGGING| printing xdiff 7.921120806
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff -2.665379539e-16
+DEBUGGING| printing xdiff 9.319694196e-16
+DEBUGGING| printing xdiff 1.198507373e-15
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.1987040398
+DEBUGGING| printing xdiff -0.1946887005
+DEBUGGING| printing xdiff -0.3933927404
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.6381528
+DEBUGGING| printing xdiff -1.960060444
+DEBUGGING| printing xdiff -2.598213244
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.655082474e-16
+DEBUGGING| printing xdiff -6.093754287e-16
+DEBUGGING| printing xdiff -7.748836761e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.699075957
+DEBUGGING| printing xdiff 6.222044849
+DEBUGGING| printing xdiff 7.921120806
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff -2.402856262
+DEBUGGING| printing xdiff 8.799300212
+DEBUGGING| printing xdiff 11.20215647
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.699075957
+DEBUGGING| printing xdiff 6.222044849
+DEBUGGING| printing xdiff 7.921120806
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.193052894e-16
+DEBUGGING| printing xdiff 3.405002674e-16
+DEBUGGING| printing xdiff 4.598055568e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.1987040398
+DEBUGGING| printing xdiff -0.1946887005
+DEBUGGING| printing xdiff -0.3933927404
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.0823059082
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff 4.568895717e-18
+DEBUGGING| printing xdiff -4.476569126e-18
+DEBUGGING| printing xdiff -9.045464844e-18
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.0823059082
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.1163981316
+DEBUGGING| printing xdiff 0.1140460003
+DEBUGGING| printing xdiff 0.230444132
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.0823059082
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| printing xdiff 0.1629486084
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff -1.827558287e-17
+DEBUGGING| printing xdiff 1.79062765e-17
+DEBUGGING| printing xdiff 3.618185937e-17
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.0823059082
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| printing xdiff -0.1629486084
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 7.223134404
+DEBUGGING| printing yerror 7.223134404
+SOLVING| Momentum | performing Runge-Kutta at iteration: 5
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.1183923483
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff -1.31441911e-17
+DEBUGGING| printing xdiff -4.191052849e-18
+DEBUGGING| printing xdiff 8.953138252e-18
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.1183923483
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.1674320646
+DEBUGGING| printing xdiff 0.05338606431
+DEBUGGING| printing xdiff -0.1140460003
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.1183923483
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff 3.286047775e-17
+DEBUGGING| printing xdiff 1.047763212e-17
+DEBUGGING| printing xdiff -2.238284563e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.1183923483
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.9179463566
+DEBUGGING| printing xdiff 1.042114087
+DEBUGGING| printing xdiff 1.960060444
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff -2.380741613e-16
+DEBUGGING| printing xdiff 3.713012674e-16
+DEBUGGING| printing xdiff 6.093754287e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff 2.444023726
+DEBUGGING| printing xdiff -3.778021123
+DEBUGGING| printing xdiff -6.222044849
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff 3.4563715
+DEBUGGING| printing xdiff -5.342928712
+DEBUGGING| printing xdiff -8.799300212
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff 2.444023726
+DEBUGGING| printing xdiff -3.778021123
+DEBUGGING| printing xdiff -6.222044849
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff 7.886514661e-17
+DEBUGGING| printing xdiff 2.514631709e-17
+DEBUGGING| printing xdiff -5.371882951e-17
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.2858244129
+DEBUGGING| printing xdiff -0.0911357124
+DEBUGGING| printing xdiff 0.1946887005
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.9179463566
+DEBUGGING| printing xdiff 1.042114087
+DEBUGGING| printing xdiff 1.960060444
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff -2.380741613e-16
+DEBUGGING| printing xdiff 3.713012674e-16
+DEBUGGING| printing xdiff 6.093754287e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff 2.444023726
+DEBUGGING| printing xdiff -3.778021123
+DEBUGGING| printing xdiff -6.222044849
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff 3.4563715
+DEBUGGING| printing xdiff -5.342928712
+DEBUGGING| printing xdiff -8.799300212
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff 2.444023726
+DEBUGGING| printing xdiff -3.778021123
+DEBUGGING| printing xdiff -6.222044849
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff 2.906509257e-16
+DEBUGGING| printing xdiff -3.54537056e-16
+DEBUGGING| printing xdiff -6.451879817e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.2858244129
+DEBUGGING| printing xdiff -0.0911357124
+DEBUGGING| printing xdiff 0.1946887005
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.3802258304
+DEBUGGING| printing xdiff 0.4316577885
+DEBUGGING| printing xdiff 0.8118836189
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff -5.951854033e-17
+DEBUGGING| printing xdiff 9.282531685e-17
+DEBUGGING| printing xdiff 1.523438572e-16
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff 1.012347774
+DEBUGGING| printing xdiff -1.564907588
+DEBUGGING| printing xdiff -2.577255362
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff 1.431675952
+DEBUGGING| printing xdiff -2.213113535
+DEBUGGING| printing xdiff -3.644789487
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff 1.012347774
+DEBUGGING| printing xdiff -1.564907588
+DEBUGGING| printing xdiff -2.577255362
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff 2.62883822e-17
+DEBUGGING| printing xdiff 8.382105697e-18
+DEBUGGING| printing xdiff -1.79062765e-17
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.1183923483
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.3802258304
+DEBUGGING| printing xdiff -0.4316577885
+DEBUGGING| printing xdiff -0.8118836189
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff -4.637434923e-17
+DEBUGGING| printing xdiff 9.70163697e-17
+DEBUGGING| printing xdiff 1.433907189e-16
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff -1.012347774
+DEBUGGING| printing xdiff 1.564907588
+DEBUGGING| printing xdiff 2.577255362
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff -1.431675952
+DEBUGGING| printing xdiff 2.213113535
+DEBUGGING| printing xdiff 3.644789487
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff -1.012347774
+DEBUGGING| printing xdiff 1.564907588
+DEBUGGING| printing xdiff 2.577255362
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff 2.665806258e-17
+DEBUGGING| printing xdiff -1.03302949e-16
+DEBUGGING| printing xdiff -1.299610115e-16
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.1183923483
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.9179463566
+DEBUGGING| printing xdiff -1.042114087
+DEBUGGING| printing xdiff -1.960060444
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff 2.380741613e-16
+DEBUGGING| printing xdiff -3.713012674e-16
+DEBUGGING| printing xdiff -6.093754287e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff -2.444023726
+DEBUGGING| printing xdiff 3.778021123
+DEBUGGING| printing xdiff 6.222044849
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff -3.4563715
+DEBUGGING| printing xdiff 5.342928712
+DEBUGGING| printing xdiff 8.799300212
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff -2.444023726
+DEBUGGING| printing xdiff 3.778021123
+DEBUGGING| printing xdiff 6.222044849
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff -3.833996242e-16
+DEBUGGING| printing xdiff 5.485697954e-16
+DEBUGGING| printing xdiff 9.319694196e-16
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.2858244129
+DEBUGGING| printing xdiff 0.0911357124
+DEBUGGING| printing xdiff -0.1946887005
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.9179463566
+DEBUGGING| printing xdiff -1.042114087
+DEBUGGING| printing xdiff -1.960060444
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff 2.380741613e-16
+DEBUGGING| printing xdiff -3.713012674e-16
+DEBUGGING| printing xdiff -6.093754287e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff -2.444023726
+DEBUGGING| printing xdiff 3.778021123
+DEBUGGING| printing xdiff 6.222044849
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff -3.4563715
+DEBUGGING| printing xdiff 5.342928712
+DEBUGGING| printing xdiff 8.799300212
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff -2.444023726
+DEBUGGING| printing xdiff 3.778021123
+DEBUGGING| printing xdiff 6.222044849
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.716138451e-16
+DEBUGGING| printing xdiff 1.688864223e-16
+DEBUGGING| printing xdiff 3.405002674e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.2858244129
+DEBUGGING| printing xdiff 0.0911357124
+DEBUGGING| printing xdiff -0.1946887005
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.1183923483
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff 6.572095551e-18
+DEBUGGING| printing xdiff 2.095526424e-18
+DEBUGGING| printing xdiff -4.476569126e-18
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.1183923483
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.1674320646
+DEBUGGING| printing xdiff -0.05338606431
+DEBUGGING| printing xdiff 0.1140460003
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.1183923483
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| printing xdiff 0.0806427002
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff -2.62883822e-17
+DEBUGGING| printing xdiff -8.382105697e-18
+DEBUGGING| printing xdiff 1.79062765e-17
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.1183923483
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| printing xdiff -0.0806427002
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 10.39006631
+DEBUGGING| printing yerror 10.39006631
+SOLVING| Momentum | performing Runge-Kutta at iteration: 6
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.05859196186
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff -6.505014512e-18
+DEBUGGING| printing xdiff -1.069606736e-17
+DEBUGGING| printing xdiff -4.191052849e-18
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.05859196186
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.08286154711
+DEBUGGING| printing xdiff 0.1362476114
+DEBUGGING| printing xdiff 0.05338606431
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.05859196186
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff 1.626253628e-17
+DEBUGGING| printing xdiff 2.67401684e-17
+DEBUGGING| printing xdiff 1.047763212e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.05859196186
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.4542884628
+DEBUGGING| printing xdiff 0.5878256245
+DEBUGGING| printing xdiff 1.042114087
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.178220753e-16
+DEBUGGING| printing xdiff 2.53479192e-16
+DEBUGGING| printing xdiff 3.713012674e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.209538851
+DEBUGGING| printing xdiff -2.568482272
+DEBUGGING| printing xdiff -3.778021123
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.710546248
+DEBUGGING| printing xdiff -3.632382464
+DEBUGGING| printing xdiff -5.342928712
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.209538851
+DEBUGGING| printing xdiff -2.568482272
+DEBUGGING| printing xdiff -3.778021123
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff 3.903008707e-17
+DEBUGGING| printing xdiff 6.417640416e-17
+DEBUGGING| printing xdiff 2.514631709e-17
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.141453509
+DEBUGGING| printing xdiff -0.2325892214
+DEBUGGING| printing xdiff -0.0911357124
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.4542884628
+DEBUGGING| printing xdiff 0.5878256245
+DEBUGGING| printing xdiff 1.042114087
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.178220753e-16
+DEBUGGING| printing xdiff 2.53479192e-16
+DEBUGGING| printing xdiff 3.713012674e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.209538851
+DEBUGGING| printing xdiff -2.568482272
+DEBUGGING| printing xdiff -3.778021123
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.710546248
+DEBUGGING| printing xdiff -3.632382464
+DEBUGGING| printing xdiff -5.342928712
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.209538851
+DEBUGGING| printing xdiff -2.568482272
+DEBUGGING| printing xdiff -3.778021123
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.438421334e-16
+DEBUGGING| printing xdiff -2.106949226e-16
+DEBUGGING| printing xdiff -3.54537056e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.141453509
+DEBUGGING| printing xdiff -0.2325892214
+DEBUGGING| printing xdiff -0.0911357124
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.1881724425
+DEBUGGING| printing xdiff 0.243485346
+DEBUGGING| printing xdiff 0.4316577885
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff -2.945551884e-17
+DEBUGGING| printing xdiff 6.336979801e-17
+DEBUGGING| printing xdiff 9.282531685e-17
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.5010073964
+DEBUGGING| printing xdiff -1.063900192
+DEBUGGING| printing xdiff -1.564907588
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.7085314548
+DEBUGGING| printing xdiff -1.50458208
+DEBUGGING| printing xdiff -2.213113535
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.5010073964
+DEBUGGING| printing xdiff -1.063900192
+DEBUGGING| printing xdiff -1.564907588
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff 1.301002902e-17
+DEBUGGING| printing xdiff 2.139213472e-17
+DEBUGGING| printing xdiff 8.382105697e-18
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.05859196186
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.1881724425
+DEBUGGING| printing xdiff -0.243485346
+DEBUGGING| printing xdiff -0.4316577885
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff -2.295050432e-17
+DEBUGGING| printing xdiff 7.406586537e-17
+DEBUGGING| printing xdiff 9.70163697e-17
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.5010073964
+DEBUGGING| printing xdiff 1.063900192
+DEBUGGING| printing xdiff 1.564907588
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.7085314548
+DEBUGGING| printing xdiff 1.50458208
+DEBUGGING| printing xdiff 2.213113535
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.5010073964
+DEBUGGING| printing xdiff 1.063900192
+DEBUGGING| printing xdiff 1.564907588
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.319298256e-17
+DEBUGGING| printing xdiff -9.010996641e-17
+DEBUGGING| printing xdiff -1.03302949e-16
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.05859196186
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.4542884628
+DEBUGGING| printing xdiff -0.5878256245
+DEBUGGING| printing xdiff -1.042114087
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.178220753e-16
+DEBUGGING| printing xdiff -2.53479192e-16
+DEBUGGING| printing xdiff -3.713012674e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.209538851
+DEBUGGING| printing xdiff 2.568482272
+DEBUGGING| printing xdiff 3.778021123
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.710546248
+DEBUGGING| printing xdiff 3.632382464
+DEBUGGING| printing xdiff 5.342928712
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.209538851
+DEBUGGING| printing xdiff 2.568482272
+DEBUGGING| printing xdiff 3.778021123
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.89743142e-16
+DEBUGGING| printing xdiff 3.588266533e-16
+DEBUGGING| printing xdiff 5.485697954e-16
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.141453509
+DEBUGGING| printing xdiff 0.2325892214
+DEBUGGING| printing xdiff 0.0911357124
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.4542884628
+DEBUGGING| printing xdiff -0.5878256245
+DEBUGGING| printing xdiff -1.042114087
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.178220753e-16
+DEBUGGING| printing xdiff -2.53479192e-16
+DEBUGGING| printing xdiff -3.713012674e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.209538851
+DEBUGGING| printing xdiff 2.568482272
+DEBUGGING| printing xdiff 3.778021123
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.710546248
+DEBUGGING| printing xdiff 3.632382464
+DEBUGGING| printing xdiff 5.342928712
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.209538851
+DEBUGGING| printing xdiff 2.568482272
+DEBUGGING| printing xdiff 3.778021123
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff -8.493109572e-17
+DEBUGGING| printing xdiff 8.395532658e-17
+DEBUGGING| printing xdiff 1.688864223e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.141453509
+DEBUGGING| printing xdiff 0.2325892214
+DEBUGGING| printing xdiff 0.0911357124
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.05859196186
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff 3.252507256e-18
+DEBUGGING| printing xdiff 5.34803368e-18
+DEBUGGING| printing xdiff 2.095526424e-18
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.05859196186
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.08286154711
+DEBUGGING| printing xdiff -0.1362476114
+DEBUGGING| printing xdiff -0.05338606431
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.05859196186
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| printing xdiff -0.03774964809
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff -1.301002902e-17
+DEBUGGING| printing xdiff -2.139213472e-17
+DEBUGGING| printing xdiff -8.382105697e-18
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.05859196186
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| printing xdiff 0.03774964809
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 5.142007722
+DEBUGGING| printing yerror 5.142007722
+SOLVING| Momentum | performing Runge-Kutta at iteration: 7
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.02742747869
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff 3.045061835e-18
+DEBUGGING| printing xdiff -7.651005525e-18
+DEBUGGING| printing xdiff -1.069606736e-17
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.02742747869
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.03878831235
+DEBUGGING| printing xdiff 0.09745929907
+DEBUGGING| printing xdiff 0.1362476114
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.02742747869
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff -7.612654588e-18
+DEBUGGING| printing xdiff 1.912751381e-17
+DEBUGGING| printing xdiff 2.67401684e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.02742747869
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.2126569369
+DEBUGGING| printing xdiff 0.8004825614
+DEBUGGING| printing xdiff 0.5878256245
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff 5.515368249e-17
+DEBUGGING| printing xdiff 3.086328745e-16
+DEBUGGING| printing xdiff 2.53479192e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.5661971372
+DEBUGGING| printing xdiff -3.134679409
+DEBUGGING| printing xdiff -2.568482272
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.8007236705
+DEBUGGING| printing xdiff -4.433106134
+DEBUGGING| printing xdiff -3.632382464
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.5661971372
+DEBUGGING| printing xdiff -3.134679409
+DEBUGGING| printing xdiff -2.568482272
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.827037101e-17
+DEBUGGING| printing xdiff 4.590603315e-17
+DEBUGGING| printing xdiff 6.417640416e-17
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.06621579104
+DEBUGGING| printing xdiff -0.1663734303
+DEBUGGING| printing xdiff -0.2325892214
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.2126569369
+DEBUGGING| printing xdiff 0.8004825614
+DEBUGGING| printing xdiff 0.5878256245
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff 5.515368249e-17
+DEBUGGING| printing xdiff 3.086328745e-16
+DEBUGGING| printing xdiff 2.53479192e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.5661971372
+DEBUGGING| printing xdiff -3.134679409
+DEBUGGING| printing xdiff -2.568482272
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.8007236705
+DEBUGGING| printing xdiff -4.433106134
+DEBUGGING| printing xdiff -3.632382464
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.5661971372
+DEBUGGING| printing xdiff -3.134679409
+DEBUGGING| printing xdiff -2.568482272
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff -6.733392983e-17
+DEBUGGING| printing xdiff -2.780288524e-16
+DEBUGGING| printing xdiff -2.106949226e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.06621579104
+DEBUGGING| printing xdiff -0.1663734303
+DEBUGGING| printing xdiff -0.2325892214
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.08808538739
+DEBUGGING| printing xdiff 0.3315707334
+DEBUGGING| printing xdiff 0.243485346
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff 1.378842062e-17
+DEBUGGING| printing xdiff 7.715821863e-17
+DEBUGGING| printing xdiff 6.336979801e-17
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.2345265332
+DEBUGGING| printing xdiff -1.298426725
+DEBUGGING| printing xdiff -1.063900192
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.331670604
+DEBUGGING| printing xdiff -1.836252684
+DEBUGGING| printing xdiff -1.50458208
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.2345265332
+DEBUGGING| printing xdiff -1.298426725
+DEBUGGING| printing xdiff -1.063900192
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff -6.090123671e-18
+DEBUGGING| printing xdiff 1.530201105e-17
+DEBUGGING| printing xdiff 2.139213472e-17
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.02742747869
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.08808538739
+DEBUGGING| printing xdiff -0.3315707334
+DEBUGGING| printing xdiff -0.243485346
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.074335879e-17
+DEBUGGING| printing xdiff 8.480922416e-17
+DEBUGGING| printing xdiff 7.406586537e-17
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.2345265332
+DEBUGGING| printing xdiff 1.298426725
+DEBUGGING| printing xdiff 1.063900192
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.331670604
+DEBUGGING| printing xdiff 1.836252684
+DEBUGGING| printing xdiff 1.50458208
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.2345265332
+DEBUGGING| printing xdiff 1.298426725
+DEBUGGING| printing xdiff 1.063900192
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff -6.175766035e-18
+DEBUGGING| printing xdiff -9.628573245e-17
+DEBUGGING| printing xdiff -9.010996641e-17
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.02742747869
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.2126569369
+DEBUGGING| printing xdiff -0.8004825614
+DEBUGGING| printing xdiff -0.5878256245
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff -5.515368249e-17
+DEBUGGING| printing xdiff -3.086328745e-16
+DEBUGGING| printing xdiff -2.53479192e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.5661971372
+DEBUGGING| printing xdiff 3.134679409
+DEBUGGING| printing xdiff 2.568482272
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.8007236705
+DEBUGGING| printing xdiff 4.433106134
+DEBUGGING| printing xdiff 3.632382464
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.5661971372
+DEBUGGING| printing xdiff 3.134679409
+DEBUGGING| printing xdiff 2.568482272
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff 8.882064741e-17
+DEBUGGING| printing xdiff 4.476473008e-16
+DEBUGGING| printing xdiff 3.588266533e-16
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.06621579104
+DEBUGGING| printing xdiff 0.1663734303
+DEBUGGING| printing xdiff 0.2325892214
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.2126569369
+DEBUGGING| printing xdiff -0.8004825614
+DEBUGGING| printing xdiff -0.5878256245
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff -5.515368249e-17
+DEBUGGING| printing xdiff -3.086328745e-16
+DEBUGGING| printing xdiff -2.53479192e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.5661971372
+DEBUGGING| printing xdiff 3.134679409
+DEBUGGING| printing xdiff 2.568482272
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.8007236705
+DEBUGGING| printing xdiff 4.433106134
+DEBUGGING| printing xdiff 3.632382464
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.5661971372
+DEBUGGING| printing xdiff 3.134679409
+DEBUGGING| printing xdiff 2.568482272
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff 3.975708859e-17
+DEBUGGING| printing xdiff 1.237124152e-16
+DEBUGGING| printing xdiff 8.395532658e-17
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.06621579104
+DEBUGGING| printing xdiff 0.1663734303
+DEBUGGING| printing xdiff 0.2325892214
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.02742747869
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff -1.522530918e-18
+DEBUGGING| printing xdiff 3.825502762e-18
+DEBUGGING| printing xdiff 5.34803368e-18
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.02742747869
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.03878831235
+DEBUGGING| printing xdiff -0.09745929907
+DEBUGGING| printing xdiff -0.1362476114
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.02742747869
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| printing xdiff -0.09634160995
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff 6.090123671e-18
+DEBUGGING| printing xdiff -1.530201105e-17
+DEBUGGING| printing xdiff -2.139213472e-17
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.02742747869
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| printing xdiff 0.09634160995
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 2.407024833
+DEBUGGING| printing yerror 2.407024833
+SOLVING| Momentum | performing Runge-Kutta at iteration: 8
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.06999820098
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff 7.771361441e-18
+DEBUGGING| printing xdiff 1.203559165e-19
+DEBUGGING| printing xdiff -7.651005525e-18
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.06999820098
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.09899240517
+DEBUGGING| printing xdiff -0.001533106103
+DEBUGGING| printing xdiff 0.09745929907
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.06999820098
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff -1.94284036e-17
+DEBUGGING| printing xdiff -3.008897912e-19
+DEBUGGING| printing xdiff 1.912751381e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.06999820098
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.5427258981
+DEBUGGING| printing xdiff 1.34320846
+DEBUGGING| printing xdiff 0.8004825614
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.407587841e-16
+DEBUGGING| printing xdiff 4.493916586e-16
+DEBUGGING| printing xdiff 3.086328745e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.445002709
+DEBUGGING| printing xdiff -4.579682118
+DEBUGGING| printing xdiff -3.134679409
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff -2.043542428
+DEBUGGING| printing xdiff -6.476648563
+DEBUGGING| printing xdiff -4.433106134
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.445002709
+DEBUGGING| printing xdiff -4.579682118
+DEBUGGING| printing xdiff -3.134679409
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff -4.662816865e-17
+DEBUGGING| printing xdiff -7.22135499e-19
+DEBUGGING| printing xdiff 4.590603315e-17
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.1689906062
+DEBUGGING| printing xdiff 0.002617175824
+DEBUGGING| printing xdiff -0.1663734303
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.5427258981
+DEBUGGING| printing xdiff 1.34320846
+DEBUGGING| printing xdiff 0.8004825614
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.407587841e-16
+DEBUGGING| printing xdiff 4.493916586e-16
+DEBUGGING| printing xdiff 3.086328745e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.445002709
+DEBUGGING| printing xdiff -4.579682118
+DEBUGGING| printing xdiff -3.134679409
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff -2.043542428
+DEBUGGING| printing xdiff -6.476648563
+DEBUGGING| printing xdiff -4.433106134
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.445002709
+DEBUGGING| printing xdiff -4.579682118
+DEBUGGING| printing xdiff -3.134679409
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.718442299e-16
+DEBUGGING| printing xdiff -4.498730823e-16
+DEBUGGING| printing xdiff -2.780288524e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.1689906062
+DEBUGGING| printing xdiff 0.002617175824
+DEBUGGING| printing xdiff -0.1663734303
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.2248044277
+DEBUGGING| printing xdiff 0.556375161
+DEBUGGING| printing xdiff 0.3315707334
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff 3.518969603e-17
+DEBUGGING| printing xdiff 1.123479147e-16
+DEBUGGING| printing xdiff 7.715821863e-17
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.5985397197
+DEBUGGING| printing xdiff -1.896966445
+DEBUGGING| printing xdiff -1.298426725
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.8464629892
+DEBUGGING| printing xdiff -2.682715674
+DEBUGGING| printing xdiff -1.836252684
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.5985397197
+DEBUGGING| printing xdiff -1.896966445
+DEBUGGING| printing xdiff -1.298426725
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff -1.554272288e-17
+DEBUGGING| printing xdiff -2.40711833e-19
+DEBUGGING| printing xdiff 1.530201105e-17
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.06999820098
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.2248044277
+DEBUGGING| printing xdiff -0.556375161
+DEBUGGING| printing xdiff -0.3315707334
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff 2.741833459e-17
+DEBUGGING| printing xdiff 1.122275587e-16
+DEBUGGING| printing xdiff 8.480922416e-17
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.5985397197
+DEBUGGING| printing xdiff 1.896966445
+DEBUGGING| printing xdiff 1.298426725
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.8464629892
+DEBUGGING| printing xdiff 2.682715674
+DEBUGGING| printing xdiff 1.836252684
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.5985397197
+DEBUGGING| printing xdiff 1.896966445
+DEBUGGING| printing xdiff 1.298426725
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff -1.576129242e-17
+DEBUGGING| printing xdiff -1.120470249e-16
+DEBUGGING| printing xdiff -9.628573245e-17
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.06999820098
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.5427258981
+DEBUGGING| printing xdiff -1.34320846
+DEBUGGING| printing xdiff -0.8004825614
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.407587841e-16
+DEBUGGING| printing xdiff -4.493916586e-16
+DEBUGGING| printing xdiff -3.086328745e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.445002709
+DEBUGGING| printing xdiff 4.579682118
+DEBUGGING| printing xdiff 3.134679409
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff 2.043542428
+DEBUGGING| printing xdiff 6.476648563
+DEBUGGING| printing xdiff 4.433106134
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.445002709
+DEBUGGING| printing xdiff 4.579682118
+DEBUGGING| printing xdiff 3.134679409
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff 2.26680899e-16
+DEBUGGING| printing xdiff 6.743281998e-16
+DEBUGGING| printing xdiff 4.476473008e-16
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.1689906062
+DEBUGGING| printing xdiff -0.002617175824
+DEBUGGING| printing xdiff 0.1663734303
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.5427258981
+DEBUGGING| printing xdiff -1.34320846
+DEBUGGING| printing xdiff -0.8004825614
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.407587841e-16
+DEBUGGING| printing xdiff -4.493916586e-16
+DEBUGGING| printing xdiff -3.086328745e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.445002709
+DEBUGGING| printing xdiff 4.579682118
+DEBUGGING| printing xdiff 3.134679409
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff 2.043542428
+DEBUGGING| printing xdiff 6.476648563
+DEBUGGING| printing xdiff 4.433106134
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.445002709
+DEBUGGING| printing xdiff 4.579682118
+DEBUGGING| printing xdiff 3.134679409
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.014648378e-16
+DEBUGGING| printing xdiff 2.25177253e-16
+DEBUGGING| printing xdiff 1.237124152e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.1689906062
+DEBUGGING| printing xdiff -0.002617175824
+DEBUGGING| printing xdiff 0.1663734303
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.06999820098
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff -3.885680721e-18
+DEBUGGING| printing xdiff -6.017795825e-20
+DEBUGGING| printing xdiff 3.825502762e-18
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.06999820098
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.09899240517
+DEBUGGING| printing xdiff 0.001533106103
+DEBUGGING| printing xdiff -0.09745929907
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.06999820098
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| printing xdiff -0.06891413126
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff 1.554272288e-17
+DEBUGGING| printing xdiff 2.40711833e-19
+DEBUGGING| printing xdiff -1.530201105e-17
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.06999820098
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| printing xdiff 0.06891413126
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 6.143014819
+DEBUGGING| printing yerror 6.143014819
+SOLVING| Momentum | performing Runge-Kutta at iteration: 9
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.05007042349
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff 5.558933702e-18
+DEBUGGING| printing xdiff 5.679289618e-18
+DEBUGGING| printing xdiff 1.203559165e-19
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.05007042349
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.07081027198
+DEBUGGING| printing xdiff -0.07234337808
+DEBUGGING| printing xdiff -0.001533106103
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.05007042349
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff -1.389733425e-17
+DEBUGGING| printing xdiff -1.419822405e-17
+DEBUGGING| printing xdiff -3.008897912e-19
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.05007042349
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.3882173424
+DEBUGGING| printing xdiff 1.731425802
+DEBUGGING| printing xdiff 1.34320846
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff 1.006861867e-16
+DEBUGGING| printing xdiff 5.500778453e-16
+DEBUGGING| printing xdiff 4.493916586e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.033625101
+DEBUGGING| printing xdiff -5.61330722
+DEBUGGING| printing xdiff -4.579682118
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.461766637
+DEBUGGING| printing xdiff -7.9384152
+DEBUGGING| printing xdiff -6.476648563
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.033625101
+DEBUGGING| printing xdiff -5.61330722
+DEBUGGING| printing xdiff -4.579682118
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff -3.335360221e-17
+DEBUGGING| printing xdiff -3.407573771e-17
+DEBUGGING| printing xdiff -7.22135499e-19
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.1208806955
+DEBUGGING| printing xdiff 0.1234978713
+DEBUGGING| printing xdiff 0.002617175824
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.3882173424
+DEBUGGING| printing xdiff 1.731425802
+DEBUGGING| printing xdiff 1.34320846
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.006861867e-16
+DEBUGGING| printing xdiff 5.500778453e-16
+DEBUGGING| printing xdiff 4.493916586e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.033625101
+DEBUGGING| printing xdiff -5.61330722
+DEBUGGING| printing xdiff -4.579682118
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.461766637
+DEBUGGING| printing xdiff -7.9384152
+DEBUGGING| printing xdiff -6.476648563
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.033625101
+DEBUGGING| printing xdiff -5.61330722
+DEBUGGING| printing xdiff -4.579682118
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.229219215e-16
+DEBUGGING| printing xdiff -5.727950038e-16
+DEBUGGING| printing xdiff -4.498730823e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.1208806955
+DEBUGGING| printing xdiff 0.1234978713
+DEBUGGING| printing xdiff 0.002617175824
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.1608048884
+DEBUGGING| printing xdiff 0.7171800494
+DEBUGGING| printing xdiff 0.556375161
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff 2.517154667e-17
+DEBUGGING| printing xdiff 1.375194613e-16
+DEBUGGING| printing xdiff 1.123479147e-16
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.4281415354
+DEBUGGING| printing xdiff -2.32510798
+DEBUGGING| printing xdiff -1.896966445
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.6054835659
+DEBUGGING| printing xdiff -3.288199239
+DEBUGGING| printing xdiff -2.682715674
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.4281415354
+DEBUGGING| printing xdiff -2.32510798
+DEBUGGING| printing xdiff -1.896966445
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff -1.11178674e-17
+DEBUGGING| printing xdiff -1.135857924e-17
+DEBUGGING| printing xdiff -2.40711833e-19
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.05007042349
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.1608048884
+DEBUGGING| printing xdiff -0.7171800494
+DEBUGGING| printing xdiff -0.556375161
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.961261297e-17
+DEBUGGING| printing xdiff 1.318401717e-16
+DEBUGGING| printing xdiff 1.122275587e-16
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.4281415354
+DEBUGGING| printing xdiff 2.32510798
+DEBUGGING| printing xdiff 1.896966445
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.6054835659
+DEBUGGING| printing xdiff 3.288199239
+DEBUGGING| printing xdiff 2.682715674
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.4281415354
+DEBUGGING| printing xdiff 2.32510798
+DEBUGGING| printing xdiff 1.896966445
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff -1.127421241e-17
+DEBUGGING| printing xdiff -1.233212373e-16
+DEBUGGING| printing xdiff -1.120470249e-16
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.05007042349
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.3882173424
+DEBUGGING| printing xdiff -1.731425802
+DEBUGGING| printing xdiff -1.34320846
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff -1.006861867e-16
+DEBUGGING| printing xdiff -5.500778453e-16
+DEBUGGING| printing xdiff -4.493916586e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.033625101
+DEBUGGING| printing xdiff 5.61330722
+DEBUGGING| printing xdiff 4.579682118
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.461766637
+DEBUGGING| printing xdiff 7.9384152
+DEBUGGING| printing xdiff 6.476648563
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.033625101
+DEBUGGING| printing xdiff 5.61330722
+DEBUGGING| printing xdiff 4.579682118
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.621471474e-16
+DEBUGGING| printing xdiff 8.364753472e-16
+DEBUGGING| printing xdiff 6.743281998e-16
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.1208806955
+DEBUGGING| printing xdiff -0.1234978713
+DEBUGGING| printing xdiff -0.002617175824
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.3882173424
+DEBUGGING| printing xdiff -1.731425802
+DEBUGGING| printing xdiff -1.34320846
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.006861867e-16
+DEBUGGING| printing xdiff -5.500778453e-16
+DEBUGGING| printing xdiff -4.493916586e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.033625101
+DEBUGGING| printing xdiff 5.61330722
+DEBUGGING| printing xdiff 4.579682118
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.461766637
+DEBUGGING| printing xdiff 7.9384152
+DEBUGGING| printing xdiff 6.476648563
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.033625101
+DEBUGGING| printing xdiff 5.61330722
+DEBUGGING| printing xdiff 4.579682118
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff 7.257882814e-17
+DEBUGGING| printing xdiff 2.977560811e-16
+DEBUGGING| printing xdiff 2.25177253e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.1208806955
+DEBUGGING| printing xdiff -0.1234978713
+DEBUGGING| printing xdiff -0.002617175824
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.05007042349
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff -2.779466851e-18
+DEBUGGING| printing xdiff -2.839644809e-18
+DEBUGGING| printing xdiff -6.017795825e-20
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.05007042349
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.07081027198
+DEBUGGING| printing xdiff 0.07234337808
+DEBUGGING| printing xdiff 0.001533106103
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.05007042349
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| printing xdiff 0.001084069721
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff 1.11178674e-17
+DEBUGGING| printing xdiff 1.135857924e-17
+DEBUGGING| printing xdiff 2.40711833e-19
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.05007042349
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| printing xdiff -0.001084069721
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 4.394160838
+DEBUGGING| printing yerror 4.394160838
+SOLVING| Momentum | performing Runge-Kutta at iteration: 10
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+======================== Entering Box 0 ======================= 
+DEBUGGING| Locating at | i=0 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.000787644407
+DEBUGGING| printing xdiff 0.05036684881
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| Locating at | i=2 ; j=0 ; k=0
+DEBUGGING| printing xdiff -8.744609558e-20
+DEBUGGING| printing xdiff 5.591843523e-18
+DEBUGGING| printing xdiff 5.679289618e-18
+DEBUGGING| Locating at | i=3 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.000787644407
+DEBUGGING| printing xdiff -0.05036684881
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| Locating at | i=4 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.001113897403
+DEBUGGING| printing xdiff -0.07122948068
+DEBUGGING| printing xdiff -0.07234337808
+DEBUGGING| Locating at | i=5 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0.000787644407
+DEBUGGING| printing xdiff -0.05036684881
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| Locating at | i=6 ; j=0 ; k=0
+DEBUGGING| printing xdiff 2.18615239e-19
+DEBUGGING| printing xdiff -1.397960881e-17
+DEBUGGING| printing xdiff -1.419822405e-17
+DEBUGGING| Locating at | i=7 ; j=0 ; k=0
+DEBUGGING| printing xdiff -0.000787644407
+DEBUGGING| printing xdiff 0.05036684881
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| Locating at | i=8 ; j=0 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.006106942924
+DEBUGGING| printing xdiff 1.725318859
+DEBUGGING| printing xdiff 1.731425802
+DEBUGGING| Locating at | i=2 ; j=1 ; k=0
+DEBUGGING| printing xdiff -1.583867406e-18
+DEBUGGING| printing xdiff 5.484939779e-16
+DEBUGGING| printing xdiff 5.500778453e-16
+DEBUGGING| Locating at | i=3 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.01625967933
+DEBUGGING| printing xdiff -5.59704754
+DEBUGGING| printing xdiff -5.61330722
+DEBUGGING| Locating at | i=4 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.02299465903
+DEBUGGING| printing xdiff -7.915420541
+DEBUGGING| printing xdiff -7.9384152
+DEBUGGING| Locating at | i=5 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0.01625967933
+DEBUGGING| printing xdiff -5.59704754
+DEBUGGING| printing xdiff -5.61330722
+DEBUGGING| Locating at | i=6 ; j=1 ; k=0
+DEBUGGING| printing xdiff 5.246765735e-19
+DEBUGGING| printing xdiff -3.355106114e-17
+DEBUGGING| printing xdiff -3.407573771e-17
+DEBUGGING| Locating at | i=7 ; j=1 ; k=0
+DEBUGGING| printing xdiff -0.00190154181
+DEBUGGING| printing xdiff 0.1215963295
+DEBUGGING| printing xdiff 0.1234978713
+DEBUGGING| Locating at | i=8 ; j=1 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.006106942924
+DEBUGGING| printing xdiff 1.725318859
+DEBUGGING| printing xdiff 1.731425802
+DEBUGGING| Locating at | i=2 ; j=2 ; k=0
+DEBUGGING| printing xdiff -1.583867406e-18
+DEBUGGING| printing xdiff 5.484939779e-16
+DEBUGGING| printing xdiff 5.500778453e-16
+DEBUGGING| Locating at | i=3 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.01625967933
+DEBUGGING| printing xdiff -5.59704754
+DEBUGGING| printing xdiff -5.61330722
+DEBUGGING| Locating at | i=4 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.02299465903
+DEBUGGING| printing xdiff -7.915420541
+DEBUGGING| printing xdiff -7.9384152
+DEBUGGING| Locating at | i=5 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0.01625967933
+DEBUGGING| printing xdiff -5.59704754
+DEBUGGING| printing xdiff -5.61330722
+DEBUGGING| Locating at | i=6 ; j=2 ; k=0
+DEBUGGING| printing xdiff 1.933651789e-18
+DEBUGGING| printing xdiff -5.70861352e-16
+DEBUGGING| printing xdiff -5.727950038e-16
+DEBUGGING| Locating at | i=7 ; j=2 ; k=0
+DEBUGGING| printing xdiff -0.00190154181
+DEBUGGING| printing xdiff 0.1215963295
+DEBUGGING| printing xdiff 0.1234978713
+DEBUGGING| Locating at | i=8 ; j=2 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.002529578584
+DEBUGGING| printing xdiff 0.7146504708
+DEBUGGING| printing xdiff 0.7171800494
+DEBUGGING| Locating at | i=2 ; j=3 ; k=0
+DEBUGGING| printing xdiff -3.959668516e-19
+DEBUGGING| printing xdiff 1.371234945e-16
+DEBUGGING| printing xdiff 1.375194613e-16
+DEBUGGING| Locating at | i=3 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.006734979698
+DEBUGGING| printing xdiff -2.318373
+DEBUGGING| printing xdiff -2.32510798
+DEBUGGING| Locating at | i=4 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.009524699631
+DEBUGGING| printing xdiff -3.27867454
+DEBUGGING| printing xdiff -3.288199239
+DEBUGGING| Locating at | i=5 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0.006734979698
+DEBUGGING| printing xdiff -2.318373
+DEBUGGING| printing xdiff -2.32510798
+DEBUGGING| Locating at | i=6 ; j=3 ; k=0
+DEBUGGING| printing xdiff 1.748921912e-19
+DEBUGGING| printing xdiff -1.118368705e-17
+DEBUGGING| printing xdiff -1.135857924e-17
+DEBUGGING| Locating at | i=7 ; j=3 ; k=0
+DEBUGGING| printing xdiff -0.000787644407
+DEBUGGING| printing xdiff 0.05036684881
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| Locating at | i=8 ; j=3 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.002529578584
+DEBUGGING| printing xdiff -0.7146504708
+DEBUGGING| printing xdiff -0.7171800494
+DEBUGGING| Locating at | i=2 ; j=4 ; k=0
+DEBUGGING| printing xdiff -3.08520756e-19
+DEBUGGING| printing xdiff 1.31531651e-16
+DEBUGGING| printing xdiff 1.318401717e-16
+DEBUGGING| Locating at | i=3 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.006734979698
+DEBUGGING| printing xdiff 2.318373
+DEBUGGING| printing xdiff 2.32510798
+DEBUGGING| Locating at | i=4 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.009524699631
+DEBUGGING| printing xdiff 3.27867454
+DEBUGGING| printing xdiff 3.288199239
+DEBUGGING| Locating at | i=5 ; j=4 ; k=0
+DEBUGGING| printing xdiff -0.006734979698
+DEBUGGING| printing xdiff 2.318373
+DEBUGGING| printing xdiff 2.32510798
+DEBUGGING| Locating at | i=6 ; j=4 ; k=0
+DEBUGGING| printing xdiff 1.773516126e-19
+DEBUGGING| printing xdiff -1.231438857e-16
+DEBUGGING| printing xdiff -1.233212373e-16
+DEBUGGING| Locating at | i=7 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0.000787644407
+DEBUGGING| printing xdiff -0.05036684881
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| Locating at | i=8 ; j=4 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.006106942924
+DEBUGGING| printing xdiff -1.725318859
+DEBUGGING| printing xdiff -1.731425802
+DEBUGGING| Locating at | i=2 ; j=5 ; k=0
+DEBUGGING| printing xdiff 1.583867406e-18
+DEBUGGING| printing xdiff -5.484939779e-16
+DEBUGGING| printing xdiff -5.500778453e-16
+DEBUGGING| Locating at | i=3 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.01625967933
+DEBUGGING| printing xdiff 5.59704754
+DEBUGGING| printing xdiff 5.61330722
+DEBUGGING| Locating at | i=4 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.02299465903
+DEBUGGING| printing xdiff 7.915420541
+DEBUGGING| printing xdiff 7.9384152
+DEBUGGING| Locating at | i=5 ; j=5 ; k=0
+DEBUGGING| printing xdiff -0.01625967933
+DEBUGGING| printing xdiff 5.59704754
+DEBUGGING| printing xdiff 5.61330722
+DEBUGGING| Locating at | i=6 ; j=5 ; k=0
+DEBUGGING| printing xdiff -2.550693301e-18
+DEBUGGING| printing xdiff 8.339246539e-16
+DEBUGGING| printing xdiff 8.364753472e-16
+DEBUGGING| Locating at | i=7 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0.00190154181
+DEBUGGING| printing xdiff -0.1215963295
+DEBUGGING| printing xdiff -0.1234978713
+DEBUGGING| Locating at | i=8 ; j=5 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.006106942924
+DEBUGGING| printing xdiff -1.725318859
+DEBUGGING| printing xdiff -1.731425802
+DEBUGGING| Locating at | i=2 ; j=6 ; k=0
+DEBUGGING| printing xdiff 1.583867406e-18
+DEBUGGING| printing xdiff -5.484939779e-16
+DEBUGGING| printing xdiff -5.500778453e-16
+DEBUGGING| Locating at | i=3 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.01625967933
+DEBUGGING| printing xdiff 5.59704754
+DEBUGGING| printing xdiff 5.61330722
+DEBUGGING| Locating at | i=4 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.02299465903
+DEBUGGING| printing xdiff 7.915420541
+DEBUGGING| printing xdiff 7.9384152
+DEBUGGING| Locating at | i=5 ; j=6 ; k=0
+DEBUGGING| printing xdiff -0.01625967933
+DEBUGGING| printing xdiff 5.59704754
+DEBUGGING| printing xdiff 5.61330722
+DEBUGGING| Locating at | i=6 ; j=6 ; k=0
+DEBUGGING| printing xdiff -1.141718085e-18
+DEBUGGING| printing xdiff 2.96614363e-16
+DEBUGGING| printing xdiff 2.977560811e-16
+DEBUGGING| Locating at | i=7 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0.00190154181
+DEBUGGING| printing xdiff -0.1215963295
+DEBUGGING| printing xdiff -0.1234978713
+DEBUGGING| Locating at | i=8 ; j=6 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=0 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| Locating at | i=1 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.000787644407
+DEBUGGING| printing xdiff -0.05036684881
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| Locating at | i=2 ; j=7 ; k=0
+DEBUGGING| printing xdiff 4.372304779e-20
+DEBUGGING| printing xdiff -2.795921761e-18
+DEBUGGING| printing xdiff -2.839644809e-18
+DEBUGGING| Locating at | i=3 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.000787644407
+DEBUGGING| printing xdiff 0.05036684881
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| Locating at | i=4 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.001113897403
+DEBUGGING| printing xdiff 0.07122948068
+DEBUGGING| printing xdiff 0.07234337808
+DEBUGGING| Locating at | i=5 ; j=7 ; k=0
+DEBUGGING| printing xdiff -0.000787644407
+DEBUGGING| printing xdiff 0.05036684881
+DEBUGGING| printing xdiff 0.05115449322
+DEBUGGING| Locating at | i=6 ; j=7 ; k=0
+DEBUGGING| printing xdiff -1.748921912e-19
+DEBUGGING| printing xdiff 1.118368705e-17
+DEBUGGING| printing xdiff 1.135857924e-17
+DEBUGGING| Locating at | i=7 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0.000787644407
+DEBUGGING| printing xdiff -0.05036684881
+DEBUGGING| printing xdiff -0.05115449322
+DEBUGGING| Locating at | i=8 ; j=7 ; k=0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xdiff 0
+DEBUGGING| printing xerror 0.06912336597
+DEBUGGING| printing yerror 0.06912336597
+SOLVING| Momentum | ending after 10 iteration(s) with convergence: 0.06912336597
+INFO| End Advanced Step 1
+Run time = 0.062704334
+AMReX (23.07-13-gb41f85ab36ac) finalized

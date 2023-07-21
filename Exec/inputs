@@ -1,7 +1,7 @@
-nsteps = 2
+nsteps = 1
 plot_int = 2
-n_cell = 4
-max_grid_size = 2
+n_cell = 8
+max_grid_size = 8
 
 ren = 10
 vis = 1

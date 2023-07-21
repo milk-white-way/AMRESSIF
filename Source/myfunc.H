@@ -81,6 +81,9 @@ void momentum_km_runge_kutta ( amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rh
 
 
 // ==================================== UTILITY | CONVERSION  ================================
+void copy_contravariant_velocity (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+                                  amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContPrev);
+
 void cont2cart (amrex::MultiFab& velCart,
                 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                 amrex::Geometry const& geom);

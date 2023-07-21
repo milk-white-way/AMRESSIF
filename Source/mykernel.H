@@ -23,7 +23,6 @@ void init_userCtx (int i, int j, int k,
 #endif
 }
 
-// ================================= MODULE | INITIALIZATION =================================
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void init_cartesian_velocity (int i, int j, int k,
                               amrex::Array4<amrex::Real> const& vcart,
@@ -87,7 +86,7 @@ void compute_half_node_convective_flux_x_contrib (int i, int j, int k,
 {
     using amrex::Real;
 
-    amrex::Print() << "COMPUTING| Half-node Flux | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+    // amrex::Print() << "COMPUTING| Half-node Flux | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
     //Contribution of x-directional terms:
     if ( xcont(i, j, k) < 0 ) { // down stream
         if ( i==0 ) { // west wall (if any)
@@ -161,7 +160,7 @@ void compute_half_node_convective_flux_y_contrib (int i, int j, int k,
 {
     using amrex::Real;
 
-    amrex::Print() << "COMPUTING| Half-node Flux | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+    // amrex::Print() << "COMPUTING| Half-node Flux | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
     // Contribution of y-directional terms: flux_ycont_xface, flux_ycont_yface
     if ( ycont(i, j, k) < 0 ) { // down stream
         if ( j==0 ) { // south wall (if any)
@@ -297,6 +296,38 @@ void update_phi (int i, int j, int k,
 
 #endif
 
+// ==================================== UTILITY | CONVERSION  ================================
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void convert_contravariant_velocity_x (int i, int j, int k,
+                                       amrex::Array4<amrex::Real> const& xcont,
+                                       amrex::Array4<amrex::Real const> const& vcart)
+{
+    using amrex::Real;
+    xcont(i, j, k) = Real(0.5) * ( vcart(i-1, j, k, 0) + vcart(i, j, k, 0) ) ;
+    // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+    // amrex::Print() << "DEBUGGING| contravariant velocity in x-direction " << xcont(i, j, k) << "\n";
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void convert_contravariant_velocity_y (int i, int j, int k,
+                                       amrex::Array4<amrex::Real> const& ycont,
+                                       amrex::Array4<amrex::Real const> const& vcart)
+{
+    using amrex::Real;
+    ycont(i, j, k) = Real(0.5) * ( vcart(i, j-1, k, 1) + vcart(i, j, k, 1) ) ;
+}
+
+#if (AMREX_SPACEDIM > 2)
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void convert_contravariant_velocity_z (int i, int j, int k,
+                                       amrex::Array4<amrex::Real> const& zcont,
+                                       amrex::Array4<amrex::Real const> const& vcart)
+{
+    using amrex:Real;
+    zcont(i, j, k) = Real(0.5) * ( vcart(i, j, k-1, 2) + vcart(i, j, k, 2) ) ;
+}
+#endif
+
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void filling_ghost_west (int i, int j, int k, int n_cell, int bcs,
@@ -305,7 +336,7 @@ void filling_ghost_west (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( i < 0 ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
 
         if ( j == i || j == (n_cell - i) ) {
             for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
@@ -336,7 +367,7 @@ void filling_ghost_east (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( i > (n_cell - 1) ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
 
         if ( j == i || j == (n_cell - i) ) {
             for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
@@ -367,7 +398,7 @@ void filling_ghost_south (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( j < 0 ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
 
         if ( j == i || j == (n_cell - i) ) {
             for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
@@ -398,7 +429,7 @@ void filling_ghost_north (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( j > (n_cell - 1) ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
 
         if ( j == i || j == (n_cell - i) ) {
             for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)

@@ -7,6 +7,7 @@
 #include <AMReX_BCRec.H>
 #include <AMReX_BCUtil.H>
 #include <AMReX_MultiFabUtil.H>
+#include <AMReX_VisMF.H>
 
 #include "./meTh_Fractional_Time/mdl_initialization/fn_init.H"
 #include "./meTh_Fractional_Time/mdl_momentum/fn_momentum.H"
@@ -249,11 +250,8 @@ void main_main ()
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     amrex::Print() << "===================== INITIALIZATION STEP ===================== \n";
     // Current: Taylor-Green Vortex initial conditions
-    init(userCtx, velCart, velCartDiff, velContDiff, geom);
     // How partial periodic boundary conditions can be deployed?
-    velCart.FillBoundary(geom.periodicity());
-    manual_filling_ghost_cells(velCart, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    cart2cont(velCart, velCont);
+    init(userCtx, velCart, velCartDiff, velContDiff, geom);
 
     Real cfl = 0.9;
     Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
@@ -273,11 +271,27 @@ void main_main ()
     // Write a plotfile of the initial data if plot_int > 0 (plot_int was defined in the inputs file)
     if (plot_int > 0)
     {
+#if (AMREX_SPACEDIM > 2)
+        MultiFab plt(ba, dm, 4, 0);
+#else
+        MultiFab plt(ba, dm, 3, 0);
+#endif
+
+        // Copy the pressure and velocity fields to the 'plt' Multifab
+        MultiFab::Copy(plt, userCtx, 0, 0, 1, 0);
+        MultiFab::Copy(plt, velCart, 0, 1, 1, 0);
+        MultiFab::Copy(plt, velCart, 1, 2, 1, 0);
+#if (AMREX_SPACEDIM > 2)
+        MultiFab::Copy(plt, velCart, 2, 3, 1, 0);
+#endif
+
         int n = 0;
-        const std::string& pltfile1 = amrex::Concatenate("pltPressue",n,5);
-        const std::string& pltfile2 = amrex::Concatenate("pltVelocity",n,5);
-        WriteSingleLevelPlotfile(pltfile1, userCtx, {"pressure", "phi"}, geom, time, 0);
-        WriteSingleLevelPlotfile(pltfile2, velCart, {"U", "V"}, geom, time, 0);
+        const std::string& pltfile = amrex::Concatenate("pltInitialization", n, 5);
+#if (AMREX_SPACEDIM > 2)
+        WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V", "W"}, geom, time, 0);
+#else
+        WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V"}, geom, time, 0);
+#endif
     }
 
 // ==================================== MODULE | ADVANCE =====================================
@@ -288,8 +302,8 @@ void main_main ()
     int IterNum = 10;
 
     // Setup Runge-Kutta scheme coefficients
-    int RungeKuttaOrder = 4;
-    Vector<Real> rk(RungeKuttaOrder, 0);
+int RungeKuttaOrder = 4;
+Vector<Real> rk(RungeKuttaOrder, 0);
     {
         rk[0] = Real(0.25);
         rk[1] = Real(1.0)/Real(3.0);
@@ -297,12 +311,20 @@ void main_main ()
         rk[3] = Real(1.0);
     }
 
+    VisMF::Write(userCtx, "a_userCtx");
 
     //for (int n = 1; n <= 1; ++n)
     for (int n = 1; n <= nsteps; ++n)
     {
-        MultiFab::Copy(userCtxPrev, userCtx, 0, 0, 1, 0);
-        MultiFab::Copy(velCartPrev, velCart, 0, 0, 1, 0);
+        MultiFab::Copy(userCtxPrev, userCtx, 0, 0, AMREX_SPACEDIM, 0);
+
+        MultiFab::Copy(velCartPrev, velCart, 0, 0, AMREX_SPACEDIM, 0);
+
+        velCartPrev.FillBoundary(geom.periodicity());
+
+        manual_filling_ghost_cells(velCartPrev, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+        cart2cont(velCartPrev, velCont);
 
         // Momentum solver
         // momentum_km_runge_kutta(rhs, fluxTotal,
@@ -323,11 +345,14 @@ void main_main ()
             countIter++;
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << "\n";
 
+            copy_contravariant_velocity(velCont, velContPrev);
+
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
-                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCartPrev, velCont, geom, n_cell);
+                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCartPrev, velContPrev, geom, n_cell);
                 viscous_flux_calc(fluxViscous, velCartPrev, geom, ren, n_cell);
                 pressure_gradient_calc(fluxPrsGrad, userCtxPrev, geom, n_cell);
+
                 righthand_side_calc(rhs, fluxConvect, fluxViscous, fluxPrsGrad, fluxTotal, n_cell);
 
                 // Update new contravariant velocities
@@ -366,12 +391,11 @@ void main_main ()
                         // Corection for right-hand-side term
                         xrhs(i, j, k) = xrhs(i, j, k) - (Real(0.5)/dt)*(xhat - xrhs(i, j, k)) + (Real(0.5)/dt)*(xdiff(i, j, k));
                         // RK4 substep to update the immediate velocity
-                        if ( i==0 || i==(n_cell-1) ) {
+                        if ( i==0 || i==(n_cell) ) {
                             xhat = amrex::Real(0.0);
                         } else {
                             xhat = xcont(i, j, k) + rk[sub]*dt*xrhs(i,j,k);
                         }
-                        xprev(i, j, k) = xcont(i, j, k);
                         xcont(i, j, k) = xhat;
                     });
 
@@ -381,12 +405,11 @@ void main_main ()
 
                         yrhs(i, j, k) = yrhs(i, j, k) - (Real(0.5)/dt)*(yhat - yrhs(i, j, k)) + (Real(0.5)/dt)*(ydiff(i, j, k));
 
-                        if ( j==0 || j==(n_cell-1) ) {
+                        if ( j==0 || j==(n_cell) ) {
                             yhat = amrex::Real(0.0);
                         } else {
                             yhat = ycont(i, j, k) + rk[sub]*dt*yrhs(i,j,k);
                         }
-                        yprev(i, j, k) = ycont(i, j, k);
                         ycont(i, j, k) = yhat;
                     });
 
@@ -397,16 +420,23 @@ void main_main ()
 
                         zrhs(i, j, k) = zrhs(i, j, k) - (Real(0.5)/dt)*(zhat - zrhs(i, j, k)) + (Real(0.5)/dt)*(zdiff(i, j, k));
 
-                        if ( k==0 || k==(n_cell-1) ) {
+                        if ( k==0 || k==(n_cell) ) {
                             zhat = amrex::Real(0.0);
                         } else {
                             zhat = zcont(i, j, k) + rk[sub]*dt*zrhs(i,j,k);
                         }
-                        zprev(i, j, k) = zcont(i, j, k);
                         zcont(i, j, k) = zhat;
                     });
 #endif
                 }
+            }
+            if (plot_int > 0 ) {
+                const std::string& plt_conv_flux = amrex::Concatenate("pltConvectFlux", n, 5);
+                WriteSingleLevelPlotfile(plt_conv_flux, fluxConvect, {"conv_fluxx", "conv_fluxy"}, geom, time, n);
+                const std::string& plt_visc_flux = amrex::Concatenate("pltViscousFlux", n, 5);
+                WriteSingleLevelPlotfile(plt_visc_flux, fluxViscous, {"visc_fluxx", "visc_fluxy"}, geom, time, n);
+                const std::string& plt_pres_grad = amrex::Concatenate("pltPressureGrad", n, 5);
+                WriteSingleLevelPlotfile(plt_pres_grad, fluxPrsGrad, {"pres_gradx", "pres_grady"}, geom, time, n);
             }
             // Update contravariant velocity difference
             for ( MFIter mfi(velContDiff[0]); mfi.isValid(); ++mfi )
@@ -452,6 +482,8 @@ void main_main ()
             Real xerror = velContDiff[0].norm2(0, geom.periodicity());
             Real yerror = velContDiff[1].norm2(0, geom.periodicity());
 
+            amrex::Print() << "DEBUGGING| printing xerror " << xerror << "\n";
+            amrex::Print() << "DEBUGGING| printing yerror " << yerror << "\n";
             normError = std::max(xerror, yerror);
 #if (AMREX_SPACEDIM > 2)
             Real zerror = velContDiff[2].norm2(0, geom.periodicity());
@@ -459,6 +491,8 @@ void main_main ()
 #endif
         }
         amrex::Print() << "SOLVING| Momentum | ending after " << countIter << " iteration(s) with convergence: " << normError << "\n";
+
+        // PSEUDO-CODE: POISSON SOLVER HERE
 
         // advance will do all above steps
         //advance(userCtxOld, userCtx, flux, dt, geom);
@@ -475,8 +509,8 @@ void main_main ()
             WriteSingleLevelPlotfile(plt_pressure_file, userCtx, {"pressure", "phi"}, geom, time, n);
             WriteSingleLevelPlotfile(plt_velfield_file, velCart, {"U", "V"}, geom, time, n);
             // Extra
-            //const std::string& plt_totaflux_field = amrex::Concatenate("pltTotalFlux", n, 5);
-            //WriteSingleLevelPlotfile(plt_totaflux_field, fluxTotal, {"fluxx", "fluxy", "fluxz"}, geom, time, n);
+            const std::string& plt_totaflux_field = amrex::Concatenate("pltTotalFlux", n, 5);
+            WriteSingleLevelPlotfile(plt_totaflux_field, fluxTotal, {"fluxx", "fluxy"}, geom, time, n);
         }
     }
 
