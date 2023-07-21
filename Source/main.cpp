@@ -316,13 +316,15 @@ Vector<Real> rk(RungeKuttaOrder, 0);
     //for (int n = 1; n <= 1; ++n)
     for (int n = 1; n <= nsteps; ++n)
     {
-        MultiFab::Copy(userCtxPrev, userCtx, 0, 0, AMREX_SPACEDIM, 0);
+        MultiFab::Copy(userCtxPrev, userCtx, 0, 0, 1, 0);
+        MultiFab::Copy(userCtxPrev, userCtx, 1, 1, 1, 0);
 
         MultiFab::Copy(velCartPrev, velCart, 0, 0, AMREX_SPACEDIM, 0);
 
         velCartPrev.FillBoundary(geom.periodicity());
+        userCtxPrev.FillBoundary(geom.periodicity());
 
-        manual_filling_ghost_cells(velCartPrev, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        manual_fill_ghost_cells(velCartPrev, userCtxPrev, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         cart2cont(velCartPrev, velCont);
 
@@ -349,11 +351,27 @@ Vector<Real> rk(RungeKuttaOrder, 0);
 
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
+                // Calculate Convective terms
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCartPrev, velContPrev, geom, n_cell);
-                viscous_flux_calc(fluxViscous, velCartPrev, geom, ren, n_cell);
-                pressure_gradient_calc(fluxPrsGrad, userCtxPrev, geom, n_cell);
+                fluxConvect.FillBoundary(geom.periodicity());
+                enforce_boundary_conditions(fluxConvect, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
-                righthand_side_calc(rhs, fluxConvect, fluxViscous, fluxPrsGrad, fluxTotal, n_cell);
+                // Calculate Viscous terms
+                viscous_flux_calc(fluxViscous, velCartPrev, geom, ren, n_cell);
+                fluxViscous.FillBoundary(geom.periodicity());
+                enforce_boundary_conditions(fluxViscous, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+                // Calculate Pressure Gradient terms
+                pressure_gradient_calc(fluxPrsGrad, userCtxPrev, geom, n_cell);
+                fluxPrsGrad.FillBoundary(geom.periodicity());
+                enforce_boundary_conditions(fluxPrsGrad, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+                // Calculate Total Flux
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, n_cell);
+                fluxTotal.FillBoundary(geom.periodicity());
+                enforce_boundary_conditions(fluxTotal, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                // Calculate the Righ Hand Side
+                righthand_side_calc(rhs, fluxTotal, n_cell);
 
                 // Update new contravariant velocities
                 for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
@@ -482,8 +500,6 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             Real xerror = velContDiff[0].norm2(0, geom.periodicity());
             Real yerror = velContDiff[1].norm2(0, geom.periodicity());
 
-            amrex::Print() << "DEBUGGING| printing xerror " << xerror << "\n";
-            amrex::Print() << "DEBUGGING| printing yerror " << yerror << "\n";
             normError = std::max(xerror, yerror);
 #if (AMREX_SPACEDIM > 2)
             Real zerror = velContDiff[2].norm2(0, geom.periodicity());

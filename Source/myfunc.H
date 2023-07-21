@@ -36,11 +36,14 @@ void pressure_gradient_calc (amrex::MultiFab& fluxPrsGrad,
                              amrex::Geometry const& geom,
                              int const& n_cell);
 
+void total_flux_calc (amrex::MultiFab& fluxTotal,
+                      amrex::MultiFab& fluxConvect,
+                      amrex::MultiFab& fluxViscous,
+                      amrex::MultiFab& fluxPrsGrad,
+                      int const& n_cell);
+
 // +++++++++++++++++++++++++ Subroutine | Kim and Moine's RHS Term  ++++++++++++++++++++++++
 void righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
-                          amrex::MultiFab& fluxConvect,
-                          amrex::MultiFab& fluxViscous,
-                          amrex::MultiFab& fluxPrsGrad,
                           amrex::MultiFab& fluxTotal,
                           int const& n_cell);
 
@@ -92,9 +95,16 @@ void cart2cont (amrex::MultiFab& velCart,
                 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont);
 
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
-void manual_filling_ghost_cells (amrex::MultiFab& velCart,
-                                int const& Nghost,
-                                amrex::Vector<int> const& bc_lo,
-                                amrex::Vector<int> const& bc_hi,
-                                int const& n_cell);
+void manual_fill_ghost_cells (amrex::MultiFab& velCart,
+                              amrex::MultiFab& userCtx,
+                              int const& Nghost,
+                              amrex::Vector<int> const& phy_bc_lo,
+                              amrex::Vector<int> const& phy_bc_hi,
+                              int const& n_cell);
+
+void enforce_boundary_conditions (amrex::MultiFab& inputFlux,
+                                  int const& Nghost,
+                                  amrex::Vector<int> const& phy_bc_lo,
+                                  amrex::Vector<int> const& phy_bc_hi,
+                                  int const& n_cell);
 #endif

@@ -141,29 +141,25 @@ void convective_flux_calc ( MultiFab& fluxConvect,
 #endif
         auto const& vcart = velCart.array(mfi);
 
-        int const& box_id = mfi.LocalIndex();
-        //int const& box_id = mfi.LocalTileIndex();
-        print_box(box_id);
-
         // amrex::Print() << "===================== x-contributive terms ==================== \n";
         amrex::ParallelFor(xbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            compute_half_node_convective_flux_x_contrib(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, qkcoef, n_cell, box_id);
+            compute_half_node_convective_flux_x_contrib(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, qkcoef, n_cell);
         });
 
         // amrex::Print() << "===================== y-contributive terms ==================== \n";
         amrex::ParallelFor(ybx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            compute_half_node_convective_flux_y_contrib(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, qkcoef, n_cell, box_id);
+            compute_half_node_convective_flux_y_contrib(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, qkcoef, n_cell);
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::Print() << "===================== z-contributive terms ==================== \n";
         amrex::ParallelFor(ybx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            compute_half_node_convective_flux_z_contrib(i, j, k, fluxx_zcont, fluxy_zcont, fluxz_zcont, zcont, vcart, qkcoef, n_cell, box_id);
+            compute_half_node_convective_flux_z_contrib(i, j, k, fluxx_zcont, fluxy_zcont, fluxz_zcont, zcont, vcart, qkcoef, n_cell);
         });
 #endif
     }
@@ -190,30 +186,23 @@ void convective_flux_calc ( MultiFab& fluxConvect,
 #endif
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-            if ( i == 0 || i == (n_cell-1) || j == 0 || j == (n_cell-1) ) {
-                for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
-                {
-                    conv_flux(i, j, k, dir) = Real(0.0);
-                }
-            } else {
-                conv_flux(i, j, k, 0) = (fluxx_xcont(i, j, k) - fluxx_xcont(i+1, j, k))/(dx[0]) + (fluxx_ycont(i, j, k) - fluxx_ycont(i, j+1, k))/(dx[1])
+            conv_flux(i, j, k, 0) = (fluxx_xcont(i, j, k) - fluxx_xcont(i+1, j, k))/(dx[0]) + (fluxx_ycont(i, j, k) - fluxx_ycont(i, j+1, k))/(dx[1])
 #if (AMREX_SPACEDIM > 2)
-                    + (fluxx_zcont(i, j, k) - fluxx_zcont(i, j, k+1))/(dx[2]);
+                + (fluxx_zcont(i, j, k) - fluxx_zcont(i, j, k+1))/(dx[2]);
 #else
-                ;
+            ;
 #endif
 
-                conv_flux(i, j, k, 1) = (fluxy_xcont(i, j, k) - fluxy_xcont(i+1, j, k))/(dx[0]) + (fluxy_ycont(i, j, k) - fluxy_ycont(i, j+1, k))/(dx[1])
+            conv_flux(i, j, k, 1) = (fluxy_xcont(i, j, k) - fluxy_xcont(i+1, j, k))/(dx[0]) + (fluxy_ycont(i, j, k) - fluxy_ycont(i, j+1, k))/(dx[1])
 #if (AMREX_SPACEDIM > 2)
-                    + (fluxy_zcont(i, j, k) - fluxy_zcont(i, j, k+1))/(dx[2]);
+                + (fluxy_zcont(i, j, k) - fluxy_zcont(i, j, k+1))/(dx[2]);
 #else
-                ;
+            ;
 #endif
 
 #if (AMREX_SPACEDIM > 2)
-                conv_flux(i, j, k, 2) = (fluxz_xcont(i, j, k) - fluxz_xcont(i+1, j, k))/(dx[0]) + (fluxz_ycont(i, j, k) - fluxz_ycont(i, j+1, k))/(dx[1]) + (fluxz_zcont(i, j, k) - fluxz_zcont(i, j, k+1))/(dx[2]);
+            conv_flux(i, j, k, 2) = (fluxz_xcont(i, j, k) - fluxz_xcont(i+1, j, k))/(dx[0]) + (fluxz_ycont(i, j, k) - fluxz_ycont(i, j+1, k))/(dx[1]) + (fluxz_zcont(i, j, k) - fluxz_zcont(i, j, k+1))/(dx[2]);
 #endif
-            }
         });
     }
 }
@@ -240,17 +229,13 @@ void viscous_flux_calc ( MultiFab& fluxViscous,
         {
             for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
             {
-                if ( i == 0 || i == (n_cell-1) || j == 0 || j == (n_cell-1) ) {
-                    visc_flux(i, j, k, dir) = Real(0.0);
-                } else {
-                    auto const& centerMAC = vcart(i, j, k, dir);
-                    auto const& northMAC = vcart(i, j+1, k, dir);
-                    auto const& southMAC = vcart(i, j-1, k, dir);
-                    auto const& westMAC = vcart(i-1, j, k, dir);
-                    auto const& eastMAC = vcart(i+1, j, k, dir);
+                auto const& centerMAC = vcart(i, j, k, dir);
+                auto const& northMAC = vcart(i, j+1, k, dir);
+                auto const& southMAC = vcart(i, j-1, k, dir);
+                auto const& westMAC = vcart(i-1, j, k, dir);
+                auto const& eastMAC = vcart(i+1, j, k, dir);
 
-                    visc_flux(i, j, k, dir) = ( (westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]) )/ren;
-                }
+                visc_flux(i, j, k, dir) = ( (westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]) )/ren;
             }
         });
     }
@@ -276,30 +261,21 @@ void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            if ( i == 0 || i == (n_cell-1) || j == 0 || j == (n_cell-1) ) {
-                for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
-                {
-                    prsgrad_flux(i, j, k, dir) = Real(0.0);
-                }
-            } else {
-                prsgrad_flux(i, j, k, 0) = (prs_field(i+1, j, k, 0) - prs_field(i-1, j, k, 0))/(Real(2.0)*dx[0]);
-                prsgrad_flux(i, j, k, 1) = (prs_field(i, j+1, k, 0) - prs_field(i, j-1, k, 0))/(Real(2.0)*dx[1]);
+            prsgrad_flux(i, j, k, 0) = (prs_field(i+1, j, k, 0) - prs_field(i-1, j, k, 0))/(Real(2.0)*dx[0]);
+            prsgrad_flux(i, j, k, 1) = (prs_field(i, j+1, k, 0) - prs_field(i, j-1, k, 0))/(Real(2.0)*dx[1]);
 #if (AMREX_SPACEDIM > 2)
-                prsgrad_flux(i, j, k, 2) = (prs_field(i, j, k+1, 0) - prs_field(i, j, k-1, 0))/(Real(2.0)*dx[2]);
+            prsgrad_flux(i, j, k, 2) = (prs_field(i, j, k+1, 0) - prs_field(i, j, k-1, 0))/(Real(2.0)*dx[2]);
 #endif
-            }
         });
     }
 }
 
-void righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
-                           MultiFab& fluxConvect,
-                           MultiFab& fluxViscous,
-                           MultiFab& fluxPrsGrad,
-                           MultiFab& fluxTotal,
-                           int const& n_cell )
+void total_flux_calc ( MultiFab& fluxTotal,
+                       MultiFab& fluxConvect,
+                       MultiFab& fluxViscous,
+                       MultiFab& fluxPrsGrad,
+                       int const& n_cell )
 {
-    // +++++++++++++++++++++++++ Total Flux and the RHS  +++++++++++++++++++++++++
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -316,14 +292,15 @@ void righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
-            {
-                // total_flux(i, j, k, dir) = conv_flux(i, j, k, dir) + visc_flux(i, j, k, dir) + prsgrad_flux(i, j, k, dir);
-                total_flux(i, j, k, dir) = visc_flux(i, j, k, dir);
-            }
+            compute_total_flux(i, j, k, total_flux, conv_flux, visc_flux, prsgrad_flux);
         });
     }
+}
 
+void righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
+                           MultiFab& fluxTotal,
+                           int const& n_cell )
+{
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -341,48 +318,18 @@ void righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 #endif
         auto const& total_flux = fluxTotal.array(mfi);
 
+        int const& box_id = mfi.LocalIndex();
+        //print_box(box_id);
+
         amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            if ( i==0 ) {
-                xrhs(i, j, k) = Real(0.0);
-            }
-            else if ( i==(n_cell-1) ) {
-                xrhs(i, j, k) = Real(0.0);
-            }
-            else {
-                xrhs(i, j, k) = Real(0.5)*( total_flux((i)-1, j, k, 0) + total_flux(i, j, k, 0) );
-            }
-        });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_x(i, j, k, xrhs, total_flux); });
 
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            if ( j==0 ) {
-                yrhs(i, j, k) = Real(0.0);
-            }
-            else if ( j==(n_cell-1) ) {
-                yrhs(i, j, k) = Real(0.0);
-            }
-            else {
-                yrhs(i, j, k) = Real(0.5)*( total_flux(i, (j)-1, k, 1) + total_flux(i, j, k, 1) );
-            }
-        });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_y(i, j, k, yrhs, total_flux); });
 
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            if ( k==0 ) {
-                zrhs(i, j, k) = Real(0.0);
-            }
-            else if ( k==(n_cell-1) ) {
-                zrhs(i, j, k) = Real(0.0);
-            }
-            else {
-                zrhs(i, j, k) = Real(0.5)*( total_flux(i, j, (k)-1, 2) + total_flux(i, j, k, 2) );
-            }
-        });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_z(i, j, k, zrhs, total_flux); });
 #endif
     }
 }
@@ -546,23 +493,24 @@ void cart2cont (MultiFab& velCart,
         auto const& vcart = velCart.const_array(mfi);
 
         amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ convert_contravariant_velocity_x(i, j, k, xcont, vcart); });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_x(i, j, k, xcont, vcart); });
 
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ convert_contravariant_velocity_y(i, j, k, ycont, vcart); });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_y(i, j, k, ycont, vcart); });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ convert_contravariant_velocity_z(i, j, k, zcont, vcart); });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_z(i, j, k, zcont, vcart); });
 #endif
     }
 }
 
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
-void manual_filling_ghost_cells (amrex::MultiFab& velCart,
-                                int const& Nghost,
-                                amrex::Vector<int> const& phy_bc_lo,
-                                amrex::Vector<int> const& phy_bc_hi,
-                                int const& n_cell)
+void manual_fill_ghost_cells (MultiFab& velCart,
+                              MultiFab& userCtx,
+                              int const& Nghost,
+                              Vector<int> const& phy_bc_lo,
+                              Vector<int> const& phy_bc_hi,
+                              int const& n_cell)
 {
     for (MFIter mfi(velCart); mfi.isValid(); ++mfi)
     {
@@ -576,65 +524,149 @@ void manual_filling_ghost_cells (amrex::MultiFab& velCart,
         auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
 #endif
         const Box& gbx = mfi.growntilebox(Nghost);
+        auto const& ctx = userCtx.array(mfi);
         auto const& vcart = velCart.array(mfi);
 
         if ( west_wall_bcs != 0 ) {
-            amrex::Print() << "========================== west wall  ========================= \n";
+            // amrex::Print() << "========================== west wall  ========================= \n";
 
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                filling_ghost_west(i, j, k, n_cell, west_wall_bcs, vcart);
+                filling_ghost_west(i, j, k, n_cell, west_wall_bcs, vcart, ctx);
             });
         }
 
         if ( east_wall_bcs != 0 ) {
-            amrex::Print() << "========================== east wall  ========================= \n";
+            // amrex::Print() << "========================== east wall  ========================= \n";
 
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                filling_ghost_east(i, j, k, n_cell, west_wall_bcs, vcart);
+                filling_ghost_east(i, j, k, n_cell, west_wall_bcs, vcart, ctx);
             });
         }
 
         if ( south_wall_bcs != 0 ) {
-            amrex::Print() << "========================= south wall  ========================= \n";
+            // amrex::Print() << "========================= south wall  ========================= \n";
 
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                filling_ghost_south(i, j, k, n_cell, south_wall_bcs, vcart);
+                filling_ghost_south(i, j, k, n_cell, south_wall_bcs, vcart, ctx);
             });
         }
 
         if ( north_wall_bcs != 0 ) {
-            amrex::Print() << "========================= north wall  ========================= \n";
+            // amrex::Print() << "========================= north wall  ========================= \n";
 
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                filling_ghost_north(i, j, k, n_cell, north_wall_bcs, vcart);
+                filling_ghost_north(i, j, k, n_cell, north_wall_bcs, vcart, ctx);
             });
         }
 #if (AMREX_SPACEDIM > 2)
         if ( front_wall_bcs != 0 ) {
-            amrex::Print() << "========================= front wall  ========================= \n";
+            // amrex::Print() << "========================= front wall  ========================= \n";
 
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                filling_ghost_front(i, j, k, n_cell, front_wall_bcs, vcart);
+                filling_ghost_front(i, j, k, n_cell, front_wall_bcs, vcart. ctx);
             });
         }
 
         if ( back_wall_bcs != 0 ) {
-            amrex::Print() << "========================== back wall  ========================= \n";
+            // amrex::Print() << "========================== back wall  ========================= \n";
 
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                filling_ghost_back(i, j, k, n_cell, back_wall_bcs, vcart);
+                filling_ghost_back(i, j, k, n_cell, back_wall_bcs, vcart, ctx);
+            });
+        }
+#endif
+    }
+}
+
+void enforce_boundary_conditions (MultiFab& inputFlux,
+                                  int const& Nghost,
+                                  Vector<int> const& phy_bc_lo,
+                                  Vector<int> const& phy_bc_hi,
+                                  int const& n_cell)
+{
+    for (MFIter mfi(inputFlux); mfi.isValid(); ++mfi)
+    {
+        auto const& west_wall_bcs = phy_bc_lo[0]; // west wall
+        auto const& east_wall_bcs = phy_bc_hi[0]; // east wall
+
+        auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
+        auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
+#if (AMREX_SPACEDIM > 2)
+        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
+#endif
+        const Box& gbx = mfi.growntilebox(Nghost);
+        auto const& flux = inputFlux.array(mfi);
+
+        if ( west_wall_bcs != 0 ) {
+            // amrex::Print() << "========================== west wall  ========================= \n";
+
+            amrex::ParallelFor(gbx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k)
+            {
+                enforcing_bcs_west(i, j, k, n_cell, west_wall_bcs, flux);
+            });
+        }
+
+        if ( east_wall_bcs != 0 ) {
+            // amrex::Print() << "========================== east wall  ========================= \n";
+
+            amrex::ParallelFor(gbx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k)
+            {
+                enforcing_bcs_east(i, j, k, n_cell, west_wall_bcs, flux);
+            });
+        }
+
+        if ( south_wall_bcs != 0 ) {
+            // amrex::Print() << "========================= south wall  ========================= \n";
+
+            amrex::ParallelFor(gbx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k)
+            {
+                enforcing_bcs_south(i, j, k, n_cell, south_wall_bcs, flux);
+            });
+        }
+
+        if ( north_wall_bcs != 0 ) {
+            // amrex::Print() << "========================= north wall  ========================= \n";
+
+            amrex::ParallelFor(gbx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k)
+            {
+                enforcing_bcs_north(i, j, k, n_cell, north_wall_bcs, flux);
+            });
+        }
+#if (AMREX_SPACEDIM > 2)
+        if ( front_wall_bcs != 0 ) {
+            // amrex::Print() << "========================= front wall  ========================= \n";
+
+            amrex::ParallelFor(gbx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k)
+            {
+                enforcing_bcs_front(i, j, k, n_cell, front_wall_bcs, flux);
+            });
+        }
+
+        if ( back_wall_bcs != 0 ) {
+            // amrex::Print() << "========================== back wall  ========================= \n";
+
+            amrex::ParallelFor(gbx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k)
+            {
+                enforcing_bcs_back(i, j, k, n_cell, back_wall_bcs, flux);
             });
         }
 #endif

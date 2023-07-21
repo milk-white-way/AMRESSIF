@@ -81,8 +81,7 @@ void compute_half_node_convective_flux_x_contrib (int i, int j, int k,
                                                   amrex::Array4<amrex::Real> const& xcont,
                                                   amrex::Array4<amrex::Real> const& vcart,
                                                   amrex::Real const& coef,
-                                                  int const& n_cell,
-                                                  int const& box_id)
+                                                  int const& n_cell)
 {
     using amrex::Real;
 
@@ -155,8 +154,7 @@ void compute_half_node_convective_flux_y_contrib (int i, int j, int k,
                                                   amrex::Array4<amrex::Real> const& ycont,
                                                   amrex::Array4<amrex::Real> const& vcart,
                                                   amrex::Real const& coef,
-                                                  int const& n_cell,
-                                                  int const& box_id)
+                                                  int const& n_cell)
 {
     using amrex::Real;
 
@@ -230,8 +228,7 @@ void compute_half_node_convective_flux_z_contrib (int i, int j, int k,
                                                   amrex::Array4<amrex::Real> const& zcont,
                                                   amrex::Array4<amrex::Real> const& vcart,
                                                   amrex::Real const& coef,
-                                                  int const& n_cell,
-                                                  int const& box_id)
+                                                   wwint const& n_cell)
 {
     using amrex::Real;
 
@@ -242,6 +239,20 @@ void compute_half_node_convective_flux_z_contrib (int i, int j, int k,
     fluxz_zcont(i, j, k) = real(0.0);
 }
 #endif
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void compute_total_flux (int i, int j, int k,
+                         amrex::Array4<amrex::Real> const& total_flux,
+                         amrex::Array4<amrex::Real> const& conv_flux,
+                         amrex::Array4<amrex::Real> const& visc_flux,
+                         amrex::Array4<amrex::Real> const& prsgrad_flux)
+{
+    for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
+    {
+        total_flux(i, j, k, dir) = conv_flux(i, j, k, dir) + visc_flux(i, j, k, dir) + prsgrad_flux(i, j, k, dir);
+        //total_flux(i, j, k, dir) = visc_flux(i, j, k, dir);
+    }
+}
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void compute_flux_x (int i, int j, int k,
@@ -298,20 +309,18 @@ void update_phi (int i, int j, int k,
 
 // ==================================== UTILITY | CONVERSION  ================================
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void convert_contravariant_velocity_x (int i, int j, int k,
-                                       amrex::Array4<amrex::Real> const& xcont,
-                                       amrex::Array4<amrex::Real const> const& vcart)
+void cart2cont_x (int i, int j, int k,
+                  amrex::Array4<amrex::Real> const& xcont,
+                  amrex::Array4<amrex::Real const> const& vcart)
 {
     using amrex::Real;
     xcont(i, j, k) = Real(0.5) * ( vcart(i-1, j, k, 0) + vcart(i, j, k, 0) ) ;
-    // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
-    // amrex::Print() << "DEBUGGING| contravariant velocity in x-direction " << xcont(i, j, k) << "\n";
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void convert_contravariant_velocity_y (int i, int j, int k,
-                                       amrex::Array4<amrex::Real> const& ycont,
-                                       amrex::Array4<amrex::Real const> const& vcart)
+void cart2cont_y (int i, int j, int k,
+                  amrex::Array4<amrex::Real> const& ycont,
+                  amrex::Array4<amrex::Real const> const& vcart)
 {
     using amrex::Real;
     ycont(i, j, k) = Real(0.5) * ( vcart(i, j-1, k, 1) + vcart(i, j, k, 1) ) ;
@@ -319,9 +328,9 @@ void convert_contravariant_velocity_y (int i, int j, int k,
 
 #if (AMREX_SPACEDIM > 2)
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void convert_contravariant_velocity_z (int i, int j, int k,
-                                       amrex::Array4<amrex::Real> const& zcont,
-                                       amrex::Array4<amrex::Real const> const& vcart)
+void car2cont_z (int i, int j, int k,
+                 amrex::Array4<amrex::Real> const& zcont,
+                 amrex::Array4<amrex::Real const> const& vcart)
 {
     using amrex:Real;
     zcont(i, j, k) = Real(0.5) * ( vcart(i, j, k-1, 2) + vcart(i, j, k, 2) ) ;
@@ -331,6 +340,41 @@ void convert_contravariant_velocity_z (int i, int j, int k,
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void filling_ghost_west (int i, int j, int k, int n_cell, int bcs,
+                         amrex::Array4<amrex::Real> const& vcart,
+                         amrex::Array4<amrex::Real> const& ctx)
+{
+    using amrex::Real;
+
+    if ( i < 0 ) {
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+
+        if ( j == i || j == (n_cell - i) ) {
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = Real(0.0);
+            }
+            ctx(i, j, k, 0) = Real(0.0);
+        } else {
+            if ( bcs == -1 ) {
+                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+                {
+                    vcart(i, j, k, dir) = - vcart(-i-1, j, k, dir);
+                }
+                ctx(i, j, k, 0) = - ctx(-i-1, j, k, 0);
+            } else if ( bcs == 1 ) {
+                vcart(i, j, k, 0) = - vcart(-i-1, j, k, 0);
+                vcart(i, j, k, 1) = vcart(-i-1, j, k, 1);
+#if (AMREX_SPACEDIM > 2)
+                vcart(i, j, k, 2) = vcart(-i-1, j, k, 2);
+#endif
+                ctx(i, j, k, 0) = ctx(-i-1, j, k, 0);
+            }
+        }
+    }
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void enforcing_bcs_west (int i, int j, int k, int n_cell, int bcs,
                          amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
@@ -362,6 +406,41 @@ void filling_ghost_west (int i, int j, int k, int n_cell, int bcs,
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void filling_ghost_east (int i, int j, int k, int n_cell, int bcs,
+                         amrex::Array4<amrex::Real> const& vcart,
+                         amrex::Array4<amrex::Real> const& ctx)
+{
+    using amrex::Real;
+
+    if ( i > (n_cell - 1) ) {
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+
+        if ( j == i || j == (n_cell - i) ) {
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = Real(0.0);
+            }
+            ctx(i, j, k, 0) = Real(0.0);
+        } else {
+            if ( bcs == -1 ) {
+                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+                {
+                    vcart(i, j, k, dir) = - vcart(( (n_cell-i) + (n_cell-1) ), j, k, dir);
+                }
+                ctx(i, j, k, 0) = - ctx(( (n_cell-i) + (n_cell-1) ), j, k, 0);
+            } else if ( bcs == 1 ) {
+                vcart(i, j, k, 0) = - vcart(( (n_cell-i) + (n_cell-1) ), j, k, 0);
+                vcart(i, j, k, 1) = vcart(( (n_cell-i) + (n_cell-1) ), j, k, 1);
+#if (AMREX_SPACEDIM > 2)
+                vcart(i, j, k, 2) = vcart(( (n_cell-i) + (n_cell-1) ), j, k, 2);
+#endif
+                ctx(i, j, k, 0) = ctx(( (n_cell-i) + (n_cell-1) ), j, k, 0);
+            }
+        }
+    }
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void enforcing_bcs_east (int i, int j, int k, int n_cell, int bcs,
                          amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
@@ -393,6 +472,41 @@ void filling_ghost_east (int i, int j, int k, int n_cell, int bcs,
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void filling_ghost_south (int i, int j, int k, int n_cell, int bcs,
+                          amrex::Array4<amrex::Real> const& vcart,
+                          amrex::Array4<amrex::Real> const& ctx)
+{
+    using amrex::Real;
+
+    if ( j < 0 ) {
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+
+        if ( j == i || j == (n_cell - i) ) {
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = Real(0.0);
+            }
+            ctx(i, j, k, 0) = Real(0.0);
+        } else {
+            if ( bcs == -1 ) {
+                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+                {
+                    vcart(i, j, k, dir) = - vcart(i, -j-1, k, dir);
+                }
+                ctx(i, j, k, 0) = - ctx(i, -j-1, k, 0);
+            } else if ( bcs == 1 ) {
+                vcart(i, j, k, 0) = vcart(i, -j-1, k, 0);
+                vcart(i, j, k, 1) = - vcart(i, -j-1, k, 1);
+#if (AMREX_SPACEDIM > 2)
+                vcart(i, j, k, 2) = vcart(i, -j-1, k, 2);
+#endif
+                ctx(i, j, k, 0) = ctx(i, -j-1, k, 0);
+            }
+        }
+    }
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void enforcing_bcs_south (int i, int j, int k, int n_cell, int bcs,
                           amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
@@ -424,6 +538,41 @@ void filling_ghost_south (int i, int j, int k, int n_cell, int bcs,
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void filling_ghost_north (int i, int j, int k, int n_cell, int bcs,
+                          amrex::Array4<amrex::Real> const& vcart,
+                          amrex::Array4<amrex::Real> const& ctx)
+{
+    using amrex::Real;
+
+    if ( j > (n_cell - 1) ) {
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+
+        if ( j == i || j == (n_cell - i) ) {
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = Real(0.0);
+            }
+            ctx(i, j, k, 0) = Real(0.0);
+        } else {
+            if ( bcs == -1 ) {
+                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+                {
+                    vcart(i, j, k, dir) = - vcart(i, ( (n_cell-j) + (n_cell-1) ), k, dir);
+                }
+                ctx(i, j, k, 0) = - ctx(i, ( (n_cell-j) + (n_cell-1) ), k, 0);
+            } else if ( bcs == 1 ) {
+                vcart(i, j, k, 0) = vcart(i, ( (n_cell-j) + (n_cell-1) ), k, 0);
+                vcart(i, j, k, 1) = - vcart(i, ( (n_cell-j) + (n_cell-1) ), k, 1);
+#if (AMREX_SPACEDIM > 2)
+                vcart(i, j, k, 2) = vcart(i, ( (n_cell-j) + (n_cell-1) ), k, 2);
+#endif
+                ctx(i, j, k, 0) = ctx(i, ( (n_cell-j) + (n_cell-1) ), k, 0);
+            }
+        }
+    }
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void enforcing_bcs_north (int i, int j, int k, int n_cell, int bcs,
                           amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
@@ -452,9 +601,45 @@ void filling_ghost_north (int i, int j, int k, int n_cell, int bcs,
         }
     }
 }
+
 #if (AMREX_SPACEDIM > 2)
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void filling_ghost_front (int i, int j, int k, int n_cell, int bcs,
+                          amrex::Array4<amrex::Real> const& vcart,
+                          amrex::Array4<amrex::Real> const& ctx)
+{
+    using amrex::Real;
+
+    if ( k < 0 ) {
+        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+
+        if ( j == i || j == (n_cell - i) ) {
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = Real(0.0);
+            }
+            ctx(i, j, k, 0) = Real(0.0);
+        } else {
+            if ( bcs == -1 ) {
+                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+                {
+                    vcart(i, j, k, dir) = - vcart(i, j, -k-1, dir);
+                }
+                ctx(i, j, k, 0) = - ctx(i, j, -k-1, 0);
+            } else if ( bcs == 1 ) {
+                vcart(i, j, k, 0) = vcart(i, j, -k-1, 0);
+                vcart(i, j, k, 1) = vcart(i, j, -k-1, 1);
+#if (AMREX_SPACEDIM > 2)
+                vcart(i, j, k, 2) = - vcart(i, j, -k-1, 2);
+#endif
+                ctx(i, j, k, 0) = ctx(i, j, -k-1, 0);
+            }
+        }
+    }
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void enforcing_bcs_front (int i, int j, int k, int n_cell, int bcs,
                           amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
@@ -486,6 +671,41 @@ void filling_ghost_front (int i, int j, int k, int n_cell, int bcs,
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void filling_ghost_back (int i, int j, int k, int n_cell, int bcs,
+                         amrex::Array4<amrex::Real> const& vcart,
+                         amrex::Array4<amrex::Real> const& ctx)
+{
+    using amrex::Real;
+
+    if ( k > (n_cell - 1) ) {
+        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+
+        if ( j == i || j == (n_cell - i) ) {
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = Real(0.0);
+            }
+            ctx(i, j, k, 0) = Real(0.0);
+        } else {
+            if ( bcs == -1 ) {
+                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+                {
+                    vcart(i, j, k, dir) = - vcart(i, j, ( (n_cell-k) + (n_cell-1) ), dir);
+                }
+                ctx(i, j, k, 0) = - ctx(i, j, ( (n_cell-k) + (n_cell-1) ), 0);
+            } else if ( bcs == 1 ) {
+                vcart(i, j, k, 0) = vcart(i, j, ( (n_cell-k) + (n_cell-1) ), 0);
+                vcart(i, j, k, 1) = vcart(i, j, ( (n_cell-k) + (n_cell-1) ), 1);
+#if (AMREX_SPACEDIM > 2)
+                vcart(i, j, k, 2) = - vcart(i, j, ( (n_cell-k) + (n_cell-1) ), 2);
+#endif
+                ctx(i, j, k, 0) = ctx(i, j, ( (n_cell-k) + (n_cell-1) ), 0);
+            }
+        }
+    }
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void enforcing_bcs_back (int i, int j, int k, int n_cell, int bcs,
                          amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
