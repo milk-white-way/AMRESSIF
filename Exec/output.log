@@ -1,63 +1,20 @@
 MPI initialized with 1 MPI processes
 MPI initialized with thread support level 0
 AMReX (23.07-13-gb41f85ab36ac) initialized
-INFO| number of cells in each side of the domain: 64
+INFO| number of cells in each side of the domain: 128
 INFO| periodicity in 0th dimension: 1
 INFO| periodicity in 1th dimension: 1
 INFO| number of dimensions: 2
 INFO| box array: (BoxArray maxbox(4)
        m_ref->m_hash_sig(0)
-       ((0,0) (31,31) (0,0)) ((32,0) (63,31) (0,0)) ((0,32) (31,63) (0,0)) ((32,32) (63,63) (0,0)) )
+       ((0,0) (63,63) (0,0)) ((64,0) (127,63) (0,0)) ((0,64) (63,127) (0,0)) ((64,64) (127,127) (0,0)) )
 
-INFO| geometry: (0 (0,0)(0.015625,0.015625) 1)
-(RealBox 0 1 0 1 )((0,0) (63,63) (0,0))P(1,1)
+INFO| geometry: (0 (0,0)(0.0078125,0.0078125) 1)
+(RealBox 0 1 0 1 )((0,0) (127,127) (0,0))P(1,1)
 PARAMS| number of ghost cells for each array: 2
 PARAMS| number of components for each array: 2
 ===================== INITIALIZATION STEP ===================== 
-PARAMS| cfl number is set to: 0.01
-PARAMS| dt from above cfl: 6.103515625e-07
+PARAMS| set cfl: 0.9
+PARAMS| dt from above cfl: 1.373291016e-05
 ======================= ADVANCING STEP  ======================= 
 SOLVING| Momentum | performing Runge-Kutta at iteration: 1
-DEBUGGING| intermediate convergence: 209.679807
-SOLVING| Momentum | performing Runge-Kutta at iteration: 2
-DEBUGGING| intermediate convergence: 209.6036701
-SOLVING| Momentum | performing Runge-Kutta at iteration: 3
-DEBUGGING| intermediate convergence: 57.31350354
-SOLVING| Momentum | performing Runge-Kutta at iteration: 4
-DEBUGGING| intermediate convergence: 94.976663
-SOLVING| Momentum | performing Runge-Kutta at iteration: 5
-DEBUGGING| intermediate convergence: 136.6185054
-SOLVING| Momentum | performing Runge-Kutta at iteration: 6
-DEBUGGING| intermediate convergence: 67.6120237
-SOLVING| Momentum | performing Runge-Kutta at iteration: 7
-DEBUGGING| intermediate convergence: 31.64985914
-SOLVING| Momentum | performing Runge-Kutta at iteration: 8
-DEBUGGING| intermediate convergence: 80.77422011
-SOLVING| Momentum | performing Runge-Kutta at iteration: 9
-DEBUGGING| intermediate convergence: 57.77861933
-SOLVING| Momentum | performing Runge-Kutta at iteration: 10
-DEBUGGING| intermediate convergence: 0.9088999689
-SOLVING| Momentum | performing Runge-Kutta at iteration: 11
-DEBUGGING| intermediate convergence: 42.88867808
-SOLVING| Momentum | performing Runge-Kutta at iteration: 12
-DEBUGGING| intermediate convergence: 42.22830544
-SOLVING| Momentum | performing Runge-Kutta at iteration: 13
-DEBUGGING| intermediate convergence: 11.06700028
-SOLVING| Momentum | performing Runge-Kutta at iteration: 14
-DEBUGGING| intermediate convergence: 19.61450289
-SOLVING| Momentum | performing Runge-Kutta at iteration: 15
-DEBUGGING| intermediate convergence: 27.65537028
-SOLVING| Momentum | performing Runge-Kutta at iteration: 16
-DEBUGGING| intermediate convergence: 13.40420802
-SOLVING| Momentum | performing Runge-Kutta at iteration: 17
-DEBUGGING| intermediate convergence: 6.689146947
-SOLVING| Momentum | performing Runge-Kutta at iteration: 18
-DEBUGGING| intermediate convergence: 16.42814184
-SOLVING| Momentum | performing Runge-Kutta at iteration: 19
-DEBUGGING| intermediate convergence: 11.56805851
-SOLVING| Momentum | performing Runge-Kutta at iteration: 20
-DEBUGGING| intermediate convergence: 0.3680132946
-SOLVING| Momentum | ending after 20 iteration(s) with convergence: 0.3680132946
-INFO| End Advanced Step 1
-Run time = 0.674914686
-AMReX (23.07-13-gb41f85ab36ac) finalized

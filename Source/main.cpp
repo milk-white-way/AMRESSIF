@@ -188,8 +188,6 @@ void main_main ()
         fluxHalfN3[dir].define(edge_ba, dm, 1, 0);
     }
 
-    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-
     Vector<BCRec> bc(userCtxPrev.nComp());
     for (int n = 0; n < userCtxPrev.nComp(); ++n)
     {
@@ -243,16 +241,18 @@ void main_main ()
     // How partial periodic boundary conditions can be deployed?
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
 
-    Real cfl = 0.01;
+    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
+    Real cfl = 0.9;
     Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
                                + 1./(dx[1]*dx[1]),
                                + 1./(dx[2]*dx[2]) );
     Real dt = cfl/(2.0*coeff);
+    // Real dt = 1.0e-4;
 
     // time = starting time in the simulation
     Real time = 0.0;
 
-    amrex::Print() << "PARAMS| cfl number is set to: " << cfl << "\n";
+    amrex::Print() << "PARAMS| set cfl: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt from above cfl: " << dt << "\n";
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Plotting =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -324,6 +324,10 @@ Vector<Real> rk(RungeKuttaOrder, 0);
         //                         geom, ren, dt, n_cell,
         //                         IterNum, Tol);
 
+        for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
+        {
+            MultiFab::Copy(velContPrev[comp], velCont[comp], 0, 0, 1, 0);
+        }
         // Setup counter
         int countIter = 0;
         Real normError = 1.0e1;
@@ -333,16 +337,23 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             countIter++;
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << "\n";
 
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
+            Array<MultiFab, AMREX_SPACEDIM> velImRK;
+            for ( int dir=0; dir < AMREX_SPACEDIM; dir++ )
             {
-                MultiFab::Copy(velContPrev[comp], velCont[comp], 0, 0, 1, 0);
+                BoxArray edge_ba = ba;
+                edge_ba.surroundingNodes(dir);
+                velImRK[dir].define(edge_ba, dm, 1, 0);
             }
-            // copy_contravariant_velocity(velCont, velContPrev);
+
+            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp )
+            {
+                MultiFab::Copy(velImRK[comp], velCont[comp], 0, 0, 1, 0);
+            }
 
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
                 // Calculate Convective terms
-                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velCont, phy_bc_lo, phy_bc_hi, geom, n_cell);
+                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velImRK, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 // if (plot_int > 0 ) {
                 //     const std::string& plt_check = amrex::Concatenate("pltConvectiveFlux", n, 5);
                 //     WriteSingleLevelPlotfile(plt_check, fluxConvect, {"convective_fluxx", "convective_fluxy"}, geom, time, n);
@@ -371,83 +382,76 @@ Vector<Real> rk(RungeKuttaOrder, 0);
 #if (AMREX_SPACEDIM > 2)
                     const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
+                    auto const& xrhs = rhs[0].array(mfi);
+                    auto const& yrhs = rhs[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const& zrhs = rhs[2].array(mfi);
+#endif
                     auto const& xcont = velCont[0].array(mfi);
                     auto const& ycont = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
                     auto const& zcont = velCont[2].array(mfi);
+#endif
+                    auto const& ximrk = velImRK[0].array(mfi);
+                    auto const& yimrk = velImRK[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const& zimrk = velImRK[2].array(mfi);
 #endif
                     auto const& xdiff = velContDiff[0].array(mfi);
                     auto const& ydiff = velContDiff[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
                     auto const& zdiff = velContDiff[2].array(mfi);
 #endif
-                    auto const& xrhs = rhs[0].array(mfi);
-                    auto const& yrhs = rhs[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const& zrhs = rhs[2].array(mfi);
-#endif
+                    // int const& box_id = mfi.LocalIndex();
+                    // amrex::Print() << "======================== Entering Box " << box_id << " ======================= \n";
 
                     amrex::ParallelFor(xbx,
                     [=] AMREX_GPU_DEVICE (int i, int j, int k){
-                        // Itermidiate velocity
-                        Real xhat = xcont(i, j, k);
+                        // amrex::Print() << "DEBUGGING| X-Runge-Kutta | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
                         // Corection for right-hand-side term
-                        xrhs(i, j, k) = xrhs(i, j, k) - (Real(0.5)/dt)*(xhat - xrhs(i, j, k)) + (Real(0.5)/dt)*(xdiff(i, j, k));
+                        xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*( ximrk(i, j, k) - xcont(i, j, k) ) + ( Real(0.5)/dt )*( xdiff(i, j, k) );
                         // RK4 substep to update the immediate velocity
                         if ( i==0 || i==(n_cell) ) {
-                            xhat = amrex::Real(0.0);
+                            ximrk(i, j, k) = amrex::Real(0.0);
                         } else {
-                            xhat = xcont(i, j, k) + rk[sub]*dt*xrhs(i,j,k);
+                            ximrk(i, j, k) = xcont(i, j, k) + ( rk[sub] * dt * Real(0.4) * xrhs(i,j,k) );
                         }
-                        xcont(i, j, k) = xhat;
                     });
 
                     amrex::ParallelFor(ybx,
                     [=] AMREX_GPU_DEVICE(int i, int j, int k){
-                        Real yhat = ycont(i, j, k);
-
-                        yrhs(i, j, k) = yrhs(i, j, k) - (Real(0.5)/dt)*(yhat - yrhs(i, j, k)) + (Real(0.5)/dt)*(ydiff(i, j, k));
+                        // amrex::Print() << "DEBUGGING| Y-Runge-Kutta | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                        yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*( yimrk(i, j, k) - ycont(i, j, k) ) + ( Real(0.5)/dt )*( ydiff(i, j, k) );
 
                         if ( j==0 || j==(n_cell) ) {
-                            yhat = amrex::Real(0.0);
+                            yimrk(i, j, k) = amrex::Real(0.0);
                         } else {
-                            yhat = ycont(i, j, k) + rk[sub]*dt*yrhs(i,j,k);
+                            yimrk(i, k, k) = ycont(i, j, k) + ( rk[sub] * dt * Real(0.4) * yrhs(i,j,k) );
                         }
-                        ycont(i, j, k) = yhat;
                     });
 
 #if (AMREX_SPACEDIM > 2)
                     amrex::ParallelFor(zbx,
                     [=] AMREX_GPU_DEVICE(int i, int j, int k){
-                        Real zhat = zcont(i, j, k);
-
-                        zrhs(i, j, k) = zrhs(i, j, k) - (Real(0.5)/dt)*(zhat - zrhs(i, j, k)) + (Real(0.5)/dt)*(zdiff(i, j, k));
+                        zrhs(i, j, k) = zrhs(i, j, k) - ( Real(1.5)/dt )*( zimrk(i, j, k) - zcont(i, j, k) ) + ( Real(0.5)/dt )*( zdiff(i, j, k) );
 
                         if ( k==0 || k==(n_cell) ) {
-                            zhat = amrex::Real(0.0);
+                            zimrk(i, j, k) = amrex::Real(0.0);
                         } else {
-                            zhat = zcont(i, j, k) + rk[sub]*dt*zrhs(i,j,k);
+                            zimrk(i, j, k) = zcont(i, j, k) + ( rk[sub] * dt * Real(0.4) * zrhs(i,j,k) );
                         }
-                        zcont(i, j, k) = zhat;
                     });
 #endif
                 }
+                // Using implicit velocity results to update intermediate Cartesian velocity
+                cont2cart(velCart, velImRK, geom);
+                velCart.FillBoundary(geom.periodicity());
+                manual_fill_ghost_cells(velCart, userCtx, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                // Then, restart the sub-iteration loop
             }
-            if (plot_int > 0 ) {
-                MultiFab plt(ba, dm, 3*AMREX_SPACEDIM, 0);
-
-                MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
-                MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
-                MultiFab::Copy(plt, fluxViscous, 0, 2, 1, 0);
-                MultiFab::Copy(plt, fluxViscous, 1, 3, 1, 0);
-                MultiFab::Copy(plt, fluxPrsGrad, 0, 4, 1, 0);
-                MultiFab::Copy(plt, fluxPrsGrad, 1, 5, 1, 0);
-
-                const std::string& plt_flux = amrex::Concatenate("pltFlux", n, 5);
-                WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, n);
-            }
+            // ++++++++++++++ Norm Error Calculation +++++++++++++++
             // Update contravariant velocity difference
-            for ( MFIter mfi(velContDiff[0]); mfi.isValid(); ++mfi )
+            for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
             {
                 const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
                 const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
@@ -459,10 +463,10 @@ Vector<Real> rk(RungeKuttaOrder, 0);
 #if (AMREX_SPACEDIM > 2)
                 auto const& zcont = velCont[2].array(mfi);
 #endif
-                auto const& xprev = velContPrev[0].array(mfi);
-                auto const& yprev = velContPrev[1].array(mfi);
+                auto const& ximrk = velImRK[0].array(mfi);
+                auto const& yimrk = velImRK[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-                auto const& zprev = velContPrev[2].array(mfi);
+                auto const& zimrk = velImRK[2].array(mfi);
 #endif
                 auto const& xdiff = velContDiff[0].array(mfi);
                 auto const& ydiff = velContDiff[1].array(mfi);
@@ -471,35 +475,61 @@ Vector<Real> rk(RungeKuttaOrder, 0);
 #endif
                 amrex::ParallelFor(xbx,
                 [=] AMREX_GPU_DEVICE (int i, int j, int k){
-                    xdiff(i, j, k) = xcont(i, j, k) - xprev(i, j, k);
+                    xdiff(i, j, k) = xcont(i, j, k) - ximrk(i, j, k);
                 });
 
                 amrex::ParallelFor(ybx,
                 [=] AMREX_GPU_DEVICE(int i, int j, int k){
-                    ydiff(i, j, k) = ycont(i, j, k) - yprev(i, j, k);
+                    ydiff(i, j, k) = ycont(i, j, k) - yimrk(i, j, k);
                 });
 
 #if (AMREX_SPACEDIM > 2)
                 amrex::ParallelFor(zbx,
                 [=] AMREX_GPU_DEVICE(int i, int j, int k){
-                    zdiff(i, j, k) = zcont(i, j, k) - zprev(i, j, k);
+                    zdiff(i, j, k) = zcont(i, j, k) - zimrk(i, j, k);
                 });
 #endif
             }
             // Update error stopping condition
-            Real xerror = velContDiff[0].norm2(0, geom.periodicity());
-            Real yerror = velContDiff[1].norm2(0, geom.periodicity());
+            cont2cart(velCartDiff, velContDiff, geom);
+            Real errorImRK = velCartDiff.norminf(0, 0);
+            normError = std::min(normError, errorImRK);
 
-            normError = std::max(xerror, yerror);
-#if (AMREX_SPACEDIM > 2)
-            Real zerror = velContDiff[2].norm2(0, geom.periodicity());
-            normError = std::max(normError, zerror);
-#endif
-            amrex::Print() << "DEBUGGING| intermediate convergence: " << normError << "\n";
+//             // Real xerror = velContDiff[0].norm2(0, geom.periodicity());
+//             // Real yerror = velContDiff[1].norm2(0, geom.periodicity());
+//             Real xerror = velContDiff[0].norminf(0);
+//             Real yerror = velContDiff[1].norminf(0);
+
+//             normError = std::max(xerror, yerror);
+// #if (AMREX_SPACEDIM > 2)
+//             // Real zerror = velContDiff[2].norminf(0, geom.periodicity());
+//             Real zerror = velContDiff[2].norminf(0);
+//             normError = std::max(normError, zerror);
+// #endif
+            // Update contravariant velocity
+            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp )
+            {
+                MultiFab::Copy(velCont[comp], velImRK[comp], 0, 0, 1, 0);
+            }
+            // amrex::Print() << "DEBUGGING| intermediate convergence: " << normError << "\n";
         }
-        cart2cont(velCart, velCont);
+        amrex::Print() << "SOLVING| Momentum | ending Runge-Kutta after " << countIter << " iteration(s) with convergence: " << normError << "\n";
 
-        amrex::Print() << "SOLVING| Momentum | ending after " << countIter << " iteration(s) with convergence: " << normError << "\n";
+        if (plot_int > 0 ) {
+            MultiFab plt(ba, dm, 3*AMREX_SPACEDIM, 0);
+
+            MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
+            MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
+            MultiFab::Copy(plt, fluxViscous, 0, 2, 1, 0);
+            MultiFab::Copy(plt, fluxViscous, 1, 3, 1, 0);
+            MultiFab::Copy(plt, fluxPrsGrad, 0, 4, 1, 0);
+            MultiFab::Copy(plt, fluxPrsGrad, 1, 5, 1, 0);
+
+            const std::string& plt_flux = amrex::Concatenate("pltFlux", n, 5);
+            WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, n);
+        }
+
+        amrex::Print() << "SOLVING| Momentum | finished time step: " << n << "\n";
 
         // PSEUDO-CODE: POISSON SOLVER HERE
 
@@ -508,7 +538,7 @@ Vector<Real> rk(RungeKuttaOrder, 0);
         time = time + dt;
 
         // Tell the I/O Processor to write out which step we're doing
-        amrex::Print() << "INFO| End Advanced Step " << n << "\n";
+        // amrex::Print() << "INFO| End Advanced Step " << n << "\n";
 
         // Write a plotfile of the current data (plot_int was defined in the inputs file)
         if (plot_int > 0 && n%plot_int == 0)

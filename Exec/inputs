@@ -1,11 +1,11 @@
 nsteps = 1
 plot_int = 2
-n_cell = 64
-max_grid_size = 32
+n_cell = 128
+max_grid_size = 128
 
-IterNum = 20
+IterNum = 30
 
-ren = 10
+ren = 1
 vis = 1
 
 # 0 - periodic
