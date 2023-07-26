@@ -339,7 +339,7 @@ Vector<Real> rk(RungeKuttaOrder, 0);
         }
         for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
         {
-            MultiFab::Copy(velImRK[comp], velCont[comp], 0, 0, 1, 0);
+            MultiFab::Copy(velImPrev[comp], velCont[comp], 0, 0, 1, 0);
             MultiFab::Copy(velImDiff[comp], velContDiff[comp], 0, 0, 1, 0);
         }
 
@@ -363,9 +363,9 @@ Vector<Real> rk(RungeKuttaOrder, 0);
                 amrex::Print() << "RUNGE-KUTTA |1| Stopping conditions are not met; use the previous solution for iteration... \n";
             }
             */
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
+            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp )
             {
-                MultiFab::Copy(velImPrev[comp], velImRK[comp], 0, 0, 1, 0);
+                MultiFab::Copy(velImRK[comp], velImPrev[comp], 0, 0, 1, 0);
             }
 
             // amrex::Print() << "RUNGE-KUTTA |2| Performing 4th-Order Runge-Kutta... \n";
@@ -373,6 +373,9 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             { // RUNGE-KUTTA | START
                 // RUNGE-KUTTA | Calculate Cell-centered Convective terms
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velImRK, phy_bc_lo, phy_bc_hi, geom, n_cell);
+                // const std::string& probplt = amrex::Concatenate("pltFlux", n, 5);
+                // WriteSingleLevelPlotfile(probplt, fluxConvect, {"conv_fluxx", "conv_fluxy"}, geom, time, 0);
+                // amrex::Abort("Here!");
 
                 // RUNGE-KUTTA | Calculate Cell-centered Viscous terms
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
@@ -456,9 +459,9 @@ Vector<Real> rk(RungeKuttaOrder, 0);
 #endif
             amrex::Print() << "DEBUGGING| intermediate convergence: " << normError << "\n";
             // Update contravariant velocity
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp )
+            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
-                MultiFab::Copy(velImRK[comp], velImPrev[comp], 0, 0, 1, 0);
+                MultiFab::Copy(velImPrev[comp], velImRK[comp], 0, 0, 1, 0);
             }
         }
         amrex::Print() << "SOLVING| Momentum | ending Runge-Kutta after " << countIter << " iteration(s) with convergence: " << normError << "\n";
