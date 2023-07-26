@@ -61,6 +61,8 @@ void km_runge_kutta_advance (Vector<Real>& rk,
 #if (AMREX_SPACEDIM > 2)
         auto const& zdiff = velContDiff[2].array(mfi);
 #endif
+        auto const& box_id = mfi.LocalIndex();
+        amrex::Print() << "DEBUGGING| in Box ID: " << box_id << "\n";
 
         amrex::ParallelFor(xbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k){
@@ -68,23 +70,17 @@ void km_runge_kutta_advance (Vector<Real>& rk,
             // Corection for right-hand-side term
             xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*( ximrk(i, j, k) - xcont(i, j, k) ) + ( Real(0.5)/dt )*xdiff(i, j, k);
             // RK4 substep to update the immediate velocity
-            if ( i==0 || i==(n_cell) ) {
-                ximrk(i, j, k) = amrex::Real(0.0);
-            } else {
-                ximrk(i, j, k) = xcont(i, j, k) + ( rk[sub] * dt * Real(0.4) * xrhs(i,j,k) );
-            }
+            ximrk(i, j, k) = xcont(i, j, k) + ( rk[sub] * dt * Real(0.4) * xrhs(i,j,k) );
+            if ( i==0 || i==(n_cell) ) { ximrk(i, j, k) = amrex::Real(0.0); }
         });
 
         amrex::ParallelFor(ybx,
         [=] AMREX_GPU_DEVICE(int i, int j, int k){
-            // amrex::Print() << "DEBUGGING| Y-Runge-Kutta | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+            amrex::Print() << "DEBUGGING| Y-Runge-Kutta | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
             yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*( yimrk(i, j, k) - ycont(i, j, k) ) + ( Real(0.5)/dt )*ydiff(i, j, k);
 
-            if ( j==0 || j==(n_cell) ) {
-                yimrk(i, j, k) = amrex::Real(0.0);
-            } else {
-                yimrk(i, k, k) = ycont(i, j, k) + ( rk[sub] * dt * Real(0.4) * yrhs(i,j,k) );
-            }
+            yimrk(i, k, k) = ycont(i, j, k) + ( rk[sub] * dt * Real(0.4) * yrhs(i,j,k) );
+            if ( j==0 || j==(n_cell) ) { yimrk(i, j, k) = amrex::Real(0.0); }
         });
 
 #if (AMREX_SPACEDIM > 2)
@@ -92,11 +88,8 @@ void km_runge_kutta_advance (Vector<Real>& rk,
         [=] AMREX_GPU_DEVICE(int i, int j, int k){
             zrhs(i, j, k) = zrhs(i, j, k) - ( Real(1.5)/dt )*( zimrk(i, j, k) - zcont(i, j, k) ) + ( Real(0.5)/dt )*zdiff(i, j, k);
 
-            if ( k==0 || k==(n_cell) ) {
-                zimrk(i, j, k) = amrex::Real(0.0);
-            } else {
-                zimrk(i, j, k) = zcont(i, j, k) + ( rk[sub] * dt * Real(0.4) * zrhs(i,j,k) );
-            }
+            zimrk(i, j, k) = zcont(i, j, k) + ( rk[sub] * dt * Real(0.4) * zrhs(i,j,k) );
+            if ( k==0 || k==(n_cell) ) { zimrk(i, j, k) = amrex::Real(0.0); }
         });
 #endif
     }

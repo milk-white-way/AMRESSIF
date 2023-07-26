@@ -446,15 +446,15 @@ Vector<Real> rk(RungeKuttaOrder, 0);
                 });
 #endif
             }
-            // Real xerror = velImDiff[0].norm2(0, geom.periodicity());
-            // Real yerror = velImDiff[1].norm2(0, geom.periodicity());
-            Real xerror = velImDiff[0].norminf(0, 0);
-            Real yerror = velImDiff[1].norminf(0, 0);
+            Real xerror = velImDiff[0].norm2(0, geom.periodicity());
+            Real yerror = velImDiff[1].norm2(0, geom.periodicity());
+            // Real xerror = velImDiff[0].norminf(0, 0);
+            // Real yerror = velImDiff[1].norminf(0, 0);
 
             normError = std::max(xerror, yerror);
 #if (AMREX_SPACEDIM > 2)
-            // Real zerror = velContDiff[2].norminf(0, geom.periodicity());
-            Real zerror = velImDiff[2].norminf(0, 0);
+            Real zerror = velContDiff[2].norminf(0, geom.periodicity());
+            // Real zerror = velImDiff[2].norminf(0, 0);
             normError = std::max(normError, zerror);
 #endif
             amrex::Print() << "DEBUGGING| intermediate convergence: " << normError << "\n";
