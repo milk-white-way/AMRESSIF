@@ -22,30 +22,28 @@ void convective_flux_calc (amrex::MultiFab& fluxConvect,
                            amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& fluxHalfN3,
                            amrex::MultiFab& velCart,
                            amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+                           amrex::Vector<int> const& phy_bc_lo,
+                           amrex::Vector<int> const& phy_bc_hi,
                            amrex::Geometry const& geom,
                            int const& n_cell);
 
 void viscous_flux_calc (amrex::MultiFab& fluxViscous,
                         amrex::MultiFab& velCart,
                         amrex::Geometry const& geom,
-                        amrex::Real const& ren,
-                        int const& n_cell);
+                        amrex::Real const& ren);
 
 void pressure_gradient_calc (amrex::MultiFab& fluxPrsGrad,
                              amrex::MultiFab& userCtx,
-                             amrex::Geometry const& geom,
-                             int const& n_cell);
+                             amrex::Geometry const& geom);
 
 void total_flux_calc (amrex::MultiFab& fluxTotal,
                       amrex::MultiFab& fluxConvect,
                       amrex::MultiFab& fluxViscous,
-                      amrex::MultiFab& fluxPrsGrad,
-                      int const& n_cell);
+                      amrex::MultiFab& fluxPrsGrad);
 
 // +++++++++++++++++++++++++ Subroutine | Kim and Moine's RHS Term  ++++++++++++++++++++++++
 void righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
-                          amrex::MultiFab& fluxTotal,
-                          int const& n_cell);
+                          amrex::MultiFab& fluxTotal);
 
 // +++++++++++++++++++++++++ Subroutine | Kim and Moine's Runge-Kutta ++++++++++++++++++++++++
 void momentum_km_runge_kutta ( amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,

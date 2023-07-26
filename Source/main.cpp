@@ -45,6 +45,7 @@ void main_main ()
     // AMREX_SPACEDIM: number of dimensions
     // These are stock params for AMReX
     int n_cell, max_grid_size, nsteps, plot_int;
+    int IterNum;
 
     // Porting extra params from Julian code
     Real ren, vis;
@@ -68,6 +69,8 @@ void main_main ()
         //   a square (or cubic) domain.
         pp.get("n_cell", n_cell);
         amrex::Print() << "INFO| number of cells in each side of the domain: " << n_cell << "\n";
+
+        pp.get("IterNum", IterNum);
 
         // The domain is broken into boxes of size max_grid_size
         pp.get("max_grid_size", max_grid_size);
@@ -166,9 +169,7 @@ void main_main ()
     // Half-node fluxes contribute to implementation of QUICK scheme in calculating the convective flux
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN1;
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN2;
-//#if (AMREX_SPACEDIM > 2)
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN3;
-//#endif
     // The physical quantities living at the face center need to be blowed out one once in the respective direction
     for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
     {
@@ -183,19 +184,8 @@ void main_main ()
         rhs[dir].define(edge_ba, dm, 1, 0);
 
         fluxHalfN1[dir].define(edge_ba, dm, 1, 0);
-        // fluxHalfN1[0] is flux_xcont_xface
-        // fluxHalfN1[1] is flux_xcont_yface
-        // fluxHalfN1[2] is flux_xcont_zface
         fluxHalfN2[dir].define(edge_ba, dm, 1, 0);
-        // fluxHalfN2[0] is flux_ycont_xface
-        // fluxHalfN2[1] is flux_ycont_yface
-        // fluxHalfN2[2] is flux_ycont_zface
-//#if (AMREX_SPACEDIM > 2)
         fluxHalfN3[dir].define(edge_ba, dm, 1, 0);
-        // fluxHalfN3[0] is flux_zcont_xface
-        // fluxHalfN3[1] is flux_zcont_yface
-        // fluxHalfN3[2] is flux_zcont_zface
-//#endif
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
@@ -253,7 +243,7 @@ void main_main ()
     // How partial periodic boundary conditions can be deployed?
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
 
-    Real cfl = 0.9;
+    Real cfl = 0.01;
     Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
                                + 1./(dx[1]*dx[1]),
                                + 1./(dx[2]*dx[2]) );
@@ -299,7 +289,7 @@ void main_main ()
     amrex::Print() << "======================= ADVANCING STEP  ======================= \n";
     // Setup stopping criteria
     Real Tol = 1.0e-8;
-    int IterNum = 10;
+    // int IterNum = 10;
 
     // Setup Runge-Kutta scheme coefficients
 int RungeKuttaOrder = 4;
@@ -311,22 +301,18 @@ Vector<Real> rk(RungeKuttaOrder, 0);
         rk[3] = Real(1.0);
     }
 
-    VisMF::Write(userCtx, "a_userCtx");
+    // VisMF::Write(userCtx, "a_userCtx");
 
     //for (int n = 1; n <= 1; ++n)
     for (int n = 1; n <= nsteps; ++n)
     {
-        MultiFab::Copy(userCtxPrev, userCtx, 0, 0, 1, 0);
-        MultiFab::Copy(userCtxPrev, userCtx, 1, 1, 1, 0);
+        velCart.FillBoundary(geom.periodicity());
+        userCtx.FillBoundary(geom.periodicity());
+        manual_fill_ghost_cells(velCart, userCtx, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        cart2cont(velCart, velCont);
 
-        MultiFab::Copy(velCartPrev, velCart, 0, 0, AMREX_SPACEDIM, 0);
-
-        velCartPrev.FillBoundary(geom.periodicity());
-        userCtxPrev.FillBoundary(geom.periodicity());
-
-        manual_fill_ghost_cells(velCartPrev, userCtxPrev, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
-        cart2cont(velCartPrev, velCont);
+        MultiFab::Copy(userCtxPrev, userCtx, 0, 0, Ncomp, Nghost);
+        MultiFab::Copy(velCartPrev, velCart, 0, 0, AMREX_SPACEDIM, Nghost);
 
         // Momentum solver
         // momentum_km_runge_kutta(rhs, fluxTotal,
@@ -347,31 +333,35 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             countIter++;
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << "\n";
 
-            copy_contravariant_velocity(velCont, velContPrev);
+            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
+            {
+                MultiFab::Copy(velContPrev[comp], velCont[comp], 0, 0, 1, 0);
+            }
+            // copy_contravariant_velocity(velCont, velContPrev);
 
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
                 // Calculate Convective terms
-                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCartPrev, velContPrev, geom, n_cell);
-                fluxConvect.FillBoundary(geom.periodicity());
-                enforce_boundary_conditions(fluxConvect, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velCont, phy_bc_lo, phy_bc_hi, geom, n_cell);
+                // if (plot_int > 0 ) {
+                //     const std::string& plt_check = amrex::Concatenate("pltConvectiveFlux", n, 5);
+                //     WriteSingleLevelPlotfile(plt_check, fluxConvect, {"convective_fluxx", "convective_fluxy"}, geom, time, n);
+                // }
+                // Abort("Got here!");
 
                 // Calculate Viscous terms
-                viscous_flux_calc(fluxViscous, velCartPrev, geom, ren, n_cell);
-                fluxViscous.FillBoundary(geom.periodicity());
-                enforce_boundary_conditions(fluxViscous, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                viscous_flux_calc(fluxViscous, velCart, geom, ren);
 
                 // Calculate Pressure Gradient terms
-                pressure_gradient_calc(fluxPrsGrad, userCtxPrev, geom, n_cell);
-                fluxPrsGrad.FillBoundary(geom.periodicity());
-                enforce_boundary_conditions(fluxPrsGrad, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
 
                 // Calculate Total Flux
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, n_cell);
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
+
+                // Calculate the Righ Hand Side
                 fluxTotal.FillBoundary(geom.periodicity());
                 enforce_boundary_conditions(fluxTotal, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-                // Calculate the Righ Hand Side
-                righthand_side_calc(rhs, fluxTotal, n_cell);
+                righthand_side_calc(rhs, fluxTotal);
 
                 // Update new contravariant velocities
                 for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
@@ -385,11 +375,6 @@ Vector<Real> rk(RungeKuttaOrder, 0);
                     auto const& ycont = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
                     auto const& zcont = velCont[2].array(mfi);
-#endif
-                    auto const& xprev = velContPrev[0].array(mfi);
-                    auto const& yprev = velContPrev[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const& zprev = velContPrev[2].array(mfi);
 #endif
                     auto const& xdiff = velContDiff[0].array(mfi);
                     auto const& ydiff = velContDiff[1].array(mfi);
@@ -449,12 +434,17 @@ Vector<Real> rk(RungeKuttaOrder, 0);
                 }
             }
             if (plot_int > 0 ) {
-                const std::string& plt_conv_flux = amrex::Concatenate("pltConvectFlux", n, 5);
-                WriteSingleLevelPlotfile(plt_conv_flux, fluxConvect, {"conv_fluxx", "conv_fluxy"}, geom, time, n);
-                const std::string& plt_visc_flux = amrex::Concatenate("pltViscousFlux", n, 5);
-                WriteSingleLevelPlotfile(plt_visc_flux, fluxViscous, {"visc_fluxx", "visc_fluxy"}, geom, time, n);
-                const std::string& plt_pres_grad = amrex::Concatenate("pltPressureGrad", n, 5);
-                WriteSingleLevelPlotfile(plt_pres_grad, fluxPrsGrad, {"pres_gradx", "pres_grady"}, geom, time, n);
+                MultiFab plt(ba, dm, 3*AMREX_SPACEDIM, 0);
+
+                MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
+                MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
+                MultiFab::Copy(plt, fluxViscous, 0, 2, 1, 0);
+                MultiFab::Copy(plt, fluxViscous, 1, 3, 1, 0);
+                MultiFab::Copy(plt, fluxPrsGrad, 0, 4, 1, 0);
+                MultiFab::Copy(plt, fluxPrsGrad, 1, 5, 1, 0);
+
+                const std::string& plt_flux = amrex::Concatenate("pltFlux", n, 5);
+                WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, n);
             }
             // Update contravariant velocity difference
             for ( MFIter mfi(velContDiff[0]); mfi.isValid(); ++mfi )
@@ -505,7 +495,10 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             Real zerror = velContDiff[2].norm2(0, geom.periodicity());
             normError = std::max(normError, zerror);
 #endif
+            amrex::Print() << "DEBUGGING| intermediate convergence: " << normError << "\n";
         }
+        cart2cont(velCart, velCont);
+
         amrex::Print() << "SOLVING| Momentum | ending after " << countIter << " iteration(s) with convergence: " << normError << "\n";
 
         // PSEUDO-CODE: POISSON SOLVER HERE
@@ -524,9 +517,6 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             const std::string& plt_velfield_file = amrex::Concatenate("pltVelocity", n, 5);
             WriteSingleLevelPlotfile(plt_pressure_file, userCtx, {"pressure", "phi"}, geom, time, n);
             WriteSingleLevelPlotfile(plt_velfield_file, velCart, {"U", "V"}, geom, time, n);
-            // Extra
-            const std::string& plt_totaflux_field = amrex::Concatenate("pltTotalFlux", n, 5);
-            WriteSingleLevelPlotfile(plt_totaflux_field, fluxTotal, {"fluxx", "fluxy"}, geom, time, n);
         }
     }
 

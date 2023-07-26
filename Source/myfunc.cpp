@@ -5,6 +5,7 @@
 
 #include "myfunc.H"
 #include "mykernel.H"
+#include "myflux.H"
 
 using namespace amrex;
 
@@ -98,13 +99,15 @@ void init (amrex::MultiFab& userCtx,
 
 // ==================================== MODULE | MOMENTUM ====================================
 void convective_flux_calc ( MultiFab& fluxConvect,
-                           Array<MultiFab, AMREX_SPACEDIM>& fluxHalfN1,
-                           Array<MultiFab, AMREX_SPACEDIM>& fluxHalfN2,
-                           Array<MultiFab, AMREX_SPACEDIM>& fluxHalfN3,
-                           MultiFab& velCart,
-                           Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                           Geometry const& geom,
-                           int const& n_cell )
+                            Array<MultiFab, AMREX_SPACEDIM>& fluxHalfN1,
+                            Array<MultiFab, AMREX_SPACEDIM>& fluxHalfN2,
+                            Array<MultiFab, AMREX_SPACEDIM>& fluxHalfN3,
+                            MultiFab& velCart,
+                            Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                            Vector<int> const& phy_bc_lo,
+                            Vector<int> const& phy_bc_hi,
+                            Geometry const& geom,
+                            int const& n_cell )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
@@ -135,31 +138,50 @@ void convective_flux_calc ( MultiFab& fluxConvect,
         auto const& fluxz_ycont = fluxHalfN3[1].array(mfi);
 
 #if (AMREX_SPACEDIM > 2)
-        auto const& fluxx_xcont = fluxHalfN1[2].array(mfi);
-        auto const& fluxy_ycont = fluxHalfN2[2].array(mfi);
+        auto const& fluxx_zcont = fluxHalfN1[2].array(mfi);
+        auto const& fluxy_zcont = fluxHalfN2[2].array(mfi);
         auto const& fluxz_zcont = fluxHalfN3[2].array(mfi);
 #endif
         auto const& vcart = velCart.array(mfi);
 
-        // amrex::Print() << "===================== x-contributive terms ==================== \n";
+        auto const& west_wall_bcs = phy_bc_lo[0]; // west wall
+        auto const& east_wall_bcs = phy_bc_hi[0]; // east wall
+
+        auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
+        auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
+#if (AMREX_SPACEDIM > 2)
+        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
+#endif
+
         amrex::ParallelFor(xbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            compute_half_node_convective_flux_x_contrib(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, qkcoef, n_cell);
+            if ( west_wall_bcs==0 && east_wall_bcs==0 ) {
+                compute_halfnode_convective_flux_x_contrib_periodic(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, qkcoef);
+            } else {
+                compute_halfnode_convective_flux_x_contrib_wall(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, qkcoef, n_cell);
+            }
         });
 
-        // amrex::Print() << "===================== y-contributive terms ==================== \n";
         amrex::ParallelFor(ybx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            compute_half_node_convective_flux_y_contrib(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, qkcoef, n_cell);
+            if ( south_wall_bcs==0 && north_wall_bcs==0 ) {
+                compute_halfnode_convective_flux_y_contrib_periodic(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, qkcoef);
+            } else {
+                compute_halfnode_convective_flux_y_contrib_wall(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, qkcoef, n_cell);
+            }
         });
 #if (AMREX_SPACEDIM > 2)
-        amrex::Print() << "===================== z-contributive terms ==================== \n";
-        amrex::ParallelFor(ybx,
+        amrex::ParallelFor(zbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            compute_half_node_convective_flux_z_contrib(i, j, k, fluxx_zcont, fluxy_zcont, fluxz_zcont, zcont, vcart, qkcoef, n_cell);
+            if ( front_wall_bcs==0 && back_wall_bcs==0 ) {
+                compute_halfnode_convective_flux_z_contrib_periodic(i, j, k, fluxx_zcont, fluxy_zcont, fluxz_zcont, zcont, vcart, qkcoef);
+            } else {
+                compute_halfnode_convective_flux_z_contrib_wall(i, j, k, fluxx_zcont, fluxy_zcont, fluxz_zcont, zcont, vcart, qkcoef, n_cell);
+            }
         });
 #endif
     }
@@ -180,8 +202,8 @@ void convective_flux_calc ( MultiFab& fluxConvect,
         auto const& fluxz_ycont = fluxHalfN3[1].array(mfi);
 
 #if (AMREX_SPACEDIM > 2)
-        auto const& fluxx_xcont = fluxHalfN1[2].array(mfi);
-        auto const& fluxy_ycont = fluxHalfN2[2].array(mfi);
+        auto const& fluxx_zcont = fluxHalfN1[2].array(mfi);
+        auto const& fluxy_zcont = fluxHalfN2[2].array(mfi);
         auto const& fluxz_zcont = fluxHalfN3[2].array(mfi);
 #endif
         amrex::ParallelFor(vbx,
@@ -210,8 +232,7 @@ void convective_flux_calc ( MultiFab& fluxConvect,
 void viscous_flux_calc ( MultiFab& fluxViscous,
                          MultiFab& velCart,
                          Geometry const& geom,
-                         Real const& ren,
-                         int const& n_cell )
+                         Real const& ren )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
@@ -243,8 +264,7 @@ void viscous_flux_calc ( MultiFab& fluxViscous,
 
 void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
                               MultiFab& userCtx,
-                              Geometry const& geom,
-                              int const& n_cell )
+                              Geometry const& geom )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
@@ -273,8 +293,7 @@ void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
 void total_flux_calc ( MultiFab& fluxTotal,
                        MultiFab& fluxConvect,
                        MultiFab& fluxViscous,
-                       MultiFab& fluxPrsGrad,
-                       int const& n_cell )
+                       MultiFab& fluxPrsGrad )
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -298,8 +317,7 @@ void total_flux_calc ( MultiFab& fluxTotal,
 }
 
 void righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
-                           MultiFab& fluxTotal,
-                           int const& n_cell )
+                           MultiFab& fluxTotal )
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -340,6 +358,7 @@ void righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 // Dathi's Module
 
 // ==================================== MODULE | ADVANCE =====================================
+/*
 void advance (MultiFab& phi_old,
               MultiFab& phi_new,
               Array<MultiFab, AMREX_SPACEDIM>& flux,
@@ -428,7 +447,7 @@ void advance (MultiFab& phi_old,
         });
     }
 }
-
+*/
 
 // ==================================== UTILITY | CONVERSION  ================================
 void copy_contravariant_velocity (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
@@ -543,7 +562,7 @@ void manual_fill_ghost_cells (MultiFab& velCart,
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                filling_ghost_east(i, j, k, n_cell, west_wall_bcs, vcart, ctx);
+                filling_ghost_east(i, j, k, n_cell, east_wall_bcs, vcart, ctx);
             });
         }
 
@@ -616,7 +635,7 @@ void enforce_boundary_conditions (MultiFab& inputFlux,
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                enforcing_bcs_west(i, j, k, n_cell, west_wall_bcs, flux);
+                enforcing_flux_bcs_west(i, j, k, n_cell, west_wall_bcs, flux);
             });
         }
 
@@ -626,7 +645,7 @@ void enforce_boundary_conditions (MultiFab& inputFlux,
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                enforcing_bcs_east(i, j, k, n_cell, west_wall_bcs, flux);
+                enforcing_flux_bcs_east(i, j, k, n_cell, east_wall_bcs, flux);
             });
         }
 
@@ -636,7 +655,7 @@ void enforce_boundary_conditions (MultiFab& inputFlux,
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                enforcing_bcs_south(i, j, k, n_cell, south_wall_bcs, flux);
+                enforcing_flux_bcs_south(i, j, k, n_cell, south_wall_bcs, flux);
             });
         }
 
@@ -646,7 +665,7 @@ void enforce_boundary_conditions (MultiFab& inputFlux,
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                enforcing_bcs_north(i, j, k, n_cell, north_wall_bcs, flux);
+                enforcing_flux_bcs_north(i, j, k, n_cell, north_wall_bcs, flux);
             });
         }
 #if (AMREX_SPACEDIM > 2)
@@ -656,7 +675,7 @@ void enforce_boundary_conditions (MultiFab& inputFlux,
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                enforcing_bcs_front(i, j, k, n_cell, front_wall_bcs, flux);
+                enforcing_flux_bcs_front(i, j, k, n_cell, front_wall_bcs, flux);
             });
         }
 
@@ -666,7 +685,7 @@ void enforce_boundary_conditions (MultiFab& inputFlux,
             amrex::ParallelFor(gbx,
             [=] AMREX_GPU_DEVICE (int i, int j, int k)
             {
-                enforcing_bcs_back(i, j, k, n_cell, back_wall_bcs, flux);
+                enforcing_flux_bcs_back(i, j, k, n_cell, back_wall_bcs, flux);
             });
         }
 #endif

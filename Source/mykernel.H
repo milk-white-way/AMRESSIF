@@ -67,222 +67,13 @@ void init_contravariant_velocity_difference (int i, int j, int k,
 }
 
 // ============================== UTILITY | DEBUGGING ==============================
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void print_box (int const& box_id)
 {
     amrex::Print() << "======================== Entering Box " << box_id << " ======================= \n";
 }
 
 // ==================================== MODULE | ADVANCE =====================================
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void compute_half_node_convective_flux_x_contrib (int i, int j, int k,
-                                                  amrex::Array4<amrex::Real> const& fluxx_xcont,
-                                                  amrex::Array4<amrex::Real> const& fluxy_xcont,
-                                                  amrex::Array4<amrex::Real> const& fluxz_xcont,
-                                                  amrex::Array4<amrex::Real> const& xcont,
-                                                  amrex::Array4<amrex::Real> const& vcart,
-                                                  amrex::Real const& coef,
-                                                  int const& n_cell)
-{
-    using amrex::Real;
-
-    // amrex::Print() << "COMPUTING| Half-node Flux | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
-    //Contribution of x-directional terms:
-    if ( xcont(i, j, k) < 0 ) { // down stream
-        if ( i==0 ) { // west wall (if any)
-            fluxx_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+2)-1, j, k, 0) - Real(2.0) * vcart((i+1)-1, j, k, 0) + Real(3.0) * vcart((i)-1, j, k, 0) ) + vcart((i+1)-1, j, k, 0) );
-
-            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+2)-1, j, k, 1) - Real(2.0) * vcart((i+1)-1, j, k, 1) + Real(3.0) * vcart((i)-1, j, k, 1) ) + vcart((i+1)-1, j, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+2)-1, j, k, 2) - Real(2.0) * vcart((i+1)-1, j, k, 2) + Real(3.0) * vcart((i)-1, j, k, 2) ) + vcart((i+1)-1, j, k, 2) );
-#endif
-        } else if ( i==(n_cell-1) ) { // east wall (if any)
-            fluxx_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+1)-1, j, k, 0) - Real(2.0) * vcart((i+1)-1, j, k, 0) + Real(3.0) * vcart((i)-1, j, k, 0) ) + vcart((i+1)-1, j, k, 0) );
-
-            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+1)-1, j, k, 1) - Real(2.0) * vcart((i+1)-1, j, k, 1) + Real(3.0) * vcart((i)-1, j, k, 1) ) + vcart((i+1)-1, j, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+1)-1, j, k, 2) - Real(2.0) * vcart((i+1)-1, j, k, 2) + Real(3.0) * vcart((i)-1, j, k, 2) ) + vcart((i+1)-1, j, k, 2) );
-#endif
-        } else { // inner domain
-            fluxx_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+2)-1, j, k, 0) - Real(2.0) * vcart((i+1)-1, j, k, 0) + Real(3.0) * vcart((i)-1, j, k, 0) ) + vcart((i+1)-1, j, k, 0) );
-
-            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+2)-1, j, k, 1) - Real(2.0) * vcart((i+1)-1, j, k, 1) + Real(3.0) * vcart((i)-1, j, k, 1) ) + vcart((i+1)-1, j, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i+2)-1, j, k, 2) - Real(2.0) * vcart((i+1)-1, j, k, 2) + Real(3.0) * vcart((i)-1, j, k, 2) ) + vcart((i+1)-1, j, k, 2) );
-#endif
-        }
-    } else if ( xcont(i, j, k) > 0) { // up stream
-        if ( i==0 ) { // west wall (if any)
-            fluxx_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i)-1, j, k, 0) - Real(2.0) * vcart((i)-1, j, k, 0) + Real(3.0) * vcart((i+1)-1, j, k, 0) ) + vcart((i)-1, j, k, 0) );
-
-            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i)-1, j, k, 1) - Real(2.0) * vcart((i)-1, j, k, 1) + Real(3.0) * vcart((i+1)-1, j, k, 1) ) + vcart((i)-1, j, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i)-1, j, k, 2) - Real(2.0) * vcart((i)-1, j, k, 2) + Real(3.0) * vcart((i+1)-1, j, k, 2) ) + vcart((i)-1, j, k, 2) );
-#endif
-        } else if ( i==(n_cell-1) ) { // east wall (if any)
-            fluxx_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i-1)-1, j, k, 0) - Real(2.0) * vcart((i)-1, j, k, 0) + Real(3.0) * vcart((i+1)-1, j, k, 0) ) + vcart((i)-1, j, k, 0) );
-
-            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i-1)-1, j, k, 1) - Real(2.0) * vcart((i)-1, j, k, 1) + Real(3.0) * vcart((i+1)-1, j, k, 1) ) + vcart((i)-1, j, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i-1)-1, j, k, 1) - Real(2.0) * vcart((i)-1, j, k, 1) + Real(3.0) * vcart((i+1)-1, j, k, 1) ) + vcart((i)-1, j, k, 1) );
-#endif
-        } else { // inner domain
-            fluxx_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i-1)-1, j, k, 0) - Real(2.0) * vcart((i)-1, j, k, 0) + Real(3.0) * vcart((i+1)-1, j, k, 0) ) + vcart((i)-1, j, k, 0) );
-
-            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i-1)-1, j, k, 1) - Real(2.0) * vcart((i)-1, j, k, 1) + Real(3.0) * vcart((i+1)-1, j, k, 1) ) + vcart((i)-1, j, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_xcont(i, j, k) = xcont(i, j, k) * ( coef * ( - vcart((i-1)-1, j, k, 2) - Real(2.0) * vcart((i)-1, j, k, 2) + Real(3.0) * vcart((i+1)-1, j, k, 2) ) + vcart((i)-1, j, k, 2) );
-#endif
-        }
-    } else { // zero
-        fluxx_xcont(i, j, k) = Real(0.0);
-        fluxy_xcont(i, j, k) = Real(0.0);
-        fluxz_xcont(i, j, k) = Real(0.0);
-    }
-}
-
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void compute_half_node_convective_flux_y_contrib (int i, int j, int k,
-                                                  amrex::Array4<amrex::Real> const& fluxx_ycont,
-                                                  amrex::Array4<amrex::Real> const& fluxy_ycont,
-                                                  amrex::Array4<amrex::Real> const& fluxz_ycont,
-                                                  amrex::Array4<amrex::Real> const& ycont,
-                                                  amrex::Array4<amrex::Real> const& vcart,
-                                                  amrex::Real const& coef,
-                                                  int const& n_cell)
-{
-    using amrex::Real;
-
-    // amrex::Print() << "COMPUTING| Half-node Flux | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
-    // Contribution of y-directional terms: flux_ycont_xface, flux_ycont_yface
-    if ( ycont(i, j, k) < 0 ) { // down stream
-        if ( j==0 ) { // south wall (if any)
-            fluxx_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+2)-1, k, 0) - Real(2.0) * vcart(i, (j+1)-1, k, 0) + Real(3.0) * vcart(i, (j)-1, k, 0) ) + vcart(i, (j+1)-1, k, 0) );
-
-            fluxy_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+2)-1, k, 1) - Real(2.0) * vcart(i, (j+1)-1, k, 1) + Real(3.0) * vcart(i, (j)-1, k, 1) ) + vcart(i, (j)-1, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+2)-1, k, 2) - Real(2.0) * vcart(i, (j+1)-1, k, 2) + Real(3.0) * vcart(i, (j)-1, k, 2) ) + vcart(i, (j)-1, k, 2) );
-#endif
-        } else if ( j==(n_cell-1) ) { // north wall (if any)
-            fluxx_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+1)-1, k, 0) - Real(2.0) * vcart(i, (j+1)-1, k, 0) + Real(3.0) * vcart(i, (j)-1, k, 0) ) + vcart(i, (j+1)-1, k, 0) );
-
-            fluxy_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+1)-1, k, 1) - Real(2.0) * vcart(i, (j+1)-1, k, 1) + Real(3.0) * vcart(i, (j)-1, k, 1) ) + vcart(i, (j+1)-1, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+1)-1, k, 2) - Real(2.0) * vcart(i, (j+1)-1, k, 2) + Real(3.0) * vcart(i, (j)-1, k, 2) ) + vcart(i, (j+1)-1, k, 2) );
-#endif
-        } else { // inner domain
-            fluxx_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+2)-1, k, 0) - Real(2.0) * vcart(i, (j+1)-1, k, 0) + Real(3.0) * vcart(i, (j)-1, k, 0) ) + vcart(i, (j+1)-1, k, 0) );
-
-            fluxy_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+2)-1, k, 1) - Real(2.0) * vcart(i, (j+1)-1, k, 1) + Real(3.0) * vcart(i, (j)-1, k, 1) ) + vcart(i, (j+1)-1, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j+2)-1, k, 2) - Real(2.0) * vcart(i, (j+1)-1, k, 2) + Real(3.0) * vcart(i, (j)-1, k, 2) ) + vcart(i, (j+1)-1, k, 2) );
-#endif
-        }
-    } else if ( ycont(i, j, k) > 0) { // up stream
-        if ( j==0 ) { // south wall (if any)
-            fluxx_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j)-1, k, 0) - Real(2.0) * vcart(i, (j)-1, k, 0) + Real(3.0) * vcart(i, (j+1)-1, k, 0) ) + vcart(i, (j)-1, k, 0) );
-
-            fluxy_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j)-1, k, 1) - Real(2.0) * vcart(i, (j)-1, k, 1) + Real(3.0) * vcart(i, (j+1)-1, k, 1) ) + vcart(i, (j)-1, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j)-1, k, 2) - Real(2.0) * vcart(i, (j)-1, k, 2) + Real(3.0) * vcart(i, (j+1)-1, k, 2) ) + vcart(i, (j)-1, k, 2) );
-#endif
-        } else if ( j==(n_cell-1) ) { // north wall (if any)
-            fluxx_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j-1)-1, k, 0) - Real(2.0) * vcart(i, (j)-1, k, 0) + Real(3.0) * vcart(i, (j+1)-1, k, 0) ) + vcart(i, (j)-1, k, 0) );
-
-            fluxy_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j-1)-1, k, 1) - Real(2.0) * vcart(i, (j)-1, k, 1) + Real(3.0) * vcart(i, (j+1)-1, k, 1) ) + vcart(i, (j)-1, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j-1)-1, k, 2) - Real(2.0) * vcart(i, (j)-1, k, 2) + Real(3.0) * vcart(i, (j+1)-1, k, 2) ) + vcart(i, (j)-1, k, 2) );
-#endif
-        } else { // inner domain
-            fluxx_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j-1)-1, k, 0) - Real(2.0) * vcart(i, (j)-1, k, 0) + Real(3.0) * vcart(i, (j+1)-1, k, 0) ) + vcart(i, (j)-1, k, 0) );
-
-            fluxy_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j-1)-1, k, 1) - Real(2.0) * vcart(i, (j)-1, k, 1) + Real(3.0) * vcart(i, (j+1)-1, k, 1) ) + vcart(i, (j)-1, k, 1) );
-
-#if (AMREX_SPACEDIM > 2)
-            fluxz_ycont(i, j, k) = ycont(i, j, k) * ( coef * ( - vcart(i, (j-1)-1, k, 2) - Real(2.0) * vcart(i, (j)-1, k, 2) + Real(3.0) * vcart(i, (j+1)-1, k, 2) ) + vcart(i, (j)-1, k, 2) );
-#endif
-        }
-    } else { // zero
-        fluxx_ycont(i, j, k) = Real(0.0);
-        fluxy_ycont(i, j, k) = Real(0.0);
-        fluxz_ycont(i, j, k) = Real(0.0);
-    }
-}
-
-#if (AMREX_SPACEDIM > 2)
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void compute_half_node_convective_flux_z_contrib (int i, int j, int k,
-                                                  amrex::Array4<amrex::Real> const& fluxx_zcont,
-                                                  amrex::Array4<amrex::Real> const& fluxy_zcont,
-                                                  amrex::Array4<amrex::Real> const& fluxz_zcont,
-                                                  amrex::Array4<amrex::Real> const& zcont,
-                                                  amrex::Array4<amrex::Real> const& vcart,
-                                                  amrex::Real const& coef,
-                                                   wwint const& n_cell)
-{
-    using amrex::Real;
-
-    amrex::Print() << "COMPUTING| Y-Contributing Half-node Flux | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
-    // Contribution of z-directional terms:
-    fluxx_zcont(i, j, k) = Real(0.0);
-    fluxy_zcont(i, j, k) = real(0.0);
-    fluxz_zcont(i, j, k) = real(0.0);
-}
-#endif
-
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void compute_total_flux (int i, int j, int k,
-                         amrex::Array4<amrex::Real> const& total_flux,
-                         amrex::Array4<amrex::Real> const& conv_flux,
-                         amrex::Array4<amrex::Real> const& visc_flux,
-                         amrex::Array4<amrex::Real> const& prsgrad_flux)
-{
-    for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
-    {
-        total_flux(i, j, k, dir) = conv_flux(i, j, k, dir) + visc_flux(i, j, k, dir) + prsgrad_flux(i, j, k, dir);
-        //total_flux(i, j, k, dir) = visc_flux(i, j, k, dir);
-    }
-}
-
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void compute_flux_x (int i, int j, int k,
-                     amrex::Array4<amrex::Real> const& fluxx,
-                     amrex::Array4<amrex::Real const> const& phi, amrex::Real dxinv)
-{
-
-    // Pressure flux in x-axis
-    fluxx(i,j,k) = (phi(i,j,k)-phi(i-1,j,k)) * dxinv;
-}
-
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void compute_flux_y (int i, int j, int k,
-                     amrex::Array4<amrex::Real> const& fluxy,
-                     amrex::Array4<amrex::Real const> const& phi, amrex::Real dyinv)
-{
-    // Pressure flux in y-axis
-    fluxy(i,j,k) = (phi(i,j,k)-phi(i,j-1,k)) * dyinv;
-}
-
-#if (AMREX_SPACEDIM > 2)
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void compute_flux_z (int i, int j, int k,
-                     amrex::Array4<amrex::Real> const& fluxz,
-                     amrex::Array4<amrex::Real const> const& phi, amrex::Real dzinv)
-{
-    fluxz(i,j,k) = (phi(i,j,k)-phi(i,j,k-1)) * dzinv;
-}
-#endif
-
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void update_phi (int i, int j, int k,
                  amrex::Array4<amrex::Real const> const& phiold,
@@ -374,8 +165,8 @@ void filling_ghost_west (int i, int j, int k, int n_cell, int bcs,
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void enforcing_bcs_west (int i, int j, int k, int n_cell, int bcs,
-                         amrex::Array4<amrex::Real> const& vcart)
+void enforcing_flux_bcs_west (int i, int j, int k, int n_cell, int bcs,
+                              amrex::Array4<amrex::Real> const& input_flux)
 {
     using amrex::Real;
 
@@ -385,20 +176,12 @@ void enforcing_bcs_west (int i, int j, int k, int n_cell, int bcs,
         if ( j == i || j == (n_cell - i) ) {
             for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
             {
-                vcart(i, j, k, dir) = Real(0.0);
+                input_flux(i, j, k, dir) = Real(0.0);
             }
         } else {
-            if ( bcs == -1 ) {
-                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
-                {
-                    vcart(i, j, k, dir) = - vcart(-i-1, j, k, dir);
-                }
-            } else if ( bcs == 1 ) {
-                vcart(i, j, k, 0) = - vcart(-i-1, j, k, 0);
-                vcart(i, j, k, 1) = vcart(-i-1, j, k, 1);
-#if (AMREX_SPACEDIM > 2)
-                vcart(i, j, k, 2) = vcart(-i-1, j, k, 2);
-#endif
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                input_flux(i, j, k, dir) = - input_flux(-i-1, j, k, dir);
             }
         }
     }
@@ -440,7 +223,7 @@ void filling_ghost_east (int i, int j, int k, int n_cell, int bcs,
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void enforcing_bcs_east (int i, int j, int k, int n_cell, int bcs,
+void enforcing_flux_bcs_east (int i, int j, int k, int n_cell, int bcs,
                          amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
@@ -454,17 +237,9 @@ void enforcing_bcs_east (int i, int j, int k, int n_cell, int bcs,
                 vcart(i, j, k, dir) = Real(0.0);
             }
         } else {
-            if ( bcs == -1 ) {
-                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
-                {
-                    vcart(i, j, k, dir) = - vcart(( (n_cell-i) + (n_cell-1) ), j, k, dir);
-                }
-            } else if ( bcs == 1 ) {
-                vcart(i, j, k, 0) = - vcart(( (n_cell-i) + (n_cell-1) ), j, k, 0);
-                vcart(i, j, k, 1) = vcart(( (n_cell-i) + (n_cell-1) ), j, k, 1);
-#if (AMREX_SPACEDIM > 2)
-                vcart(i, j, k, 2) = vcart(( (n_cell-i) + (n_cell-1) ), j, k, 2);
-#endif
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = - vcart(( (n_cell-i) + (n_cell-1) ), j, k, dir);
             }
         }
     }
@@ -506,7 +281,7 @@ void filling_ghost_south (int i, int j, int k, int n_cell, int bcs,
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void enforcing_bcs_south (int i, int j, int k, int n_cell, int bcs,
+void enforcing_flux_bcs_south (int i, int j, int k, int n_cell, int bcs,
                           amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
@@ -520,17 +295,9 @@ void enforcing_bcs_south (int i, int j, int k, int n_cell, int bcs,
                 vcart(i, j, k, dir) = Real(0.0);
             }
         } else {
-            if ( bcs == -1 ) {
-                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
-                {
-                    vcart(i, j, k, dir) = - vcart(i, -j-1, k, dir);
-                }
-            } else if ( bcs == 1 ) {
-                vcart(i, j, k, 0) = vcart(i, -j-1, k, 0);
-                vcart(i, j, k, 1) = - vcart(i, -j-1, k, 1);
-#if (AMREX_SPACEDIM > 2)
-                vcart(i, j, k, 2) = vcart(i, -j-1, k, 2);
-#endif
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = - vcart(i, -j-1, k, dir);
             }
         }
     }
@@ -572,7 +339,7 @@ void filling_ghost_north (int i, int j, int k, int n_cell, int bcs,
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void enforcing_bcs_north (int i, int j, int k, int n_cell, int bcs,
+void enforcing_flux_bcs_north (int i, int j, int k, int n_cell, int bcs,
                           amrex::Array4<amrex::Real> const& vcart)
 {
     using amrex::Real;
@@ -586,17 +353,9 @@ void enforcing_bcs_north (int i, int j, int k, int n_cell, int bcs,
                 vcart(i, j, k, dir) = Real(0.0);
             }
         } else {
-            if ( bcs == -1 ) {
-                for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
-                {
-                    vcart(i, j, k, dir) = - vcart(i, ( (n_cell-j) + (n_cell-1) ), k, dir);
-                }
-            } else if ( bcs == 1 ) {
-                vcart(i, j, k, 0) = vcart(i, ( (n_cell-j) + (n_cell-1) ), k, 0);
-                vcart(i, j, k, 1) = - vcart(i, ( (n_cell-j) + (n_cell-1) ), k, 1);
-#if (AMREX_SPACEDIM > 2)
-                vcart(i, j, k, 2) = vcart(i, ( (n_cell-j) + (n_cell-1) ), k, 2);
-#endif
+            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                vcart(i, j, k, dir) = - vcart(i, ( (n_cell-j) + (n_cell-1) ), k, dir);
             }
         }
     }
