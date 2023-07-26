@@ -1,12 +1,15 @@
-#include "./fn_init.H"
-
 #include <AMReX_MultiFabUtil.H>
 
-void init(MultiFab& userCtx,
-          MultiFab& velCart,
-          MultiFab& velCartDiff,
-          Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
-          Geometry const& geom)
+#include "fn_init.H"
+#include "kn_init.H"
+
+using namespace amrex;
+// ================================= MODULE | INITIALIZATION =================================
+void init (MultiFab& userCtx,
+           MultiFab& velCart,
+           MultiFab& velCartDiff,
+           Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
+           Geometry const& geom)
 {
 
     GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
@@ -19,17 +22,44 @@ void init(MultiFab& userCtx,
     {
         const Box& vbx = mfi.validbox();
         auto const& ctx = userCtx.array(mfi);
-        auto const& vcart = velCart.array(mfi);
-        auto const& vcart_diff = velCartDiff.array(mfi);
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE(int i, int j, int k)
         {
             init_userCtx(i, j, k, ctx, dx, prob_lo);
+        });
+    }
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& vcart = velCart.array(mfi);
+        amrex::ParallelFor(vbx,
+        [=] AMREX_GPU_DEVICE(int i, int j, int k)
+        {
             init_cartesian_velocity(i, j, k, vcart, dx, prob_lo);
+        });
+    }
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(velCartDiff); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& vcart_diff = velCartDiff.array(mfi);
+        amrex::ParallelFor(vbx,
+        [=] AMREX_GPU_DEVICE(int i, int j, int k)
+        {
             init_cartesian_velocity_difference(i, j, k, vcart_diff);
         });
     }
 
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
     for ( MFIter mfi(velContDiff[0]); mfi.isValid(); ++mfi )
     {
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));

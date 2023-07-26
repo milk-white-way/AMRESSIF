@@ -5,16 +5,36 @@ INFO| number of cells in each side of the domain: 128
 INFO| periodicity in 0th dimension: 1
 INFO| periodicity in 1th dimension: 1
 INFO| number of dimensions: 2
-INFO| box array: (BoxArray maxbox(4)
+INFO| box array: (BoxArray maxbox(1)
        m_ref->m_hash_sig(0)
-       ((0,0) (63,63) (0,0)) ((64,0) (127,63) (0,0)) ((0,64) (63,127) (0,0)) ((64,64) (127,127) (0,0)) )
+       ((0,0) (127,127) (0,0)) )
 
 INFO| geometry: (0 (0,0)(0.0078125,0.0078125) 1)
 (RealBox 0 1 0 1 )((0,0) (127,127) (0,0))P(1,1)
 PARAMS| number of ghost cells for each array: 2
 PARAMS| number of components for each array: 2
 ===================== INITIALIZATION STEP ===================== 
-PARAMS| set cfl: 0.9
-PARAMS| dt from above cfl: 1.373291016e-05
+PARAMS| cfl value is hardcoded as: 0.9
+PARAMS| dt value from above cfl: 1.373291016e-05
 ======================= ADVANCING STEP  ======================= 
 SOLVING| Momentum | performing Runge-Kutta at iteration: 1
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 2
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 3
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 4
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 5
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 6
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 7
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 8
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 9
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 10
+DEBUGGING| intermediate convergence: 0.9993977281
+SOLVING| Momentum | performing Runge-Kutta at iteration: 11

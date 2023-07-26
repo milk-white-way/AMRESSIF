@@ -277,6 +277,40 @@ void compute_halfnode_convective_flux_z_contrib_wall (int i, int j, int k,
 #endif
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void compute_viscous_flux_periodic (int i, int j, int k,
+                                    amrex::Array4<amrex::Real> const& visc_flux,
+                                    amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dx,
+                                    amrex::Array4<amrex::Real> const& vcart,
+                                    amrex::Real const& ren)
+{
+    for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
+    {
+        auto const& centerMAC = vcart(i, j, k, dir);
+        auto const& northMAC = vcart(i, j+1, k, dir);
+        auto const& southMAC = vcart(i, j-1, k, dir);
+        auto const& westMAC = vcart(i-1, j, k, dir);
+        auto const& eastMAC = vcart(i+1, j, k, dir);
+
+        visc_flux(i, j, k, dir) = ( (westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]) )/ren;
+    }
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void compute_pressure_gradient_periodic (int i, int j, int k,
+                                         amrex::Array4<amrex::Real> const& presgrad_flux,
+                                         amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dx,
+                                         amrex::Array4<amrex::Real> const& pressurefield)
+{
+    using amrex::Real;
+
+    presgrad_flux(i, j, k, 0) = (pressurefield(i+1, j, k, 0) - pressurefield(i-1, j, k, 0))/(Real(2.0)*dx[0]);
+    presgrad_flux(i, j, k, 1) = (pressurefield(i, j+1, k, 0) - pressurefield(i, j-1, k, 0))/(Real(2.0)*dx[1]);
+#if (AMREX_SPACEDIM > 2)
+    presgrad_flux(i, j, k, 2) = (pressurefield(i, j, k+1, 0) - pressurefield(i, j, k-1, 0))/(Real(2.0)*dx[2]);
+#endif
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void compute_total_flux (int i, int j, int k,
                          amrex::Array4<amrex::Real> const& total_flux,
                          amrex::Array4<amrex::Real> const& conv_flux,
@@ -285,8 +319,8 @@ void compute_total_flux (int i, int j, int k,
 {
     for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
     {
-        // total_flux(i, j, k, dir) = - conv_flux(i, j, k, dir) + visc_flux(i, j, k, dir) - prsgrad_flux(i, j, k, dir);
-        total_flux(i, j, k, dir) = visc_flux(i, j, k, dir) - prsgrad_flux(i, j, k, dir);
+        total_flux(i, j, k, dir) = - conv_flux(i, j, k, dir) + visc_flux(i, j, k, dir) - prsgrad_flux(i, j, k, dir);
+        // total_flux(i, j, k, dir) = visc_flux(i, j, k, dir) - prsgrad_flux(i, j, k, dir);
     }
 }
 

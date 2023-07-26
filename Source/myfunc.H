@@ -1,50 +1,9 @@
 #ifndef MYFUNC_H_
 #define MYFUNC_H_
-
 #include <AMReX_Geometry.H>
 #include <AMReX_MultiFab.H>
 
-// ================================= DECLARATION MAIN FUNCTION =================================
-// void main_main ();
-
-// ================================= MODULE | INITIALIZATION =================================
-void init (amrex::MultiFab& userCtx,
-           amrex::MultiFab& velCart,
-           amrex::MultiFab& velCartDiff,
-           amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
-           amrex::Geometry const& geom);
-
 // ==================================== MODULE | MOMENTUM ====================================
-// +++++++++++++++++++++++++ Subroutine | Volume Centered Fluxes  ++++++++++++++++++++++++
-void convective_flux_calc (amrex::MultiFab& fluxConvect,
-                           amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& fluxHalfN1,
-                           amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& fluxHalfN2,
-                           amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& fluxHalfN3,
-                           amrex::MultiFab& velCart,
-                           amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-                           amrex::Vector<int> const& phy_bc_lo,
-                           amrex::Vector<int> const& phy_bc_hi,
-                           amrex::Geometry const& geom,
-                           int const& n_cell);
-
-void viscous_flux_calc (amrex::MultiFab& fluxViscous,
-                        amrex::MultiFab& velCart,
-                        amrex::Geometry const& geom,
-                        amrex::Real const& ren);
-
-void pressure_gradient_calc (amrex::MultiFab& fluxPrsGrad,
-                             amrex::MultiFab& userCtx,
-                             amrex::Geometry const& geom);
-
-void total_flux_calc (amrex::MultiFab& fluxTotal,
-                      amrex::MultiFab& fluxConvect,
-                      amrex::MultiFab& fluxViscous,
-                      amrex::MultiFab& fluxPrsGrad);
-
-// +++++++++++++++++++++++++ Subroutine | Kim and Moine's RHS Term  ++++++++++++++++++++++++
-void righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
-                          amrex::MultiFab& fluxTotal);
-
 // +++++++++++++++++++++++++ Subroutine | Kim and Moine's Runge-Kutta ++++++++++++++++++++++++
 void momentum_km_runge_kutta ( amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
                                amrex::MultiFab& fluxTotal,
@@ -74,35 +33,13 @@ void momentum_km_runge_kutta ( amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rh
 // Dathi's Module
 
 // ==================================== MODULE | ADVANCE =====================================
-// void advance (amrex::MultiFab& phi_old,
-//               amrex::MultiFab& phi_new,
-//               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& flux,
-//               amrex::Real dt,
-//               amrex::Geometry const& geom);
+void km_runge_kutta_advance ( amrex::Vector<amrex::Real>& rk,
+                              int const& sub,
+                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
+                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImRK,
+                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
+                              amrex::Real const& dt,
+                              int const& n_cell );
 
-
-// ==================================== UTILITY | CONVERSION  ================================
-void copy_contravariant_velocity (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-                                  amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContPrev);
-
-void cont2cart (amrex::MultiFab& velCart,
-                amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-                amrex::Geometry const& geom);
-
-void cart2cont (amrex::MultiFab& velCart,
-                amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont);
-
-// ============================== UTILITY | BOUNDARY CONDITIONS ==============================
-void manual_fill_ghost_cells (amrex::MultiFab& velCart,
-                              amrex::MultiFab& userCtx,
-                              int const& Nghost,
-                              amrex::Vector<int> const& phy_bc_lo,
-                              amrex::Vector<int> const& phy_bc_hi,
-                              int const& n_cell);
-
-void enforce_boundary_conditions (amrex::MultiFab& inputFlux,
-                                  int const& Nghost,
-                                  amrex::Vector<int> const& phy_bc_lo,
-                                  amrex::Vector<int> const& phy_bc_hi,
-                                  int const& n_cell);
 #endif

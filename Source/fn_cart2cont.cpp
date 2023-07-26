@@ -1,6 +1,7 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "fn_cart2cont.H"
+#include "kn_conversion.H"
 
 using namespace amrex;
 
@@ -24,22 +25,13 @@ void cart2cont (MultiFab& velCart,
         auto const& vcart = velCart.array(mfi);
 
         amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            xcont(i, j, k) = Real(0.5) * (vcart(i-1, j, k, 0) + vcart(i, j, k, 0)) ;
-        });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_x(i, j, k, xcont, vcart); });
 
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            ycont(i, j, k) = Real(0.5) * (vcart(i, j-1, k, 1) + vcart(i, j, k, 1)) ;
-        });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_y(i, j, k, ycont, vcart); });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            zcont(i, j, k) = Real(0.5) * (vcart(i, j, k-1, 2) + vcart(i, j, k, 2)) ;
-        });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_z(i, j, k, zcont, vcart); });
 #endif
     }
 }
