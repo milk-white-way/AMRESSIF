@@ -40,6 +40,8 @@ void km_runge_kutta_advance ( amrex::Vector<amrex::Real>& rk,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
                               amrex::Real const& dt,
+                              amrex::Vector<int> const& phy_bc_lo,
+                              amrex::Vector<int> const& phy_bc_hi,
                               int const& n_cell );
 
 #endif

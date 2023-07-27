@@ -58,7 +58,7 @@ void main_main ()
     int IterNum;
 
     // Porting extra params from Julian code
-    Real ren, vis;
+    Real ren, vis, cfl;
 
     // Physical boundary condition mapping
     // 0 is periodic
@@ -93,6 +93,9 @@ void main_main ()
         // Default nsteps to 10, allow us to set it to something else in the inputs file
         nsteps = 10;
         pp.query("nsteps", nsteps);
+
+        cfl = 0.9;
+        pp.query("cfl", cfl);
 
         // Parsing the Reynolds number and viscosity from input file also
         pp.get("ren", ren);
@@ -247,7 +250,6 @@ void main_main ()
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-    Real cfl = 0.9;
     Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
                                + 1./(dx[1]*dx[1]),
                                + 1./(dx[2]*dx[2]) );
@@ -257,7 +259,7 @@ void main_main ()
     // time = starting time in the simulation
     Real time = 0.0;
 
-    amrex::Print() << "PARAMS| cfl value is hardcoded as: " << cfl << "\n";
+    amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Plotting =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -373,9 +375,6 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             { // RUNGE-KUTTA | START
                 // RUNGE-KUTTA | Calculate Cell-centered Convective terms
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velImRK, phy_bc_lo, phy_bc_hi, geom, n_cell);
-                // const std::string& probplt = amrex::Concatenate("pltFlux", n, 5);
-                // WriteSingleLevelPlotfile(probplt, fluxConvect, {"conv_fluxx", "conv_fluxy"}, geom, time, 0);
-                // amrex::Abort("Here!");
 
                 // RUNGE-KUTTA | Calculate Cell-centered Viscous terms
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
@@ -394,7 +393,7 @@ Vector<Real> rk(RungeKuttaOrder, 0);
                 righthand_side_calc(rhs, fluxTotal);
 
                 // RUNGE-KUTTA | Advance
-                km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, n_cell);
+                km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, phy_bc_lo, phy_bc_hi, n_cell);
                 // After advance through 4 sub-step we obtain guessed velCont at next time step
 
                 // RUNGE-KUTTA | Update velCart from the velCont solutions
@@ -404,6 +403,7 @@ Vector<Real> rk(RungeKuttaOrder, 0);
                 velCart.FillBoundary(geom.periodicity());
                 const std::string& type4 = "velocity";
                 enforce_boundary_conditions(velCart, type4, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
             } // RUNGE-KUTTA | END
             // MOMENTUM |3| UPDATE ERROR
             for ( MFIter mfi(velImRK[0]); mfi.isValid(); ++mfi )
@@ -457,7 +457,7 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             // Real zerror = velImDiff[2].norminf(0, 0);
             normError = std::max(normError, zerror);
 #endif
-            amrex::Print() << "DEBUGGING| intermediate convergence: " << normError << "\n";
+            // amrex::Print() << "DEBUGGING| intermediate convergence: " << normError << "\n";
             // Update contravariant velocity
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
@@ -500,7 +500,7 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             const std::string& plt_velfield_file = amrex::Concatenate("pltVelocity", n, 5);
             WriteSingleLevelPlotfile(plt_pressure_file, userCtx, {"pressure", "phi"}, geom, time, n);
             WriteSingleLevelPlotfile(plt_velfield_file, velCart, {"U", "V"}, geom, time, n);
-        }
+ }
     }
 
     // Call the timer again and compute the maximum difference between the start time and stop time
