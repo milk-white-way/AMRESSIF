@@ -104,9 +104,6 @@ void km_runge_kutta_advance (Vector<Real>& rk,
                 if ( j==(n_cell) ) { yimrk(i, j, k) = amrex::Real(0.0); }
             }
         });
-    }
-}
-
 
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
@@ -123,7 +120,5 @@ void km_runge_kutta_advance (Vector<Real>& rk,
             }
         });
 #endif
-            }
-        }
     }
 }

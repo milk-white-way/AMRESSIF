@@ -68,13 +68,6 @@ void main_main ()
     Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
 
-    // Physical boundary condition mapping
-    // 0 is periodic
-    // -1 is non-slip
-    // 1 is slip
-    Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
-    Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
-
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> bc_hi(AMREX_SPACEDIM, 0);
