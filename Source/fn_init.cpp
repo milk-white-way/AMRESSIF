@@ -5,6 +5,10 @@
 
 using namespace amrex;
 // ================================= MODULE | INITIALIZATION =================================
+/**
+ * ... This is the inititialization module ...
+ */
+
 void init (MultiFab& userCtx,
            MultiFab& velCart,
            MultiFab& velCartDiff,
