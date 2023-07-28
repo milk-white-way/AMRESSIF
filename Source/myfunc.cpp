@@ -1,7 +1,4 @@
 #include <AMReX_MultiFabUtil.H>
-// #include <AMReX_Utility.H>
-// #include <AMReX_PlotFileUtil.H>
-// #include <AMReX_Print.H>
 
 #include "myfunc.H"
 #include "mykernel.H"
@@ -53,11 +50,13 @@ void km_runge_kutta_advance (Vector<Real>& rk,
 #if (AMREX_SPACEDIM > 2)
         auto const& zimrk = velImRK[2].array(mfi);
 #endif
+
         auto const& xcont = velCont[0].array(mfi);
         auto const& ycont = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
         auto const& zcont = velCont[2].array(mfi);
 #endif
+
         auto const& xdiff = velContDiff[0].array(mfi);
         auto const& ydiff = velContDiff[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
@@ -105,6 +104,9 @@ void km_runge_kutta_advance (Vector<Real>& rk,
                 if ( j==(n_cell) ) { yimrk(i, j, k) = amrex::Real(0.0); }
             }
         });
+    }
+}
+
 
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
@@ -121,5 +123,7 @@ void km_runge_kutta_advance (Vector<Real>& rk,
             }
         });
 #endif
+            }
+        }
     }
 }

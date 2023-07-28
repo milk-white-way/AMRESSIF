@@ -4,6 +4,7 @@
 #include <AMReX_FArrayBox.H>
 
 // ==================================== MODULE | ADVANCE =====================================
+
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void update_phi (int i, int j, int k,
                  amrex::Array4<amrex::Real const> const& phiold,

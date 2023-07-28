@@ -30,6 +30,7 @@
 
 // Default library
 #include "myfunc.H"
+//#include "momentum.H"
 
 using namespace amrex;
 
@@ -67,6 +68,13 @@ void main_main ()
     Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
 
+    // Physical boundary condition mapping
+    // 0 is periodic
+    // -1 is non-slip
+    // 1 is slip
+    Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
+    Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
+
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> bc_hi(AMREX_SPACEDIM, 0);
@@ -78,6 +86,7 @@ void main_main ()
         // We need to get n_cell from the inputs file - this is the number of cells on each side of
         //   a square (or cubic) domain.
         pp.get("n_cell", n_cell);
+
         amrex::Print() << "INFO| number of cells in each side of the domain: " << n_cell << "\n";
 
         pp.get("IterNum", IterNum);
@@ -117,7 +126,9 @@ void main_main ()
         if (phy_bc_lo[idim] == 0 && phy_bc_hi[idim] == 0) {
             is_periodic[idim] = 1;
         }
+
         amrex::Print() << "INFO| periodicity in " << idim << "th dimension: " << is_periodic[idim] << "\n";
+
     }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Defining System's Variables =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -147,6 +158,7 @@ void main_main ()
 
     // Nghost = number of ghost cells for each array
     int Nghost = 2; // 2nd order accuracy scheme is used for convective terms
+
 
     // Ncomp = number of components for each array
     // The userCtx has 2 components: phi and pressure
@@ -180,7 +192,9 @@ void main_main ()
     // Half-node fluxes contribute to implementation of QUICK scheme in calculating the convective flux
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN1;
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN2;
+
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN3;
+
     // The physical quantities living at the face center need to be blowed out one once in the respective direction
     for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
     {
@@ -307,8 +321,6 @@ Vector<Real> rk(RungeKuttaOrder, 0);
         rk[2] = Real(0.5);
         rk[3] = Real(1.0);
     }
-
-    // VisMF::Write(userCtx, "a_userCtx");
 
     for (int n = 1; n <= nsteps; ++n)
     {
