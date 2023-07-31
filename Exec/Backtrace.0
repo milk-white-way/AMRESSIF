@@ -1,0 +1,41 @@
+Host Name: angilas
+=== If no file names and line numbers are shown below, one can run
+            addr2line -Cpfie my_exefile my_line_address
+    to convert `my_line_address` (e.g., 0x4a6b) into file name and line number.
+    Or one can use amrex/Tools/Backtrace/parse_bt.py.
+
+=== Please note that the line number reported by addr2line may not be accurate.
+    One can use
+            readelf -wl my_exefile | grep my_line_address'
+    to find out the offset for that line.
+
+ 0: ./main2d.gnu.DEBUG.MPI.ex(+0x290c30) [0x5610f2a10c30]
+    amrex::BLBackTrace::print_backtrace_info(_IO_FILE*) at /home/trungle/Documents/amrex//Src/Base/AMReX_BLBackTrace.cpp:189
+
+ 1: ./main2d.gnu.DEBUG.MPI.ex(+0x290715) [0x5610f2a10715]
+    amrex::BLBackTrace::handler(int) at /home/trungle/Documents/amrex//Src/Base/AMReX_BLBackTrace.cpp:99
+
+ 2: ./main2d.gnu.DEBUG.MPI.ex(+0xe18c3) [0x5610f28618c3]
+    amrex::ParallelDescriptor::Abort(int, bool) at /home/trungle/Documents/amrex//Src/Base/AMReX_ParallelDescriptor.cpp:219
+
+ 3: ./main2d.gnu.DEBUG.MPI.ex(+0x5a356) [0x5610f27da356]
+    amrex::Error_host(char const*, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.cpp:240
+
+ 4: ./main2d.gnu.DEBUG.MPI.ex(+0x6d06c) [0x5610f27ed06c]
+    amrex::Abort(char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.H:161
+ (inlined by) sgetval<int> at /home/trungle/Documents/amrex//Src/Base/AMReX_ParmParse.cpp:888
+
+ 5: ./main2d.gnu.DEBUG.MPI.ex(+0x66111) [0x5610f27e6111]
+    amrex::ParmParse::get(char const*, int&, int) const at /home/trungle/Documents/amrex//Src/Base/AMReX_ParmParse.cpp:1412 (discriminator 6)
+
+ 6: ./main2d.gnu.DEBUG.MPI.ex(+0x1203e) [0x5610f279203e]
+    main_main() at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:99
+
+ 7: ./main2d.gnu.DEBUG.MPI.ex(+0x118d1) [0x5610f27918d1]
+    main at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:61
+
+ 8: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7efff87af083]
+
+ 9: ./main2d.gnu.DEBUG.MPI.ex(+0x1177e) [0x5610f279177e]
+    ?? ??:0
+

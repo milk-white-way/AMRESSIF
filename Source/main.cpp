@@ -1,6 +1,7 @@
 /** 
  * Incompressible Flow Solver
  * Testing .... 
+
  * 
  * Trung Edited
  * Jul/31/2023 - Trung edited
@@ -42,10 +43,17 @@
 
 using namespace amrex;
 
-// ============================== MAIN SECTION ==============================
+// ============================== MAIN SECTION ==============================//
+/**
+ * This is the code using AMReX for solving Navier-Stokes equation using hybrid staggerred/non-staggered method
+ * Note that the Contravariant variables stay at the face center
+ * The pressure and Cartesian velocities are in the volume center
+ */
 int main (int argc, char* argv[])
 {
     // Initialization
+    //    amrex::Print() << "Code initialization .... " <<  "\n";
+
     amrex::Initialize(argc,argv);
     // Solver
     main_main();
@@ -70,6 +78,9 @@ void main_main ()
     Real ren, vis, cfl;
 
     // Physical boundary condition mapping
+    /* These are the types of boundary conditions 
+     * supported by the codes
+     */
     // 0 is periodic
     // -1 is non-slip
     // 1 is slip
@@ -86,6 +97,8 @@ void main_main ()
 
         // We need to get n_cell from the inputs file - this is the number of cells on each side of
         //   a square (or cubic) domain.
+	// AMReX only allows the logical domain to have a square or cubic shape
+	// 
         pp.get("n_cell", n_cell);
 
         amrex::Print() << "INFO| number of cells in each side of the domain: " << n_cell << "\n";
@@ -185,6 +198,19 @@ void main_main ()
 
     MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, Nghost);
 
+    /* --------------------------------------
+     * Face center variables - FLUXES -------
+     * and Variables ------------------------
+     *---------------------------------------
+     *              _____________
+     *             |             |
+     *             |             |---> velCont
+     *             |    0 velCart|
+     *             |             |
+     *              _____________       
+     *
+     */            
+
     // Contravariant velocities live in the face center
     Array<MultiFab, AMREX_SPACEDIM> velCont;
     Array<MultiFab, AMREX_SPACEDIM> velContDiff;
@@ -193,7 +219,6 @@ void main_main ()
     // Half-node fluxes contribute to implementation of QUICK scheme in calculating the convective flux
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN1;
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN2;
-
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN3;
 
     // The physical quantities living at the face center need to be blowed out one once in the respective direction
