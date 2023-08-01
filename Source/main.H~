@@ -1,0 +1,73 @@
+
+#ifndef BL_AMREX_H
+#define BL_AMREX_H
+#include <AMReX_Config.H>
+
+#include <AMReX_GpuQualifiers.H>
+#include <AMReX_GpuPrint.H>
+#include <AMReX_GpuAssert.H>
+#include <AMReX_ccse-mpi.H>
+#include <AMReX_Exception.H>
+#include <AMReX_Extension.H>
+
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+
+/*
+ This class consists of user-defined contexts for the program computation
+*/
+
+namespace amressif
+{
+    class amress;
+
+  
+    /** the AMReX "git describe" version */
+    [[nodiscard]] std::string Version ();
+
+    // The returned AMReX* is non-owning! To delete it, call Finalize(AMReX*).
+    amress* Initialize ();
+    amress* Finalize ();
+
+   
+    class amress
+    {
+    public:
+        amress ();
+        ~amress ();
+        amress (amress const&) = delete;
+        AMReX (AMReX &&) = delete;
+        AMReX& operator= (AMReX const&) = delete;
+        AMReX& operator= (AMReX &&) = delete;
+
+        static bool empty () noexcept { return m_instance.empty(); }
+
+        static int size () noexcept { return static_cast<int>(m_instance.size()); }
+
+      
+        static AMReX* top () noexcept { return m_instance.back().get(); }
+
+        // Thisfunction will take the ownership of the AMReX pointer,
+        // and put it on the top of the stack (i.e., back of the
+        // vector).  If the pointer is already in the stack, it will
+        // be moved to the top.
+        static void push (AMReX* pamrex);
+
+        // This erases `pamrex` from the stack.
+        static void erase (AMReX* pamrex);
+
+        [[nodiscard]] Geometry* getDefaultGeometry () noexcept { return m_geom; }
+
+    private:
+
+        static AMREX_EXPORT std::vector<std::unique_ptr<AMReX> > m_instance;
+
+        Geometry* m_geom = nullptr;
+    };
+}
+
+#endif /*BL_AMREX_H*/

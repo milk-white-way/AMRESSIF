@@ -19,7 +19,7 @@
 #include <AMReX_VisMF.H>
 
 #include "main_main.H"
-
+#include "main.H"
 // #include "./meTh_Fractional_Time/mdl_initialization/fn_init.H"
 // #include "./meTh_Fractional_Time/mdl_momentum/fn_momentum.H"
 // #include "./meTh_Fractional_Time/mdl_poisson/fn_poisson.H"
@@ -41,11 +41,28 @@
 #include "myfunc.H"
 //#include "momentum.H"
 
+    class amress_solver
+    {
+    public:
+      //  amress_solver ();
+      //~amress_solver ();
+      //  amress_solver (amress_solver const&) = delete;
+      //  amress_solver (amress_solver &&) = delete;
+      //  amress_solver& operator= (amress_solver const&) = delete;
+      //  amress_solver& operator= (amress_solver &&) = delete;
+      int test_value;
+
+        
+    
+    };
+
+
 using namespace amrex;
 
 // ============================== MAIN SECTION ==============================//
 /**
- * This is the code using AMReX for solving Navier-Stokes equation using hybrid staggerred/non-staggered method
+ * This is the code using AMReX for solving Navier-Stokes equation using
+ * hybrid staggerred/non-staggered method
  * Note that the Contravariant variables stay at the face center
  * The pressure and Cartesian velocities are in the volume center
  */
@@ -61,6 +78,12 @@ int main (int argc, char* argv[])
     amrex::Finalize();
     // Error handeling
     return 0;
+}
+
+void Input_Parameters(amress_solver *UserCtx)
+{
+  UserCtx->test_value = 1;
+
 }
 
 // ============================== SOLVER SECTION ==============================
@@ -130,8 +153,17 @@ void main_main ()
 
         pp.queryarr("bc_lo", bc_lo);
         pp.queryarr("bc_hi", bc_hi);
+
+	
+	amress_solver test_solver;
+	test_solver.test_value = 1;
+	
+	amrex::Print() << "test_value: TRUNG"  << test_solver.test_value << "\n";
+
+
     }
 
+    
     // Array<int,AMREX_SPACEDIM> is_periodic{AMREX_D_DECL(1,1,1)};
 
     Vector<int> is_periodic(AMREX_SPACEDIM, 0);
@@ -179,7 +211,20 @@ void main_main ()
     int Ncomp  = 2;
 
     // How Boxes are distrubuted among MPI processes
+    // Distribution mapping between the processors
     DistributionMapping dm(ba);
+
+    /*
+     * ----------------------- 
+     *   Volume center 
+     *  ----------------------
+     *  |                    |
+     *  |                    |
+     *  |          0         |
+     *  |                    |
+     *  |                    |
+     *  ---------------------- 
+     */
 
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     MultiFab userCtx(ba, dm, Ncomp, Nghost);
@@ -207,7 +252,7 @@ void main_main ()
      *             |             |---> velCont
      *             |    0 velCart|
      *             |             |
-     *              _____________       
+     *              _____________      
      *
      */            
 
@@ -221,6 +266,7 @@ void main_main ()
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN2;
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN3;
 
+    // Due to the mismatch between the volume-center and face-center variables
     // The physical quantities living at the face center need to be blowed out one once in the respective direction
     for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
     {
@@ -236,6 +282,9 @@ void main_main ()
         fluxHalfN3[dir].define(edge_ba, dm, 1, 0);
     }
 
+    //---------------------------------------------------------------
+    // Defining the boundary conditions for each face of the domain
+    // --------------------------------------------------------------
     Vector<BCRec> bc(userCtxPrev.nComp());
     for (int n = 0; n < userCtxPrev.nComp(); ++n)
     {
@@ -283,7 +332,9 @@ void main_main ()
     amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
     amrex::Print() << "PARAMS| number of components for each array: " << Ncomp << "\n";
 
-// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+   //--------------------------------------------------------------------------------------// 
+   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------//
+   //--------------------------------------------------------------------------------------//
     amrex::Print() << "===================== INITIALIZATION STEP ===================== \n";
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
@@ -302,8 +353,10 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Plotting =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-// Initial state
+    //------------------------------------------------------------------//    
+    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Plotting =-=-=-=-=-=-=-=-=-=-=-=-=-//
+    // -----------------------    Initial state ----------------------- //
+    //------------------------------------------------------------------//
 
     // Write a plotfile of the initial data if plot_int > 0 (plot_int was defined in the inputs file)
     if (plot_int > 0)
@@ -538,7 +591,7 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             const std::string& plt_velfield_file = amrex::Concatenate("pltVelocity", n, 5);
             WriteSingleLevelPlotfile(plt_pressure_file, userCtx, {"pressure", "phi"}, geom, time, n);
             WriteSingleLevelPlotfile(plt_velfield_file, velCart, {"U", "V"}, geom, time, n);
- }
+	}//End of plotting function
     }
 
     // Call the timer again and compute the maximum difference between the start time and stop time

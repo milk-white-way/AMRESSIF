@@ -122,9 +122,10 @@ tmp_build_dir/o/2d.gnu.DEBUG.MPI.EXE/main.o: ../Source/main.cpp \
  /home/trungle/Documents/amrex//Src/Base/AMReX_MultiFabUtil_nd_C.H \
  /home/trungle/Documents/amrex//Src/Base/AMReX_MultiFabUtil_2D_C.H \
  /home/trungle/Documents/amrex//Src/Base/AMReX_MultiFabUtilI.H \
- ../Source/main_main.H ../Source/fn_cart2cont.H ../Source/fn_cont2cart.H \
- ../Source/fn_init.H ../Source/fn_enforce_wall_bcs.H \
- ../Source/fn_flux_calc.H ../Source/fn_rhs.H ../Source/myfunc.H
+ ../Source/main_main.H ../Source/main.H ../Source/fn_cart2cont.H \
+ ../Source/fn_cont2cart.H ../Source/fn_init.H \
+ ../Source/fn_enforce_wall_bcs.H ../Source/fn_flux_calc.H \
+ ../Source/fn_rhs.H ../Source/myfunc.H
 
 /home/trungle/Documents/amrex//Src/Base/AMReX_Gpu.H:
 
@@ -373,6 +374,8 @@ tmp_build_dir/s/2d.gnu.DEBUG.MPI.EXE/AMReX_Config.H:
 /home/trungle/Documents/amrex//Src/Base/AMReX_MultiFabUtilI.H:
 
 ../Source/main_main.H:
+
+../Source/main.H:
 
 ../Source/fn_cart2cont.H:
 
