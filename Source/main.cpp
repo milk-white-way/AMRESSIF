@@ -41,7 +41,6 @@
 #include "myfunc.H"
 //#include "momentum.H"
 
-    
 
 using namespace amrex;
 
@@ -51,16 +50,15 @@ using namespace amrex;
  */
 struct amress_solver
     {
-      int test_value;
-
+      // Grid information
       int n_cell;
+      int max_grid_size;
 
       int IterNum;
 
-      int max_grid_size;
 
+      // Plotting results variables
       int plot_int;
-      
       int nsteps;
 
       Real cfl;
@@ -73,10 +71,27 @@ struct amress_solver
       // // Declaring params for boundary conditon type
       int bc_lo[AMREX_SPACEDIM];
       int bc_hi[AMREX_SPACEDIM];
+
+      int is_periodic[AMREX_SPACEDIM];
+
       // The declaration for the box domain
       BoxArray ba;
+      Geometry geom;
+      Box domain;
 
-    
+      // Ghost points and computational components
+      // Nghost = number of ghost cells for each array
+      int Nghost = 2; // 2nd order accuracy scheme is used for convective terms
+
+      // Ncomp = number of components for each array
+      // The userCtx has 2 components: phi and pressure
+      int Ncomp  = 2;
+
+      
+    // How Boxes are distrubuted among MPI processes
+    // Distribution mapping between the processors
+    DistributionMapping dm;
+
     };
 
 // ============================== MAIN SECTION ==============================//
@@ -174,6 +189,55 @@ void Input_Parameters(amress_solver *SolverCtx)
 	  SolverCtx->bc_hi[dir] = bc_hi[dir];
        }// End of loop around all dimensions
 
+       // Testing periodicity in all directions
+    for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+      {
+        if (SolverCtx->phy_bc_lo[dir] == 0 && SolverCtx->phy_bc_hi[dir] == 0)
+	  {
+            SolverCtx->is_periodic[dir] = 1;
+	  }
+      }// End of all directions
+
+}// End of function
+/*
+ * Define the geometrical characteristics of the domain
+ * Define the MPI processes among all compute nodes 
+*/
+void Define_Domain(amress_solver *SolverCtx)
+{
+    BoxArray ba;
+    Geometry geom;
+    
+        IntVect dom_lo(AMREX_D_DECL(       0,        0,        0));
+        IntVect dom_hi(AMREX_D_DECL(SolverCtx->n_cell-1, SolverCtx->n_cell-1, SolverCtx->n_cell-1));
+        Box domain(dom_lo, dom_hi);
+
+        // Initialize the boxarray "ba" from the single box "bx"
+        ba.define(domain);
+        // Break up boxarray "ba" into chunks no larger than "max_grid_size" along a direction
+        ba.maxSize(SolverCtx->max_grid_size);
+
+        // Here, the real domain is a rectangular box defined by (0,0); (0,1); (1,0); (1,1)
+        // This defines the physical box, [0,1] in each direction.
+        RealBox real_box({AMREX_D_DECL( Real(0.0), Real(0.0), Real(0.0))},
+                         {AMREX_D_DECL( Real(1.0), Real(1.0), Real(1.0))});
+
+        // This defines a Geometry object
+        //   NOTE: the coordinate system is Cartesian
+	std::vector<int> is_periodic(std::begin(SolverCtx->is_periodic), std::end(SolverCtx->is_periodic));
+
+        geom.define(domain, &real_box, CoordSys::cartesian, is_periodic.data());
+    
+
+	// How Boxes are distrubuted among MPI processes
+	// Distribution mapping between the processors
+	DistributionMapping dm(ba);
+
+    SolverCtx->ba = ba;
+    SolverCtx->geom = geom;
+    SolverCtx->domain = domain;
+    SolverCtx->dm     = dm;
+    
 }
 //-----------------------------------------------------------------
 // ============================== SOLVER SECTION ==================
@@ -229,55 +293,36 @@ void main_main ()
         amrex::Print() << "INFO| number of cells in each side of the domain: " << n_cell << "\n";
 	
 
-    Vector<int> is_periodic(AMREX_SPACEDIM, 0);
-    for (int dir=0; dir < AMREX_SPACEDIM; ++dir) {
-        if (phy_bc_lo[dir] == 0 && phy_bc_hi[dir] == 0) {
-            is_periodic[dir] = 1;
-        }
+    for (int dir=0; dir < AMREX_SPACEDIM; ++dir)        
+	amrex::Print() << "INFO| periodicity in " << dir << "th dim " << SolverCtx.is_periodic[dir] << "\n";
 
-	amrex::Print() << "INFO| periodicity in " << dir << "th dimension: " << is_periodic[dir] << "\n";
-
-    }
+    
     //------------------------------------------------------------------
     //------------------------------------------------------------------
     // ==-=-=-=-=-=-=-=-=-=-=-= Defining System's Variables =-=-=-==-=-=
     //------------------------------------------------------------------
     //------------------------------------------------------------------
-
+    Define_Domain(&SolverCtx);
     // make BoxArray and Geometry
     BoxArray ba;
     Geometry geom;
-    {
-        IntVect dom_lo(AMREX_D_DECL(       0,        0,        0));
-        IntVect dom_hi(AMREX_D_DECL(n_cell-1, n_cell-1, n_cell-1));
-        Box domain(dom_lo, dom_hi);
-
-        // Initialize the boxarray "ba" from the single box "bx"
-        ba.define(domain);
-        // Break up boxarray "ba" into chunks no larger than "max_grid_size" along a direction
-        ba.maxSize(max_grid_size);
-
-        // Here, the real domain is a rectangular box defined by (0,0); (0,1); (1,0); (1,1)
-        // This defines the physical box, [0,1] in each direction.
-        RealBox real_box({AMREX_D_DECL( Real(0.0), Real(0.0), Real(0.0))},
-                         {AMREX_D_DECL( Real(1.0), Real(1.0), Real(1.0))});
-
-        // This defines a Geometry object
-        //   NOTE: the coordinate system is Cartesian
-        geom.define(domain, &real_box, CoordSys::cartesian, is_periodic.data());
-    }
-
-    // Nghost = number of ghost cells for each array
-    int Nghost = 2; // 2nd order accuracy scheme is used for convective terms
+    Box domain;
+    
+    ba = SolverCtx.ba;
+    geom = SolverCtx.geom;
+    domain = SolverCtx.domain;
+    
+      // Nghost = number of ghost cells for each array
+    int Nghost = SolverCtx.Nghost; // 2nd order accuracy scheme is used for convective terms
 
 
     // Ncomp = number of components for each array
     // The userCtx has 2 components: phi and pressure
-    int Ncomp  = 2;
+    int Ncomp  = SolverCtx.Ncomp;
 
     // How Boxes are distrubuted among MPI processes
     // Distribution mapping between the processors
-    DistributionMapping dm(ba);
+    DistributionMapping dm = SolverCtx.dm;
 
     /*
      * ----------------------- 
