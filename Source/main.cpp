@@ -52,7 +52,28 @@
       //  amress_solver& operator= (amress_solver &&) = delete;
       int test_value;
 
-        
+      int n_cell;
+
+      int IterNum;
+
+      int max_grid_size;
+
+      int plot_int;
+      
+      int nsteps;
+
+      float cfl;
+      float ren;
+      float vis;
+
+      int phy_bc_lo[AMREX_SPACEDIM];
+      int phy_bc_hi[AMREX_SPACEDIM];
+
+
+          // Declaring params for boundary conditon type
+      int bc_lo[AMREX_SPACEDIM];
+      int bc_hi[AMREX_SPACEDIM];
+  
     
     };
 
@@ -82,7 +103,55 @@ int main (int argc, char* argv[])
 
 void Input_Parameters(amress_solver *UserCtx)
 {
-  UserCtx->test_value = 1;
+      
+        // ParmParse is way of reading inputs from the inputs file
+        ParmParse pp;
+
+        // We need to get n_cell from the inputs file - this is the number of cells on each side of
+        //   a square (or cubic) domain.
+	// AMReX only allows the logical domain to have a square or cubic shape
+	// 
+        pp.get("n_cell", UserCtx->n_cell);
+
+        amrex::Print() << "INFO| number of cells in each side of the domain: TRUNG TRUNG " << UserCtx->n_cell << "\n";
+
+        pp.get("IterNum", UserCtx->IterNum);
+
+        // // The domain is broken into boxes of size max_grid_size
+        pp.get("max_grid_size", UserCtx->max_grid_size);
+
+        // // Default plot_int to -1, allow us to set it to something else in the inputs file
+        // //  If plot_int < 0 then no plot files will be written
+        UserCtx->plot_int = -1;
+        pp.query("plot_int", UserCtx->plot_int);
+
+        // // Default nsteps to 10, allow us to set it to something else in the inputs file
+        UserCtx->nsteps = 10;
+        pp.query("nsteps", UserCtx->nsteps);
+
+        UserCtx->cfl = 0.9;
+        pp.query("cfl", UserCtx->cfl);
+
+        // // Parsing the Reynolds number and viscosity from input file also
+         pp.get("ren", UserCtx->ren);
+         pp.get("vis", UserCtx->vis);
+
+        // // Parsing boundary condition from input file
+        // pp.queryarr("phy_bc_lo", phy_bc_lo);
+        // pp.queryarr("phy_bc_hi", phy_bc_hi);
+
+        // pp.queryarr("bc_lo", bc_lo);
+        // pp.queryarr("bc_hi", bc_hi);
+
+	
+	// amress_solver test_solver;
+	// test_solver.test_value = 1;
+	
+	 amrex::Print() << "test_value: TRUNG"  << UserCtx->max_grid_size << "\n";
+
+
+   
+
 
 }
 
@@ -154,12 +223,9 @@ void main_main ()
         pp.queryarr("bc_lo", bc_lo);
         pp.queryarr("bc_hi", bc_hi);
 
+	amress_solver UserCtx;
 	
-	amress_solver test_solver;
-	test_solver.test_value = 1;
-	
-	amrex::Print() << "test_value: TRUNG"  << test_solver.test_value << "\n";
-
+	Input_Parameters(&UserCtx);
 
     }
 
