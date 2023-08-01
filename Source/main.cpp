@@ -41,15 +41,16 @@
 #include "myfunc.H"
 //#include "momentum.H"
 
-    class amress_solver
+    
+
+using namespace amrex;
+
+/*
+ * This is the solver context, which stores all the information about 
+ * the solver and the associated grid
+ */
+struct amress_solver
     {
-    public:
-      //  amress_solver ();
-      //~amress_solver ();
-      //  amress_solver (amress_solver const&) = delete;
-      //  amress_solver (amress_solver &&) = delete;
-      //  amress_solver& operator= (amress_solver const&) = delete;
-      //  amress_solver& operator= (amress_solver &&) = delete;
       int test_value;
 
       int n_cell;
@@ -62,23 +63,21 @@
       
       int nsteps;
 
-      float cfl;
-      float ren;
-      float vis;
+      Real cfl;
+      Real ren;
+      Real vis;
 
       int phy_bc_lo[AMREX_SPACEDIM];
       int phy_bc_hi[AMREX_SPACEDIM];
 
-
-          // Declaring params for boundary conditon type
+      // // Declaring params for boundary conditon type
       int bc_lo[AMREX_SPACEDIM];
       int bc_hi[AMREX_SPACEDIM];
-  
+      // The declaration for the box domain
+      BoxArray ba;
+
     
     };
-
-
-using namespace amrex;
 
 // ============================== MAIN SECTION ==============================//
 /**
@@ -101,61 +100,84 @@ int main (int argc, char* argv[])
     return 0;
 }
 
-void Input_Parameters(amress_solver *UserCtx)
+/* 
+ *------------------------------------------------
+ *------ This function reads the inputs file -----
+ *----and set the parameters for the simulation---
+ *------------------------------------------------
+ */
+
+void Input_Parameters(amress_solver *SolverCtx)
 {
       
         // ParmParse is way of reading inputs from the inputs file
         ParmParse pp;
 
-        // We need to get n_cell from the inputs file - this is the number of cells on each side of
+        // We need to get n_cell from the inputs file -
+	// this is the number of cells on each side of
         //   a square (or cubic) domain.
 	// AMReX only allows the logical domain to have a square or cubic shape
 	// 
-        pp.get("n_cell", UserCtx->n_cell);
+        pp.get("n_cell", SolverCtx->n_cell);
 
-        amrex::Print() << "INFO| number of cells in each side of the domain: TRUNG TRUNG " << UserCtx->n_cell << "\n";
-
-        pp.get("IterNum", UserCtx->IterNum);
+        pp.get("IterNum", SolverCtx->IterNum);
 
         // // The domain is broken into boxes of size max_grid_size
-        pp.get("max_grid_size", UserCtx->max_grid_size);
+        pp.get("max_grid_size", SolverCtx->max_grid_size);
 
         // // Default plot_int to -1, allow us to set it to something else in the inputs file
         // //  If plot_int < 0 then no plot files will be written
-        UserCtx->plot_int = -1;
-        pp.query("plot_int", UserCtx->plot_int);
+        SolverCtx->plot_int = -1;
+        pp.query("plot_int", SolverCtx->plot_int);
 
         // // Default nsteps to 10, allow us to set it to something else in the inputs file
-        UserCtx->nsteps = 10;
-        pp.query("nsteps", UserCtx->nsteps);
+        SolverCtx->nsteps = 10;
+        pp.query("nsteps", SolverCtx->nsteps);
 
-        UserCtx->cfl = 0.9;
-        pp.query("cfl", UserCtx->cfl);
+        SolverCtx->cfl = 0.9;
+        pp.query("cfl", SolverCtx->cfl);
 
         // // Parsing the Reynolds number and viscosity from input file also
-         pp.get("ren", UserCtx->ren);
-         pp.get("vis", UserCtx->vis);
+        pp.get("ren", SolverCtx->ren);
+        pp.get("vis", SolverCtx->vis);
+
+
+	// Physical boundary condition mapping
+	/* These are the types of boundary conditions 
+	 * supported by the codes
+	 */
+	// 0 is periodic
+	// -1 is non-slip
+	// 1 is slip
+
+	Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
+	Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
+
+	// Declaring params for boundary conditon type
+	Vector<int> bc_lo(AMREX_SPACEDIM, 0);
+	Vector<int> bc_hi(AMREX_SPACEDIM, 0);
+
 
         // // Parsing boundary condition from input file
-        // pp.queryarr("phy_bc_lo", phy_bc_lo);
-        // pp.queryarr("phy_bc_hi", phy_bc_hi);
+        pp.queryarr("phy_bc_lo", phy_bc_lo);
+        pp.queryarr("phy_bc_hi", phy_bc_hi);
 
-        // pp.queryarr("bc_lo", bc_lo);
-        // pp.queryarr("bc_hi", bc_hi);
+        pp.queryarr("bc_lo", bc_lo);
+        pp.queryarr("bc_hi", bc_hi);
 
-	
-	// amress_solver test_solver;
-	// test_solver.test_value = 1;
-	
-	 amrex::Print() << "test_value: TRUNG"  << UserCtx->max_grid_size << "\n";
-
-
-   
-
+	// Loop all around the dimensions and assign the values of the BCs
+       for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+	 {
+	  SolverCtx->phy_bc_lo[dir] = phy_bc_lo[dir];
+	  SolverCtx->phy_bc_hi[dir] = phy_bc_hi[dir];
+	  SolverCtx->bc_lo[dir] = bc_lo[dir];
+	  SolverCtx->bc_hi[dir] = bc_hi[dir];
+       }// End of loop around all dimensions
 
 }
-
-// ============================== SOLVER SECTION ==============================
+//-----------------------------------------------------------------
+// ============================== SOLVER SECTION ==================
+//-----------------------------------------------------------------
 void main_main ()
 {
     // What time is it now?  We'll use this to compute total run time.
@@ -168,82 +190,59 @@ void main_main ()
 
     // Porting extra params from Julian code
     Real ren, vis, cfl;
-
-    // Physical boundary condition mapping
-    /* These are the types of boundary conditions 
-     * supported by the codes
-     */
-    // 0 is periodic
-    // -1 is non-slip
-    // 1 is slip
+    
     Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
-
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> bc_hi(AMREX_SPACEDIM, 0);
-// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Parsing Inputs =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    {
-        // ParmParse is way of reading inputs from the inputs file
-        ParmParse pp;
 
-        // We need to get n_cell from the inputs file - this is the number of cells on each side of
-        //   a square (or cubic) domain.
-	// AMReX only allows the logical domain to have a square or cubic shape
-	// 
-        pp.get("n_cell", n_cell);
-
-        amrex::Print() << "INFO| number of cells in each side of the domain: " << n_cell << "\n";
-
-        pp.get("IterNum", IterNum);
-
-        // The domain is broken into boxes of size max_grid_size
-        pp.get("max_grid_size", max_grid_size);
-
-        // Default plot_int to -1, allow us to set it to something else in the inputs file
-        //  If plot_int < 0 then no plot files will be written
-        plot_int = -1;
-        pp.query("plot_int", plot_int);
-
-        // Default nsteps to 10, allow us to set it to something else in the inputs file
-        nsteps = 10;
-        pp.query("nsteps", nsteps);
-
-        cfl = 0.9;
-        pp.query("cfl", cfl);
-
-        // Parsing the Reynolds number and viscosity from input file also
-        pp.get("ren", ren);
-        pp.get("vis", vis);
-
-        // Parsing boundary condition from input file
-        pp.queryarr("phy_bc_lo", phy_bc_lo);
-        pp.queryarr("phy_bc_hi", phy_bc_hi);
-
-        pp.queryarr("bc_lo", bc_lo);
-        pp.queryarr("bc_hi", bc_hi);
-
-	amress_solver UserCtx;
+    //-------------------------------------------------------------
+    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Parsing Inputs =-=-=-=-=-=-=-=
+    //-------------------------------------------------------------
+    amress_solver SolverCtx;
+    Input_Parameters(&SolverCtx);
 	
-	Input_Parameters(&UserCtx);
+    // Temporary here!
+       	n_cell = SolverCtx.n_cell;
+	IterNum = SolverCtx.IterNum;
+       	max_grid_size  = SolverCtx.max_grid_size;
+	plot_int = SolverCtx.plot_int;
+        nsteps = SolverCtx.nsteps;
+        cfl = SolverCtx.cfl;
+	ren = SolverCtx.ren;
+	vis = SolverCtx.vis;
 
-    }
+        // Parsing boundary condition from the Context
+	for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+	  {
+	    phy_bc_lo[dir] == SolverCtx.phy_bc_lo[dir]; 
+	    phy_bc_hi[dir] == SolverCtx.phy_bc_hi[dir]; 
 
-    
-    // Array<int,AMREX_SPACEDIM> is_periodic{AMREX_D_DECL(1,1,1)};
+ 
+	    bc_lo[dir] == SolverCtx.bc_lo[dir]; 
+	    bc_hi[dir] == SolverCtx.bc_hi[dir]; 
+
+	  }
+
+	    
+        amrex::Print() << "INFO| number of cells in each side of the domain: " << n_cell << "\n";
+	
 
     Vector<int> is_periodic(AMREX_SPACEDIM, 0);
-    // BCType::int_dir = 0
-    for (int idim=0; idim < AMREX_SPACEDIM; ++idim) {
-        if (phy_bc_lo[idim] == 0 && phy_bc_hi[idim] == 0) {
-            is_periodic[idim] = 1;
+    for (int dir=0; dir < AMREX_SPACEDIM; ++dir) {
+        if (phy_bc_lo[dir] == 0 && phy_bc_hi[dir] == 0) {
+            is_periodic[dir] = 1;
         }
 
-        amrex::Print() << "INFO| periodicity in " << idim << "th dimension: " << is_periodic[idim] << "\n";
+	amrex::Print() << "INFO| periodicity in " << dir << "th dimension: " << is_periodic[dir] << "\n";
 
     }
-
-// =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Defining System's Variables =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    //------------------------------------------------------------------
+    //------------------------------------------------------------------
+    // ==-=-=-=-=-=-=-=-=-=-=-= Defining System's Variables =-=-=-==-=-=
+    //------------------------------------------------------------------
+    //------------------------------------------------------------------
 
     // make BoxArray and Geometry
     BoxArray ba;
@@ -442,7 +441,7 @@ void main_main ()
 #endif
 
         int n = 0;
-        const std::string& pltfile = amrex::Concatenate("pltInitialization", n, 5);
+        const std::string& pltfile = amrex::Concatenate("Field", n, 5);
 #if (AMREX_SPACEDIM > 2)
         WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V", "W"}, geom, time, 0);
 #else
