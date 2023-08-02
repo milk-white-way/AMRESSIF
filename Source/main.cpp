@@ -90,7 +90,14 @@ struct amress_solver
       
     // How Boxes are distrubuted among MPI processes
     // Distribution mapping between the processors
+    // This is for volume-center variables
     DistributionMapping dm;
+
+
+    // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
+    MultiFab userCtx;
+    MultiFab userCtxPrev;
+
 
     };
 
@@ -231,12 +238,19 @@ void Define_Domain(amress_solver *SolverCtx)
 
 	// How Boxes are distrubuted among MPI processes
 	// Distribution mapping between the processors
+	// This is for volume-center variables
 	DistributionMapping dm(ba);
 
     SolverCtx->ba = ba;
     SolverCtx->geom = geom;
     SolverCtx->domain = domain;
     SolverCtx->dm     = dm;
+
+    
+    // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
+    SolverCtx->userCtx.define(ba, dm, SolverCtx->Ncomp, SolverCtx->Nghost);
+    SolverCtx->userCtxPrev.define(ba, dm, SolverCtx->Ncomp, SolverCtx->Nghost);
+
     
 }
 //-----------------------------------------------------------------
@@ -337,9 +351,16 @@ void main_main ()
      */
 
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
-    MultiFab userCtx(ba, dm, Ncomp, Nghost);
-    MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
+     MultiFab userCtx(ba, dm, Ncomp, Nghost);
+     MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
 
+    // MultiFab userCtx;
+ //    for (int iter_comp=0; iter_comp < SolverCtx.Ncomp; ++iter_comp)
+ //      amrex::MultiFab::Copy(userCtx, SolverCtx.userCtx, iter_comp, iter_comp, SolverCtx.Ncomp, SolverCtx.Nghost) ;
+ //    MultiFab userCtxPrev;
+ //    for (int iter_comp=0; iter_comp < SolverCtx.Ncomp; ++iter_comp)
+ // amrex::MultiFab::Copy(userCtxPrev, SolverCtx.userCtxPrev, iter_comp, iter_comp, SolverCtx.Ncomp, SolverCtx.Nghost) ;
+    
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
     MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);

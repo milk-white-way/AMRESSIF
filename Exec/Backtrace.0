@@ -9,33 +9,42 @@ Host Name: angilas
             readelf -wl my_exefile | grep my_line_address'
     to find out the offset for that line.
 
- 0: ./main2d.gnu.DEBUG.MPI.ex(+0x290d1c) [0x5562c8e00d1c]
+ 0: ./main2d.gnu.DEBUG.MPI.ex(+0x29190e) [0x55918c9cd90e]
     amrex::BLBackTrace::print_backtrace_info(_IO_FILE*) at /home/trungle/Documents/amrex//Src/Base/AMReX_BLBackTrace.cpp:189
 
- 1: ./main2d.gnu.DEBUG.MPI.ex(+0x290801) [0x5562c8e00801]
+ 1: ./main2d.gnu.DEBUG.MPI.ex(+0x2913f3) [0x55918c9cd3f3]
     amrex::BLBackTrace::handler(int) at /home/trungle/Documents/amrex//Src/Base/AMReX_BLBackTrace.cpp:99
 
- 2: ./main2d.gnu.DEBUG.MPI.ex(+0xe19af) [0x5562c8c519af]
+ 2: ./main2d.gnu.DEBUG.MPI.ex(+0xe27ab) [0x55918c81e7ab]
     amrex::ParallelDescriptor::Abort(int, bool) at /home/trungle/Documents/amrex//Src/Base/AMReX_ParallelDescriptor.cpp:219
 
- 3: ./main2d.gnu.DEBUG.MPI.ex(+0x5a474) [0x5562c8bca474]
-    amrex::Error_host(char const*, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.cpp:240
+ 3: ./main2d.gnu.DEBUG.MPI.ex(+0x5b83e) [0x55918c79783e]
+    amrex::Assert_host(char const*, char const*, int, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.cpp:289
 
- 4: ./main2d.gnu.DEBUG.MPI.ex(+0x6d18a) [0x5562c8bdd18a]
-    amrex::Abort(char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.H:161
- (inlined by) sgetval<int> at /home/trungle/Documents/amrex//Src/Base/AMReX_ParmParse.cpp:888
+ 4: ./main2d.gnu.DEBUG.MPI.ex(+0x1dd27d) [0x55918c91927d]
+    amrex::Assert(char const*, char const*, int, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.H:189 (discriminator 1)
+ (inlined by) amrex::FabArrayBase::getTileArray(amrex::IntVect const&) const at /home/trungle/Documents/amrex//Src/Base/AMReX_FabArrayBase.cpp:2243 (discriminator 1)
 
- 5: ./main2d.gnu.DEBUG.MPI.ex(+0x6622f) [0x5562c8bd622f]
-    amrex::ParmParse::get(char const*, int&, int) const at /home/trungle/Documents/amrex//Src/Base/AMReX_ParmParse.cpp:1412 (discriminator 6)
+ 5: ./main2d.gnu.DEBUG.MPI.ex(+0x203615) [0x55918c93f615]
+    amrex::MFIter::Initialize() at /home/trungle/Documents/amrex//Src/Base/AMReX_MFIter.cpp:292
 
- 6: ./main2d.gnu.DEBUG.MPI.ex(+0x1212a) [0x5562c8b8212a]
-    main_main() at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:114
+ 6: ./main2d.gnu.DEBUG.MPI.ex(+0x202b14) [0x55918c93eb14]
+    amrex::MFIter::MFIter(amrex::FabArrayBase const&, bool) at /home/trungle/Documents/amrex//Src/Base/AMReX_MFIter.cpp:54
 
- 7: ./main2d.gnu.DEBUG.MPI.ex(+0x118d1) [0x5562c8b818d1]
-    main at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:62
+ 7: ./main2d.gnu.DEBUG.MPI.ex(+0xf2701) [0x55918c82e701]
+    void amrex::Copy<amrex::FArrayBox, amrex::FArrayBox, 0>(amrex::FabArray<amrex::FArrayBox>&, amrex::FabArray<amrex::FArrayBox> const&, int, int, int, amrex::IntVect const&) at /home/trungle/Documents/amrex//Src/Base/AMReX_FabArray.H:255 (discriminator 3)
 
- 8: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7f4bb296a083]
+ 8: ./main2d.gnu.DEBUG.MPI.ex(+0x19d519) [0x55918c8d9519]
+    amrex::MultiFab::Copy(amrex::MultiFab&, amrex::MultiFab const&, int, int, int, int) at /home/trungle/Documents/amrex//Src/Base/AMReX_MultiFab.cpp:175
 
- 9: ./main2d.gnu.DEBUG.MPI.ex(+0x1177e) [0x5562c8b8177e]
+ 9: ./main2d.gnu.DEBUG.MPI.ex(+0x130e8) [0x55918c74f0e8]
+    main_main() at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:358 (discriminator 2)
+
+10: ./main2d.gnu.DEBUG.MPI.ex(+0x118d1) [0x55918c74d8d1]
+    main at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:120
+
+11: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7f549c746083]
+
+12: ./main2d.gnu.DEBUG.MPI.ex(+0x1177e) [0x55918c74d77e]
     ?? ??:0
 
