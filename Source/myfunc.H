@@ -2,6 +2,8 @@
 #define MYFUNC_H_
 #include <AMReX_Geometry.H>
 #include <AMReX_MultiFab.H>
+#include <AMReX_BCRec.H>
+
 
 // ==================================== MODULE | MOMENTUM ====================================
 // +++++++++++++++++++++++++ Subroutine | Kim and Moine's Runge-Kutta ++++++++++++++++++++++++
@@ -78,4 +80,18 @@ void fill_physical_ghost_cells (amrex::MultiFab& velCart,
                                 int const& n_cell,
                                 amrex::Vector<int> const& bc_lo,
                                 amrex::Vector<int> const& bc_hi);
+
+
+
+void advance (//amrex::MultiFab& phi_old,
+              //amrex::MultiFab& phi_new,
+	      amrex::MultiFab& phi_initial,
+	      amrex::MultiFab& phi_exact,
+	      amrex::MultiFab& rhs_ptr,
+              //amrex::Real dt,
+              const amrex::Geometry& geom,
+              const amrex::BoxArray& grids,
+              const amrex::DistributionMapping& dmap,
+              const amrex::Vector<amrex::BCRec>& bc);
+
 #endif
