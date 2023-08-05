@@ -253,6 +253,49 @@ void Define_Domain(amress_solver *SolverCtx)
 
     
 }
+void Export_Flow_Field (
+			       amrex::BoxArray& ba,
+			       amrex::DistributionMapping& dm,
+			       amrex::Geometry& geom,
+			       amrex::MultiFab& userCtx,
+                               amrex::MultiFab& velCart,
+                               int const& timestep,
+			       amrex::Real const& time)
+{
+
+  // Depending on the dimensions the MultiFab needs to store enough
+  // components 4 : (u,v,w, p) for flow fields in 3D
+  // components = 3 (u,v,p) for flow fields in 2D
+#if (AMREX_SPACEDIM > 2)
+        MultiFab plt(ba, dm, 4, 0);
+#else
+        MultiFab plt(ba, dm, 3, 0);
+#endif
+
+        // Copy the pressure and velocity fields to the 'plt' Multifab
+	// Note the component sequence
+	// userCtx [0] --> pressure
+	// velCart [1] --> u
+	// velCart [2] --> v
+	// velCart [3] --> w
+        MultiFab::Copy(plt, userCtx, 0, 0, 1, 0);
+        MultiFab::Copy(plt, velCart, 0, 1, 1, 0);
+        MultiFab::Copy(plt, velCart, 1, 2, 1, 0);
+#if (AMREX_SPACEDIM > 2)
+        MultiFab::Copy(plt, velCart, 2, 3, 1, 0);
+#endif
+
+        
+        const std::string& pltfile = amrex::Concatenate("Fields", timestep, 5); //5 spaces
+#if (AMREX_SPACEDIM > 2)
+        WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V", "W"}, geom, timestep, 0);
+#else
+        WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V"}, geom, timestep, 0);
+#endif
+
+  
+}
+
 //-----------------------------------------------------------------
 // ============================== SOLVER SECTION ==================
 //-----------------------------------------------------------------
@@ -351,16 +394,9 @@ void main_main ()
      */
 
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
-     MultiFab userCtx(ba, dm, Ncomp, Nghost);
-     MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
+    MultiFab userCtx(ba, dm, Ncomp, Nghost);
+    MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
 
-    // MultiFab userCtx;
- //    for (int iter_comp=0; iter_comp < SolverCtx.Ncomp; ++iter_comp)
- //      amrex::MultiFab::Copy(userCtx, SolverCtx.userCtx, iter_comp, iter_comp, SolverCtx.Ncomp, SolverCtx.Nghost) ;
- //    MultiFab userCtxPrev;
- //    for (int iter_comp=0; iter_comp < SolverCtx.Ncomp; ++iter_comp)
- // amrex::MultiFab::Copy(userCtxPrev, SolverCtx.userCtxPrev, iter_comp, iter_comp, SolverCtx.Ncomp, SolverCtx.Nghost) ;
-    
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
     MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);
@@ -457,7 +493,7 @@ void main_main ()
     // Print desired variables for debugging
     amrex::Print() << "INFO| number of dimensions: " << AMREX_SPACEDIM << "\n";
 
-    amrex::Print() << "INFO| box array: " << ba << "\n";
+    //    amrex::Print() << "INFO| box array: " << ba << "\n";
     amrex::Print() << "INFO| geometry: " << geom << "\n";
 
     amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
@@ -476,8 +512,7 @@ void main_main ()
                                + 1./(dx[1]*dx[1]),
                                + 1./(dx[2]*dx[2]) );
     Real dt = cfl/(2.0*coeff);
-    // Real dt = 1.0e-4;
-
+    
     // time = starting time in the simulation
     Real time = 0.0;
 
@@ -489,42 +524,21 @@ void main_main ()
     // -----------------------    Initial state ----------------------- //
     //------------------------------------------------------------------//
 
-    // Write a plotfile of the initial data if plot_int > 0 (plot_int was defined in the inputs file)
-    if (plot_int > 0)
-    {
-#if (AMREX_SPACEDIM > 2)
-        MultiFab plt(ba, dm, 4, 0);
-#else
-        MultiFab plt(ba, dm, 3, 0);
-#endif
-
-        // Copy the pressure and velocity fields to the 'plt' Multifab
-        MultiFab::Copy(plt, userCtx, 0, 0, 1, 0);
-        MultiFab::Copy(plt, velCart, 0, 1, 1, 0);
-        MultiFab::Copy(plt, velCart, 1, 2, 1, 0);
-#if (AMREX_SPACEDIM > 2)
-        MultiFab::Copy(plt, velCart, 2, 3, 1, 0);
-#endif
-
-        int n = 0;
-        const std::string& pltfile = amrex::Concatenate("Field", n, 5);
-#if (AMREX_SPACEDIM > 2)
-        WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V", "W"}, geom, time, 0);
-#else
-        WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V"}, geom, time, 0);
-#endif
-    }
-
-// ==================================== MODULE | ADVANCE =====================================
-    // ++++++++++ KIM AND MOINE'S RUNGE-KUTTA ++++++++++
-    amrex::Print() << "======================= ADVANCING STEP  ======================= \n";
+    // Write a plotfile of the initial data if plot_int > 0
+    // (plot_int was defined in the inputs file)
+    if (plot_int > 0)      
+      Export_Flow_Field( ba, dm, geom, userCtx, velCart, 0, time); // Export the initial flow field
+      
+    //====== MODULE | ADVANCE =====================================
+    // ++++++++++ KIM AND MOINE'S RUNGE-KUTTA +++++++++++++++++++++
+    amrex::Print() << "======= ADVANCING STEP  ==================== \n";
     // Setup stopping criteria
     Real Tol = 1.0e-8;
     // int IterNum = 10;
 
     // Setup Runge-Kutta scheme coefficients
-int RungeKuttaOrder = 4;
-Vector<Real> rk(RungeKuttaOrder, 0);
+    int RungeKuttaOrder = 4;
+    Vector<Real> rk(RungeKuttaOrder, 0);
     {
         rk[0] = Real(0.25);
         rk[1] = Real(1.0)/Real(3.0);
@@ -532,6 +546,9 @@ Vector<Real> rk(RungeKuttaOrder, 0);
         rk[3] = Real(1.0);
     }
 
+    //+++++++++++++++++++++++++++++++++++++++++
+    //+++++   Begin time loop +++++++++++++++++
+    //+++++++++++++++++++++++++++++++++++++++++
     for (int n = 1; n <= nsteps; ++n)
     {
         MultiFab::Copy(userCtxPrev, userCtx, 0, 0, Ncomp, Nghost);
@@ -539,13 +556,21 @@ Vector<Real> rk(RungeKuttaOrder, 0);
         // Forming boundary conditions
         userCtx.FillBoundary(geom.periodicity());
         const std::string& type1 = "pressure"; // 1 of 4 options: 'pressure', 'phi', 'velocity', 'flux'
+	// Enforce the physical boundary conditions
         enforce_boundary_conditions(velCart, type1, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
+	// Doing the HALO exchange
+	// This is important
+	// If the physical boundary are not periodic
+	// Then the update will not touch those grid points
         velCart.FillBoundary(geom.periodicity());
         const std::string& type2 = "velocity";
+
+	// Enforce the boundary conditions again
         enforce_boundary_conditions(velCart, type2, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
-        // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
+        // Convert cartesian velocity to contravariant velocity
+	// after boundary conditions are enfoced
         // velCont is updated first via Momentum solver
         cart2cont(velCart, velCont);
 
@@ -561,6 +586,9 @@ Vector<Real> rk(RungeKuttaOrder, 0);
             velImPrev[dir].define(edge_ba, dm, 1, 0);
             velImDiff[dir].define(edge_ba, dm, 1, 0);
         }
+
+
+	// Copy the intermediate values to the next sub-iteration
         for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
         {
             MultiFab::Copy(velImPrev[comp], velCont[comp], 0, 0, 1, 0);
@@ -575,7 +603,9 @@ Vector<Real> rk(RungeKuttaOrder, 0);
         int countIter = 0;
         Real normError = 1.0e1;
 
-        // MOMENTUM |2| KIM AND MOINE'S FTS START
+	//-----------------------------------------------
+        // This is the sub-iteration of the implicit RK4
+	//-----------------------------------------------
         while ( countIter < IterNum && normError > Tol )
         {
             countIter++;
@@ -717,16 +747,13 @@ Vector<Real> rk(RungeKuttaOrder, 0);
 
         // Write a plotfile of the current data (plot_int was defined in the inputs file)
         if (plot_int > 0 && n%plot_int == 0)
-        {
-            const std::string& plt_pressure_file = amrex::Concatenate("pltPressue", n, 5);
-            const std::string& plt_velfield_file = amrex::Concatenate("pltVelocity", n, 5);
-            WriteSingleLevelPlotfile(plt_pressure_file, userCtx, {"pressure", "phi"}, geom, time, n);
-            WriteSingleLevelPlotfile(plt_velfield_file, velCart, {"U", "V"}, geom, time, n);
-	}//End of plotting function
-    }
+	  Export_Flow_Field(ba, dm, geom, userCtx, velCart, n, time);
+	
+    }//end of time loop
 
-    // Call the timer again and compute the maximum difference between the start time and stop time
-    //   over all processors
+    // Call the timer again and compute the maximum difference
+    // between the start time and stop time
+    // over all processors
     auto stop_time = ParallelDescriptor::second() - strt_time;
     const int IOProc = ParallelDescriptor::IOProcessorNumber();
     ParallelDescriptor::ReduceRealMax(stop_time,IOProc);

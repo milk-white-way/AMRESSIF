@@ -3,7 +3,13 @@
 #include <AMReX_Geometry.H>
 #include <AMReX_MultiFab.H>
 #include <AMReX_BCRec.H>
-
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// This file contains all the main functions of the AMIBS_2D solver
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// This includes the momentum solver
+// And the Poisson solver
+// And the Update solution function
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ==================================== MODULE | MOMENTUM ====================================
 // +++++++++++++++++++++++++ Subroutine | Kim and Moine's Runge-Kutta ++++++++++++++++++++++++
@@ -31,8 +37,6 @@ void momentum_km_runge_kutta ( amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rh
                                int const& IterNum,
                                amrex::Real const& Tol);
 
-// ==================================== MODULE | POISSON =====================================
-// Dathi's Module
 
 // ==================================== MODULE | ADVANCE =====================================
 void km_runge_kutta_advance ( amrex::Vector<amrex::Real>& rk,
@@ -81,14 +85,20 @@ void fill_physical_ghost_cells (amrex::MultiFab& velCart,
                                 amrex::Vector<int> const& bc_lo,
                                 amrex::Vector<int> const& bc_hi);
 
+void Export_Flow_Field (       amrex::BoxArray& ba,
+			       amrex::DistributionMapping& dm,
+			       amrex::Geometry& geom,
+			       amrex::MultiFab& userCtx,
+                               amrex::MultiFab& velCart,
+                               int const& timestep,
+			       amrex::Real const& time);
 
+// ==================================== MODULE | POISSON =====================================
+// Dathi's Module
 
-void advance (//amrex::MultiFab& phi_old,
-              //amrex::MultiFab& phi_new,
-	      amrex::MultiFab& phi_initial,
-	      amrex::MultiFab& phi_exact,
+void Poisson_Solver(
+	      amrex::MultiFab& phi_solution,
 	      amrex::MultiFab& rhs_ptr,
-              //amrex::Real dt,
               const amrex::Geometry& geom,
               const amrex::BoxArray& grids,
               const amrex::DistributionMapping& dmap,

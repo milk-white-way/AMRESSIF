@@ -7,10 +7,9 @@
 
 using namespace amrex;
 
-void advance (
+void Poisson_Solver (
 	      amrex::MultiFab& phi_solution,
 	      amrex::MultiFab& rhs_ptr,
-	      amrex::MultiFab& phi_exact,
               const Geometry& geom,
               const BoxArray& grids,
               const DistributionMapping& dmap,
@@ -29,12 +28,10 @@ void advance (
 
     // Fill the ghost cells of each grid from the other grids
     // includes periodic domain boundaries
-   // phi_old.FillBoundary(geom.periodicity());
-      phi_solution.FillBoundary(geom.periodicity());
+     phi_solution.FillBoundary(geom.periodicity());
 
     // Fill non-periodic physical boundaries
-    //FillDomainBoundary(phi_old, geom, bc);
-    FillDomainBoundary(phi_solution, geom, bc);
+     FillDomainBoundary(phi_solution, geom, bc);
 
     // assorment of solver and parallization options and parameters
     // see AMReX_MLLinOp.H for the defaults, accessors, and mutators
@@ -90,13 +87,10 @@ void advance (
     mlabec.setDomainBC(bc_lo, bc_hi);
 
     // set the boundary conditions
-    //mlabec.setLevelBC(0, &phi_old);
     mlabec.setLevelBC(0, &phi_solution);
 
     // scaling factors
-   // Real ascalar = 1.0;
     Real ascalar = 0.0;
-   // Real bscalar = 1.0;
     Real bscalar = -1.0;
     mlabec.setScalars(ascalar, bscalar);
 
@@ -106,8 +100,9 @@ void advance (
     // fill in the acoef MultiFab and load this into the solver
     acoef.setVal(1.0);
     mlabec.setACoeffs(0, acoef);
-   // bcoef.setVal(1.0);
-   // mlabec.setBCoeffs(0, bcoef);
+    // We need to check this ? What is the coefficent for b for ??
+    // bcoef.setVal(1.0);
+    // mlabec.setBCoeffs(0, bcoef);
 
 
     // bcoef lives on faces so we make an array of face-centered MultiFabs
@@ -140,12 +135,11 @@ void advance (
     mlmg.setBottomVerbose(bottom_verbose);
 
     // relative and absolute tolerances for linear solve
-    const Real tol_rel = 1.0e-3;
+    const Real tol_rel = 1.0e-10;
     const Real tol_abs = 0.0;
 
     // Solve linear system
      mlmg.solve({&phi_solution}, {&rhs_ptr}, tol_rel, tol_abs);
-      //Real solve({&phi_initial}, {&rhs_ptr}, tol_rel, tol_abs);
-    // Real solve(amrex::MultiFab& phi_initial, amrex::MultiFab& rhs_ptr, Real tol_rel, Real tol_abs);
+   
 }
 
