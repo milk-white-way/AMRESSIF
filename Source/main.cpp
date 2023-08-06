@@ -39,7 +39,7 @@
 
 // Default library
 #include "myfunc.H"
-//#include "momentum.H"
+#include "momentum.H"
 
 
 using namespace amrex;
@@ -253,6 +253,10 @@ void Define_Domain(amress_solver *SolverCtx)
 
     
 }
+//-------------------------------------------------
+//+++++++++++++++++++++++++++++++++++++++++++++++++
+//+++  EXPORT VELOCITY FIELS ++++++++++++++++++++++
+//+++++++++++++++++++++++++++++++++++++++++++++++++
 void Export_Flow_Field (
 			       amrex::BoxArray& ba,
 			       amrex::DistributionMapping& dm,
@@ -295,6 +299,110 @@ void Export_Flow_Field (
 
   
 }
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//------- EXPORT FLUXES -------------------------------------------
+//-----------------------------------------------------------------
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void Export_Fluxes(
+		   amrex::MultiFab &fluxConvect,
+		   amrex::MultiFab &fluxViscous,
+		   amrex::MultiFab &fluxPrsGrad,
+		   amrex::BoxArray &ba,
+		   amrex::DistributionMapping &dm,
+		   amrex::Geometry &geom,
+		   int const       &timestep,
+		   amrex::Real const &time)
+{
+
+            MultiFab plt(ba, dm, 3*AMREX_SPACEDIM, 0);
+
+            MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
+            MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
+            MultiFab::Copy(plt, fluxViscous, 0, 2, 1, 0);
+            MultiFab::Copy(plt, fluxViscous, 1, 3, 1, 0);
+            MultiFab::Copy(plt, fluxPrsGrad, 0, 4, 1, 0);
+            MultiFab::Copy(plt, fluxPrsGrad, 1, 5, 1, 0);
+
+            const std::string& plt_flux = amrex::Concatenate("pltFlux", timestep, 5);
+            WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, timestep);
+
+  
+}
+
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//+++++++++++ Error Norm computation ++++++++++++++++++++++++++++++
+//-----------------------------------------------------------------
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+amrex::Real Error_Computation( amrex::Array<MultiFab, AMREX_SPACEDIM>  &velImRK,
+			       amrex::Array<MultiFab, AMREX_SPACEDIM>  &velImPrev,
+			       amrex::Array<MultiFab, AMREX_SPACEDIM>  &velImDiff,
+			       amrex::Geometry const &geom)
+{
+  amrex::Real normError;
+  
+ 	
+           //  // MOMENTUM |3| UPDATE ERROR
+            for ( MFIter mfi(velImRK[0]); mfi.isValid(); ++mfi )
+              {
+		
+                  const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                  const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+
+  #if (AMREX_SPACEDIM > 2)
+                  const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+  #endif
+                  auto const& ximrk = velImRK[0].array(mfi);
+                  auto const& yimrk = velImRK[1].array(mfi);
+
+  #if (AMREX_SPACEDIM > 2)
+                  auto const& zimrk = velImRK[2].array(mfi);
+  #endif
+                  auto const& xprev = velImPrev[0].array(mfi);
+                  auto const& yprev = velImPrev[1].array(mfi);
+  #if (AMREX_SPACEDIM > 2)
+                  auto const& zprev = velImPrev[2].array(mfi);
+  #endif
+                  auto const& xdiff = velImDiff[0].array(mfi);
+                  auto const& ydiff = velImDiff[1].array(mfi);
+
+  #if (AMREX_SPACEDIM > 2)
+                  auto const& zdiff = velImDiff[2].array(mfi);
+  #endif
+                  amrex::ParallelFor(xbx,
+                  [=] AMREX_GPU_DEVICE (int i, int j, int k){
+                      xdiff(i, j, k) = xprev(i, j, k) - ximrk(i, j, k);
+                  });
+
+                  amrex::ParallelFor(ybx,
+                  [=] AMREX_GPU_DEVICE(int i, int j, int k){
+                      ydiff(i, j, k) = yprev(i, j, k) - yimrk(i, j, k);
+                  });
+
+  #if (AMREX_SPACEDIM > 2)
+                  amrex::ParallelFor(zbx,
+                  [=] AMREX_GPU_DEVICE(int i, int j, int k){
+                      zdiff(i, j, k) = zprev(i, j, k) - zimrk(i, j, k);
+                  });
+  #endif
+	      }// End of all loops for Multi-Fabs
+	   
+            Real xerror = velImDiff[0].norm2(0, geom.periodicity());
+            Real yerror = velImDiff[1].norm2(0, geom.periodicity());
+            // Real xerror = velImDiff[0].norminf(0, 0);
+            // Real yerror = velImDiff[1].norminf(0, 0);
+
+            normError = std::max(xerror, yerror);
+ #if (AMREX_SPACEDIM > 2)
+             Real zerror = velContDiff[2].norminf(0, geom.periodicity());
+             // Real zerror = velImDiff[2].norminf(0, 0);
+             normError = std::max(normError, zerror);
+ #endif
+
+   
+	    return normError;
+}
+
 
 //-----------------------------------------------------------------
 // ============================== SOLVER SECTION ==================
@@ -555,7 +663,18 @@ void main_main ()
         MultiFab::Copy(velCartPrev, velCart, 0, 0, AMREX_SPACEDIM, Nghost);
         // Forming boundary conditions
         userCtx.FillBoundary(geom.periodicity());
-        const std::string& type1 = "pressure"; // 1 of 4 options: 'pressure', 'phi', 'velocity', 'flux'
+
+	//------------------------------------------------------
+	// 1 of 4 options: 'pressure', 'phi', 'velocity', 'flux'
+	//------------------------------------------------------
+	const std::string& type1 = "pressure";
+	const std::string& type2 = "velocity";
+        const std::string& type3 = "flux";
+        const std::string& type4 = "velocity";
+
+
+
+	
 	// Enforce the physical boundary conditions
         enforce_boundary_conditions(velCart, type1, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
@@ -564,8 +683,7 @@ void main_main ()
 	// If the physical boundary are not periodic
 	// Then the update will not touch those grid points
         velCart.FillBoundary(geom.periodicity());
-        const std::string& type2 = "velocity";
-
+        
 	// Enforce the boundary conditions again
         enforce_boundary_conditions(velCart, type2, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
@@ -577,6 +695,7 @@ void main_main ()
         Array<MultiFab, AMREX_SPACEDIM> velImRK;
         Array<MultiFab, AMREX_SPACEDIM> velImPrev;
         Array<MultiFab, AMREX_SPACEDIM> velImDiff;
+	
         for ( int dir=0; dir < AMREX_SPACEDIM; dir++ )
         {
             BoxArray edge_ba = ba;
@@ -601,7 +720,7 @@ void main_main ()
 
         // MOMENTUM |1| Setup counter
         int countIter = 0;
-        Real normError = 1.0e1;
+        Real normError = 1.0e6;
 
 	//-----------------------------------------------
         // This is the sub-iteration of the implicit RK4
@@ -610,21 +729,16 @@ void main_main ()
         {
             countIter++;
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << "\n";
-            /*
-            if (countIter == 1) {
-                amrex::Print() << "RUNGE-KUTTA |1| Create new face-centered variable to house the implicit velocity solutions... \n";
-            } else {
-                amrex::Print() << "RUNGE-KUTTA |1| Stopping conditions are not met; use the previous solution for iteration... \n";
-            }
-            */
+
+	    // Assign the initial guess as the previous flow field
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp )
             {
                 MultiFab::Copy(velImRK[comp], velImPrev[comp], 0, 0, 1, 0);
             }
 
-            // amrex::Print() << "RUNGE-KUTTA |2| Performing 4th-Order Runge-Kutta... \n";
+	    // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
-            { // RUNGE-KUTTA | START
+            { 
                 // RUNGE-KUTTA | Calculate Cell-centered Convective terms
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velImRK, phy_bc_lo, phy_bc_hi, geom, n_cell);
 
@@ -638,7 +752,6 @@ void main_main ()
                 total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
 
                 fluxTotal.FillBoundary(geom.periodicity());
-                const std::string& type3 = "flux";
                 enforce_boundary_conditions(fluxTotal, type3, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
                 // RUNGE-KUTTA | Calculate the Face-centered Righ-Hand-Side terms
@@ -653,85 +766,24 @@ void main_main ()
                 // This updated velCart will be used again next sub-iteration
                 // So, we need to re-enforce the boundary conditions
                 velCart.FillBoundary(geom.periodicity());
-                const std::string& type4 = "velocity";
                 enforce_boundary_conditions(velCart, type4, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
             } // RUNGE-KUTTA | END
-            // MOMENTUM |3| UPDATE ERROR
-            for ( MFIter mfi(velImRK[0]); mfi.isValid(); ++mfi )
-            {
-                const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-                const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-                const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
-                auto const& ximrk = velImRK[0].array(mfi);
-                auto const& yimrk = velImRK[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                auto const& zimrk = velImRK[2].array(mfi);
-#endif
-                auto const& xprev = velImPrev[0].array(mfi);
-                auto const& yprev = velImPrev[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                auto const& zprev = velImPrev[2].array(mfi);
-#endif
-                auto const& xdiff = velImDiff[0].array(mfi);
-                auto const& ydiff = velImDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                auto const& zdiff = velImDiff[2].array(mfi);
-#endif
+	    
 
-                amrex::ParallelFor(xbx,
-                [=] AMREX_GPU_DEVICE (int i, int j, int k){
-                    xdiff(i, j, k) = xprev(i, j, k) - ximrk(i, j, k);
-                });
-
-                amrex::ParallelFor(ybx,
-                [=] AMREX_GPU_DEVICE(int i, int j, int k){
-                    ydiff(i, j, k) = yprev(i, j, k) - yimrk(i, j, k);
-                });
-
-#if (AMREX_SPACEDIM > 2)
-                amrex::ParallelFor(zbx,
-                [=] AMREX_GPU_DEVICE(int i, int j, int k){
-                    zdiff(i, j, k) = zprev(i, j, k) - zimrk(i, j, k);
-                });
-#endif
-            }
-            Real xerror = velImDiff[0].norm2(0, geom.periodicity());
-            Real yerror = velImDiff[1].norm2(0, geom.periodicity());
-            // Real xerror = velImDiff[0].norminf(0, 0);
-            // Real yerror = velImDiff[1].norminf(0, 0);
-
-            normError = std::max(xerror, yerror);
-#if (AMREX_SPACEDIM > 2)
-            Real zerror = velContDiff[2].norminf(0, geom.periodicity());
-            // Real zerror = velImDiff[2].norminf(0, 0);
-            normError = std::max(normError, zerror);
-#endif
-            // amrex::Print() << "DEBUGGING| intermediate convergence: " << normError << "\n";
+	    normError = Error_Computation(velImRK, velImPrev, velImDiff, geom);
+	    
             // Update contravariant velocity
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
                 MultiFab::Copy(velImPrev[comp], velImRK[comp], 0, 0, 1, 0);
             }
-        }
+        }// End of the RK-4 LOOP Iteration!
         amrex::Print() << "SOLVING| Momentum | ending Runge-Kutta after " << countIter << " iteration(s) with convergence: " << normError << "\n";
 
         // MOMENTUM |4| PLOTTING
-        if (plot_int > 0 ) {
-            MultiFab plt(ba, dm, 3*AMREX_SPACEDIM, 0);
-
-            MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
-            MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
-            MultiFab::Copy(plt, fluxViscous, 0, 2, 1, 0);
-            MultiFab::Copy(plt, fluxViscous, 1, 3, 1, 0);
-            MultiFab::Copy(plt, fluxPrsGrad, 0, 4, 1, 0);
-            MultiFab::Copy(plt, fluxPrsGrad, 1, 5, 1, 0);
-
-            const std::string& plt_flux = amrex::Concatenate("pltFlux", n, 5);
-            WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, n);
-        }
+        if (plot_int > 0 )	  
+	    Export_Fluxes( fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, n, time);
 
         amrex::Print() << "SOLVING| Momentum | finished time step: " << n << "\n";
         // MOMENTUM |5| KIM AND MOINE'S FTS END
@@ -749,7 +801,7 @@ void main_main ()
         if (plot_int > 0 && n%plot_int == 0)
 	  Export_Flow_Field(ba, dm, geom, userCtx, velCart, n, time);
 	
-    }//end of time loop
+    }//end of time loop - this is the (n) loop!
 
     // Call the timer again and compute the maximum difference
     // between the start time and stop time

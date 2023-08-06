@@ -1,4 +1,4 @@
-Host Name: angilas
+Host Name: trungle-Inspiron-15-7000-Gaming
 === If no file names and line numbers are shown below, one can run
             addr2line -Cpfie my_exefile my_line_address
     to convert `my_line_address` (e.g., 0x4a6b) into file name and line number.
@@ -9,42 +9,38 @@ Host Name: angilas
             readelf -wl my_exefile | grep my_line_address'
     to find out the offset for that line.
 
- 0: ./main2d.gnu.DEBUG.MPI.ex(+0x29190e) [0x55918c9cd90e]
+ 0: ./main2d.gnu.DEBUG.ex(+0x261f70) [0x55fba4d86f70]
     amrex::BLBackTrace::print_backtrace_info(_IO_FILE*) at /home/trungle/Documents/amrex//Src/Base/AMReX_BLBackTrace.cpp:189
 
- 1: ./main2d.gnu.DEBUG.MPI.ex(+0x2913f3) [0x55918c9cd3f3]
+ 1: ./main2d.gnu.DEBUG.ex(+0x261a23) [0x55fba4d86a23]
     amrex::BLBackTrace::handler(int) at /home/trungle/Documents/amrex//Src/Base/AMReX_BLBackTrace.cpp:99
 
- 2: ./main2d.gnu.DEBUG.MPI.ex(+0xe27ab) [0x55918c81e7ab]
-    amrex::ParallelDescriptor::Abort(int, bool) at /home/trungle/Documents/amrex//Src/Base/AMReX_ParallelDescriptor.cpp:219
+ 2: ./main2d.gnu.DEBUG.ex(+0xd1ba3) [0x55fba4bf6ba3]
+    amrex::ParallelDescriptor::Abort(int, bool) at /home/trungle/Documents/amrex//Src/Base/AMReX_ParallelDescriptor.cpp:1197
 
- 3: ./main2d.gnu.DEBUG.MPI.ex(+0x5b83e) [0x55918c79783e]
+ 3: ./main2d.gnu.DEBUG.ex(+0x4a854) [0x55fba4b6f854]
     amrex::Assert_host(char const*, char const*, int, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.cpp:289
 
- 4: ./main2d.gnu.DEBUG.MPI.ex(+0x1dd27d) [0x55918c91927d]
+ 4: ./main2d.gnu.DEBUG.ex(+0x1a8d9) [0x55fba4b3f8d9]
     amrex::Assert(char const*, char const*, int, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.H:189 (discriminator 1)
- (inlined by) amrex::FabArrayBase::getTileArray(amrex::IntVect const&) const at /home/trungle/Documents/amrex//Src/Base/AMReX_FabArrayBase.cpp:2243 (discriminator 1)
+ (inlined by) amrex::FabArray<amrex::FArrayBox>::fabPtr(amrex::MFIter const&) at /home/trungle/Documents/amrex//Src/Base/AMReX_FabArray.H:1458 (discriminator 1)
 
- 5: ./main2d.gnu.DEBUG.MPI.ex(+0x203615) [0x55918c93f615]
-    amrex::MFIter::Initialize() at /home/trungle/Documents/amrex//Src/Base/AMReX_MFIter.cpp:292
+ 5: ./main2d.gnu.DEBUG.ex(+0x1874f) [0x55fba4b3d74f]
+    amrex::Array4<double> amrex::FabArray<amrex::FArrayBox>::array<amrex::FArrayBox, 0>(amrex::MFIter const&) at /home/trungle/Documents/amrex//Src/Base/AMReX_FabArray.H:1529
 
- 6: ./main2d.gnu.DEBUG.MPI.ex(+0x202b14) [0x55918c93eb14]
-    amrex::MFIter::MFIter(amrex::FabArrayBase const&, bool) at /home/trungle/Documents/amrex//Src/Base/AMReX_MFIter.cpp:54
+ 6: ./main2d.gnu.DEBUG.ex(+0x11a46) [0x55fba4b36a46]
+    Error_Computation(std::array<amrex::MultiFab, 2ul>&, std::array<amrex::MultiFab, 2ul>&, amrex::Geometry const&) at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:369 (discriminator 4)
 
- 7: ./main2d.gnu.DEBUG.MPI.ex(+0xf2701) [0x55918c82e701]
-    void amrex::Copy<amrex::FArrayBox, amrex::FArrayBox, 0>(amrex::FabArray<amrex::FArrayBox>&, amrex::FabArray<amrex::FArrayBox> const&, int, int, int, amrex::IntVect const&) at /home/trungle/Documents/amrex//Src/Base/AMReX_FabArray.H:255 (discriminator 3)
+ 7: ./main2d.gnu.DEBUG.ex(+0x1475a) [0x55fba4b3975a]
+    main_main() at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:825
 
- 8: ./main2d.gnu.DEBUG.MPI.ex(+0x19d519) [0x55918c8d9519]
-    amrex::MultiFab::Copy(amrex::MultiFab&, amrex::MultiFab const&, int, int, int, int) at /home/trungle/Documents/amrex//Src/Base/AMReX_MultiFab.cpp:175
-
- 9: ./main2d.gnu.DEBUG.MPI.ex(+0x130e8) [0x55918c74f0e8]
-    main_main() at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:358 (discriminator 2)
-
-10: ./main2d.gnu.DEBUG.MPI.ex(+0x118d1) [0x55918c74d8d1]
+ 8: ./main2d.gnu.DEBUG.ex(+0xf5b0) [0x55fba4b345b0]
     main at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:120
 
-11: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7f549c746083]
+ 9: /lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f5ef0c29d90]
 
-12: ./main2d.gnu.DEBUG.MPI.ex(+0x1177e) [0x55918c74d77e]
+10: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7f5ef0c29e40]
+
+11: ./main2d.gnu.DEBUG.ex(+0xf475) [0x55fba4b34475]
     ?? ??:0
 
