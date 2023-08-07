@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-
+#include "myfunc.H"
 
 /*
  This class consists of user-defined contexts for the program computation

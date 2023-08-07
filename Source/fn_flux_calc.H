@@ -31,4 +31,8 @@ void total_flux_calc (amrex::MultiFab& fluxTotal,
                       amrex::MultiFab& fluxViscous,
                       amrex::MultiFab& fluxPrsGrad);
 
+void Poisson_RHS(amrex::Geometry const& geom,
+		 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+		   amrex::MultiFab& rhs);
+
 #endif

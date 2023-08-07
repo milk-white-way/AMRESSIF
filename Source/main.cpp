@@ -447,7 +447,6 @@ void main_main ()
 	  {
 	    phy_bc_lo[dir] == SolverCtx.phy_bc_lo[dir]; 
 	    phy_bc_hi[dir] == SolverCtx.phy_bc_hi[dir]; 
-
  
 	    bc_lo[dir] == SolverCtx.bc_lo[dir]; 
 	    bc_hi[dir] == SolverCtx.bc_hi[dir]; 
@@ -461,7 +460,6 @@ void main_main ()
     for (int dir=0; dir < AMREX_SPACEDIM; ++dir)        
 	amrex::Print() << "INFO| periodicity in " << dir << "th dim " << SolverCtx.is_periodic[dir] << "\n";
 
-    
     //------------------------------------------------------------------
     //------------------------------------------------------------------
     // ==-=-=-=-=-=-=-=-=-=-=-= Defining System's Variables =-=-=-==-=-=
@@ -504,6 +502,12 @@ void main_main ()
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     MultiFab userCtx(ba, dm, Ncomp, Nghost);
     MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
+
+    
+    // Define the RHS for the Poisson equation - Just one component
+    MultiFab Poisson_RHS_Vector(ba, dm, 1, Nghost);
+    MultiFab phi_solution(ba, dm, 1, Nghost);
+   
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
@@ -671,9 +675,6 @@ void main_main ()
 	const std::string& type2 = "velocity";
         const std::string& type3 = "flux";
         const std::string& type4 = "velocity";
-
-
-
 	
 	// Enforce the physical boundary conditions
         enforce_boundary_conditions(velCart, type1, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
@@ -757,6 +758,7 @@ void main_main ()
                 // RUNGE-KUTTA | Calculate the Face-centered Righ-Hand-Side terms
                 righthand_side_calc(rhs, fluxTotal);
 
+		
                 // RUNGE-KUTTA | Advance
                 km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, phy_bc_lo, phy_bc_hi, n_cell);
                 // After advance through 4 sub-step we obtain guessed velCont at next time step
@@ -786,7 +788,12 @@ void main_main ()
 	    Export_Fluxes( fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, n, time);
 
         amrex::Print() << "SOLVING| Momentum | finished time step: " << n << "\n";
-        // MOMENTUM |5| KIM AND MOINE'S FTS END
+
+
+	// Setup the RHS
+	Poisson_RHS(geom, velImRK, Poisson_RHS_Vector );
+	Set_Phi_To_Zero(phi_solution);
+	
 
         // PSEUDO-CODE: POISSON SOLVER HERE
 
