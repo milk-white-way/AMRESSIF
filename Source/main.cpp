@@ -795,7 +795,9 @@ void main_main ()
 	Set_Phi_To_Zero(phi_solution);
 	
 
-        // PSEUDO-CODE: POISSON SOLVER HERE
+        //POISSON SOLVER
+	Poisson_Solver (phi_solution, Poisson_RHS_Vector, geom, ba, dm, bc);
+
 
         // advance will do all above steps
         //advance(userCtxOld, userCtx, flux, dt, geom);
