@@ -1,4 +1,4 @@
-Host Name: trungle-Inspiron-15-7000-Gaming
+Host Name: angilas
 === If no file names and line numbers are shown below, one can run
             addr2line -Cpfie my_exefile my_line_address
     to convert `my_line_address` (e.g., 0x4a6b) into file name and line number.
@@ -9,38 +9,36 @@ Host Name: trungle-Inspiron-15-7000-Gaming
             readelf -wl my_exefile | grep my_line_address'
     to find out the offset for that line.
 
- 0: ./main2d.gnu.DEBUG.ex(+0x261f70) [0x55fba4d86f70]
+ 0: ./main2d.gnu.DEBUG.ex(+0x26b860) [0x559046db5860]
     amrex::BLBackTrace::print_backtrace_info(_IO_FILE*) at /home/trungle/Documents/amrex//Src/Base/AMReX_BLBackTrace.cpp:189
 
- 1: ./main2d.gnu.DEBUG.ex(+0x261a23) [0x55fba4d86a23]
+ 1: ./main2d.gnu.DEBUG.ex(+0x26b345) [0x559046db5345]
     amrex::BLBackTrace::handler(int) at /home/trungle/Documents/amrex//Src/Base/AMReX_BLBackTrace.cpp:99
 
- 2: ./main2d.gnu.DEBUG.ex(+0xd1ba3) [0x55fba4bf6ba3]
+ 2: ./main2d.gnu.DEBUG.ex(+0xe3843) [0x559046c2d843]
     amrex::ParallelDescriptor::Abort(int, bool) at /home/trungle/Documents/amrex//Src/Base/AMReX_ParallelDescriptor.cpp:1197
 
- 3: ./main2d.gnu.DEBUG.ex(+0x4a854) [0x55fba4b6f854]
+ 3: ./main2d.gnu.DEBUG.ex(+0x626f8) [0x559046bac6f8]
     amrex::Assert_host(char const*, char const*, int, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.cpp:289
 
- 4: ./main2d.gnu.DEBUG.ex(+0x1a8d9) [0x55fba4b3f8d9]
-    amrex::Assert(char const*, char const*, int, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.H:189 (discriminator 1)
- (inlined by) amrex::FabArray<amrex::FArrayBox>::fabPtr(amrex::MFIter const&) at /home/trungle/Documents/amrex//Src/Base/AMReX_FabArray.H:1458 (discriminator 1)
+ 4: ./main2d.gnu.DEBUG.ex(+0x2a66c1) [0x559046df06c1]
+    amrex::Assert(char const*, char const*, int, char const*) at /home/trungle/Documents/amrex//Src/Base/AMReX.H:189 (discriminator 3)
+ (inlined by) amrex::MLLinOpT<amrex::MultiFab>::setDomainBC(amrex::Vector<std::array<amrex::LinOpBCType, 2ul>, std::allocator<std::array<amrex::LinOpBCType, 2ul> > > const&, amrex::Vector<std::array<amrex::LinOpBCType, 2ul>, std::allocator<std::array<amrex::LinOpBCType, 2ul> > > const&) at /home/trungle/Documents/amrex//Src/LinearSolvers/MLMG/AMReX_MLLinOp.H:1127 (discriminator 3)
 
- 5: ./main2d.gnu.DEBUG.ex(+0x1874f) [0x55fba4b3d74f]
-    amrex::Array4<double> amrex::FabArray<amrex::FArrayBox>::array<amrex::FArrayBox, 0>(amrex::MFIter const&) at /home/trungle/Documents/amrex//Src/Base/AMReX_FabArray.H:1529
+ 5: ./main2d.gnu.DEBUG.ex(+0x2a6402) [0x559046df0402]
+    amrex::MLLinOpT<amrex::MultiFab>::setDomainBC(std::array<amrex::LinOpBCType, 2ul> const&, std::array<amrex::LinOpBCType, 2ul> const&) at /home/trungle/Documents/amrex//Src/LinearSolvers/MLMG/AMReX_MLLinOp.H:1108
 
- 6: ./main2d.gnu.DEBUG.ex(+0x11a46) [0x55fba4b36a46]
-    Error_Computation(std::array<amrex::MultiFab, 2ul>&, std::array<amrex::MultiFab, 2ul>&, amrex::Geometry const&) at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:369 (discriminator 4)
+ 6: ./main2d.gnu.DEBUG.ex(+0x4f540) [0x559046b99540]
+    Poisson_Solver(amrex::MultiFab&, amrex::MultiFab&, amrex::Geometry const&, amrex::BoxArray const&, amrex::DistributionMapping const&, amrex::Vector<amrex::BCRec, std::allocator<amrex::BCRec> > const&) at /home/trungle/Documents/AMRESSIF/Exec/../Source/poisson.cpp:208
 
- 7: ./main2d.gnu.DEBUG.ex(+0x1475a) [0x55fba4b3975a]
-    main_main() at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:825
+ 7: ./main2d.gnu.DEBUG.ex(+0x1886b) [0x559046b6286b]
+    main_main() at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:805
 
- 8: ./main2d.gnu.DEBUG.ex(+0xf5b0) [0x55fba4b345b0]
+ 8: ./main2d.gnu.DEBUG.ex(+0x135cf) [0x559046b5d5cf]
     main at /home/trungle/Documents/AMRESSIF/Exec/../Source/main.cpp:120
 
- 9: /lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f5ef0c29d90]
+ 9: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7fcc6ac68083]
 
-10: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7f5ef0c29e40]
-
-11: ./main2d.gnu.DEBUG.ex(+0xf475) [0x55fba4b34475]
+10: ./main2d.gnu.DEBUG.ex(+0x1347e) [0x559046b5d47e]
     ?? ??:0
 

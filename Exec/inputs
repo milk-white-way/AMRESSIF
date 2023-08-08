@@ -3,7 +3,7 @@ plot_int = 1
 n_cell = 16 
 max_grid_size = 4
 
-cfl = 0.99
+cfl = 1.2 
 IterNum = 16
 
 ren = 1

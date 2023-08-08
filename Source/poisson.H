@@ -25,3 +25,13 @@ void Poisson_RHS(amrex::Geometry const& geom,
 		 amrex::Real& dt);
 
 void Set_Phi_To_Zero(amrex::MultiFab& phi);
+
+void Poisson_Update_Solution (
+	      amrex::MultiFab& phi_solution,
+	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& grad_phi,
+	      MultiFab& userCtx,
+	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+	      const Geometry& geom,
+              const BoxArray& grids,
+              const DistributionMapping& dmap,
+              const Vector<BCRec>& bc);

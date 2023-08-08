@@ -23,7 +23,8 @@ void Set_Phi_To_Zero(amrex::MultiFab& phi)
 #endif
     for ( MFIter mfi(phi); mfi.isValid(); ++mfi )
     {
-        const Box& vbx = mfi.validbox();
+      // This includes one ghost cell
+        const Box& vbx = mfi.growntilebox(1);
         auto const& vphi  = phi.array(mfi);
 
 
@@ -145,52 +146,55 @@ void Poisson_Solver (
     MLABecLaplacian mlabec({geom}, {grids}, {dmap}, info);
 
     // order of stencil
-    int linop_maxorder = 3;
+    int linop_maxorder = 2;
     mlabec.setMaxOrder(linop_maxorder);
 
     // build array of boundary conditions needed by MLABecLaplacian
     // see Src/Boundary/AMReX_LO_BCTYPES.H for supported types
-    std::array<LinOpBCType,AMREX_SPACEDIM> bc_lo;
-    std::array<LinOpBCType,AMREX_SPACEDIM> bc_hi;
+    std::array<LinOpBCType,AMREX_SPACEDIM> LinOp_bc_lo;
+    std::array<LinOpBCType,AMREX_SPACEDIM> LinOp_bc_hi;
 
-    for (int n = 0; n < phi_solution.nComp(); ++n)
-    {
-        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim)
-        {
-            // lo-side BCs
-            if (bc[n].lo(idim) == BCType::int_dir) {
-                bc_lo[idim] = LinOpBCType::Periodic;
-            }
-            else if (bc[n].lo(idim) == BCType::foextrap) {
-                bc_lo[idim] = LinOpBCType::Neumann;
-            }
-            else if (bc[n].lo(idim) == BCType::ext_dir) {
-                bc_lo[idim] = LinOpBCType::Dirichlet;
-            }
-            else {
-                amrex::Abort("Invalid bc_lo");
-            }
+     for (int n = 0; n < phi_solution.nComp(); ++n)
+     {
+         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim)
+         {
+             // lo-side BCs
+             if (bc[n].lo(idim) == BCType::int_dir) {
+                 LinOp_bc_lo[idim] = LinOpBCType::Periodic;
+             }
+             else if (bc[n].lo(idim) == BCType::foextrap) {
+                 LinOp_bc_lo[idim] = LinOpBCType::Neumann;
+             }
+             else if (bc[n].lo(idim) == BCType::ext_dir) {
+                 LinOp_bc_lo[idim] = LinOpBCType::Dirichlet;
+             }
+             else {
+                 amrex::Abort("Invalid bc_lo");
+             }
 
-            // hi-side BCs
-            if (bc[n].hi(idim) == BCType::int_dir) {
-                bc_hi[idim] = LinOpBCType::Periodic;
-            }
-            else if (bc[n].hi(idim) == BCType::foextrap) {
-                bc_hi[idim] = LinOpBCType::Neumann;
-            }
-            else if (bc[n].hi(idim) == BCType::ext_dir) {
-                bc_hi[idim] = LinOpBCType::Dirichlet;
-            }
-            else {
-                amrex::Abort("Invalid bc_hi");
-            }
-        }
-    }
+             // hi-side BCs
+             if (bc[n].hi(idim) == BCType::int_dir) {
+                 LinOp_bc_hi[idim] = LinOpBCType::Periodic;
+             }
+             else if (bc[n].hi(idim) == BCType::foextrap) {
+                 LinOp_bc_hi[idim] = LinOpBCType::Neumann;
+             }
+             else if (bc[n].hi(idim) == BCType::ext_dir) {
+                 LinOp_bc_hi[idim] = LinOpBCType::Dirichlet;
+             }
+             else {
+                 amrex::Abort("Invalid bc_hi");
+             }
+         }
+     }
 
     // tell the solver what the domain boundary conditions are
-    mlabec.setDomainBC(bc_lo, bc_hi);
+   
+    mlabec.setDomainBC(LinOp_bc_lo, LinOp_bc_hi);
 
     // set the boundary conditions
+    // This loads the value of the Neumman boundary condition at the ghost cells
+    // Ghost cell stores the value of the BCs for the Neumann
     mlabec.setLevelBC(0, &phi_solution);
 
     // scaling factors
@@ -245,4 +249,71 @@ void Poisson_Solver (
     // Solve linear system
      mlmg.solve({&phi_solution}, {&rhs_ptr}, tol_rel, tol_abs);
    
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++
+//-- Update the pressure and velocity field---
+//-- After the projection step ---------------
+//++++++++++++++++++++++++++++++++++++++++++++
+void Poisson_Update_Solution (
+	      amrex::MultiFab& phi_solution,
+	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& grad_phi,
+	      MultiFab& userCtx,
+	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+	      const Geometry& geom,
+              const BoxArray& grids,
+              const DistributionMapping& dmap,
+              const Vector<BCRec>& bc)
+{
+  amrex::Print() << " Updating the solution \n";
+
+  // Set the grad_phi components to be zeros
+  // Scaling the right-hand side to include time-step here
+  for ( MFIter mfi(grad_phi[0]); mfi.isValid(); ++mfi )
+    {
+         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+ #endif
+// 	// grad X, Y, and Z
+        auto const& grad_x  = grad_phi[0].array(mfi);
+   	auto const& grad_y  = grad_phi[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+
+ 	auto const& grad_z  = grad_phi[2].array(mfi);
+#endif
+	//i direction
+        amrex::ParallelFor(xbx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+
+	   grad_x(i,j,k) = 0;
+	  
+         });
+
+	//j direction
+        amrex::ParallelFor(ybx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+
+	   grad_y(i,j,k) = 0;
+	  
+         });
+
+
+#if (AMREX_SPACEDIM > 2)
+
+	//k direction
+        amrex::ParallelFor(zbx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+	   grad_z(i,j,k) = 0;
+
+         });
+
+#endif
+    }// End of the loop for boxes
+
+    amrex::Print() << " Updating ends. \n";
 }

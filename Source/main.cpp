@@ -535,6 +535,14 @@ void main_main ()
      *
      */            
 
+    //------------------------------------------------------
+    // 1 of 4 options: 'pressure', 'phi', 'velocity', 'flux'
+    //------------------------------------------------------
+    const std::string& type1 = "pressure";
+    const std::string& type2 = "velocity";
+    const std::string& type3 = "flux";
+    const std::string& type4 = "velocity";
+
     // Contravariant velocities live in the face center
     Array<MultiFab, AMREX_SPACEDIM> velCont;
     Array<MultiFab, AMREX_SPACEDIM> velContDiff;
@@ -545,6 +553,13 @@ void main_main ()
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN2;
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN3;
 
+    // Intermediate velocity fields
+    Array<MultiFab, AMREX_SPACEDIM> velImRK;
+    Array<MultiFab, AMREX_SPACEDIM> velImPrev;
+    Array<MultiFab, AMREX_SPACEDIM> velImDiff;
+    // gradient of phi
+    Array<MultiFab, AMREX_SPACEDIM> grad_phi;
+	
     // Due to the mismatch between the volume-center and face-center variables
     // The physical quantities living at the face center need to be blowed out one once in the respective direction
     for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
@@ -559,6 +574,12 @@ void main_main ()
         fluxHalfN1[dir].define(edge_ba, dm, 1, 0);
         fluxHalfN2[dir].define(edge_ba, dm, 1, 0);
         fluxHalfN3[dir].define(edge_ba, dm, 1, 0);
+
+        velImRK[dir].define(edge_ba, dm, 1, 0);
+        velImPrev[dir].define(edge_ba, dm, 1, 0);
+        velImDiff[dir].define(edge_ba, dm, 1, 0);
+
+	grad_phi[dir].define(edge_ba, dm, 1, 0);
     }
 
     //---------------------------------------------------------------
@@ -602,19 +623,21 @@ void main_main ()
             }
         }
     }
+
+
+
+
+    
     // Print desired variables for debugging
     amrex::Print() << "INFO| number of dimensions: " << AMREX_SPACEDIM << "\n";
-
-    //    amrex::Print() << "INFO| box array: " << ba << "\n";
     amrex::Print() << "INFO| geometry: " << geom << "\n";
-
     amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
     amrex::Print() << "PARAMS| number of components for each array: " << Ncomp << "\n";
 
    //--------------------------------------------------------------------------------------// 
    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------//
    //--------------------------------------------------------------------------------------//
-    amrex::Print() << "===================== INITIALIZATION STEP ===================== \n";
+    amrex::Print() << "==== INITIALIZATION STEP =========== \n";
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
@@ -668,14 +691,6 @@ void main_main ()
         // Forming boundary conditions
         userCtx.FillBoundary(geom.periodicity());
 
-	//------------------------------------------------------
-	// 1 of 4 options: 'pressure', 'phi', 'velocity', 'flux'
-	//------------------------------------------------------
-	const std::string& type1 = "pressure";
-	const std::string& type2 = "velocity";
-        const std::string& type3 = "flux";
-        const std::string& type4 = "velocity";
-	
 	// Enforce the physical boundary conditions
         enforce_boundary_conditions(velCart, type1, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
@@ -692,21 +707,6 @@ void main_main ()
 	// after boundary conditions are enfoced
         // velCont is updated first via Momentum solver
         cart2cont(velCart, velCont);
-
-        Array<MultiFab, AMREX_SPACEDIM> velImRK;
-        Array<MultiFab, AMREX_SPACEDIM> velImPrev;
-        Array<MultiFab, AMREX_SPACEDIM> velImDiff;
-	
-        for ( int dir=0; dir < AMREX_SPACEDIM; dir++ )
-        {
-            BoxArray edge_ba = ba;
-            edge_ba.surroundingNodes(dir);
-
-            velImRK[dir].define(edge_ba, dm, 1, 0);
-            velImPrev[dir].define(edge_ba, dm, 1, 0);
-            velImDiff[dir].define(edge_ba, dm, 1, 0);
-        }
-
 
 	// Copy the intermediate values to the next sub-iteration
         for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
@@ -774,6 +774,7 @@ void main_main ()
 	    
 
 	    normError = Error_Computation(velImRK, velImPrev, velImDiff, geom);
+	    amrex::Print() << "error norm2 = " << normError << "\n";
 	    
             // Update contravariant velocity
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
@@ -783,28 +784,29 @@ void main_main ()
         }// End of the RK-4 LOOP Iteration!
         amrex::Print() << "SOLVING| Momentum | ending Runge-Kutta after " << countIter << " iteration(s) with convergence: " << normError << "\n";
 
+	//---------------------------------------
         // MOMENTUM |4| PLOTTING
+	// This is just for debugging only !
+	//---------------------------------------
         if (plot_int > 0 )	  
 	    Export_Fluxes( fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, n, time);
 
         amrex::Print() << "SOLVING| Momentum | finished time step: " << n << "\n";
 
-
 	// Setup the RHS
 	Poisson_RHS(geom, velImRK, Poisson_RHS_Vector, dt);
 	Set_Phi_To_Zero(phi_solution);
 	
-
         //POISSON SOLVER
 	Poisson_Solver (phi_solution, Poisson_RHS_Vector, geom, ba, dm, bc);
 
-
+	// Update the solution
+	// U^{n+1} = v* + grad (\phi)
+	// p^{n+1} = p  + \phi
+        Poisson_Update_Solution (phi_solution, grad_phi, userCtx, velCont, geom, ba, dm, bc);
+	
         // advance will do all above steps
-        //advance(userCtxOld, userCtx, flux, dt, geom);
         time = time + dt;
-
-        // Tell the I/O Processor to write out which step we're doing
-        // amrex::Print() << "INFO| End Advanced Step " << n << "\n";
 
         // Write a plotfile of the current data (plot_int was defined in the inputs file)
         if (plot_int > 0 && n%plot_int == 0)
