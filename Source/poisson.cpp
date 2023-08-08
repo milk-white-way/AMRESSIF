@@ -47,7 +47,7 @@ void Set_Phi_To_Zero(amrex::MultiFab& phi)
 //+++++++++++++++++++++++++++++++++++++++++++++
 void Poisson_RHS(amrex::Geometry const& geom,                       
 		 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-		 amrex::MultiFab& rhs)
+		 amrex::MultiFab& rhs, amrex::Real &dt)
 {
   amrex::Print() << "Setting up the right hand side of the Poisson equation\n";
 
@@ -57,6 +57,8 @@ void Poisson_RHS(amrex::Geometry const& geom,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
+
+    // Loop for all boxes
     for ( MFIter mfi(rhs); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
@@ -65,7 +67,7 @@ void Poisson_RHS(amrex::Geometry const& geom,
 	auto const& xcont = velCont[0].array(mfi);
         auto const& ycont = velCont[1].array(mfi);
 
-
+	//Loop for all i,j,k in the local domain
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
@@ -78,6 +80,22 @@ void Poisson_RHS(amrex::Geometry const& geom,
   	  compute_flux_divergence_2D(i, j, k, vrhs, xcont, ycont, dx);
 
 #endif
+
+        });
+    }// End of all box loops
+
+
+    // Scaling the right-hand side to include time-step here
+   for ( MFIter mfi(rhs); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& vrhs  = rhs.array(mfi);
+
+        amrex::ParallelFor(vbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+
+	  vrhs(i,j,k) = vrhs(i,j,k) * 1.5 / dt;
 
         });
     }

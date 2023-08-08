@@ -791,7 +791,7 @@ void main_main ()
 
 
 	// Setup the RHS
-	Poisson_RHS(geom, velImRK, Poisson_RHS_Vector );
+	Poisson_RHS(geom, velImRK, Poisson_RHS_Vector, dt);
 	Set_Phi_To_Zero(phi_solution);
 	
 

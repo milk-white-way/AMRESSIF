@@ -21,6 +21,7 @@ void Poisson_Solver (
 
 void Poisson_RHS(amrex::Geometry const& geom,                       
 		 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-		 amrex::MultiFab& rhs);
+		 amrex::MultiFab& rhs,
+		 amrex::Real& dt);
 
 void Set_Phi_To_Zero(amrex::MultiFab& phi);
