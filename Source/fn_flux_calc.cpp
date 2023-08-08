@@ -2,11 +2,7 @@
 
 #include "fn_flux_calc.H"
 #include "kn_flux_calc.H"
-
-//#include <AMReX_BCUtil.H>
-//#include <AMReX_MLMG.H>
-//#include <AMReX_MLABecLaplacian.H>
-
+#include "kn_poisson.H"
 
 using namespace amrex;
 
@@ -216,79 +212,4 @@ void total_flux_calc ( MultiFab& fluxTotal,
             compute_total_flux(i, j, k, total_flux, conv_flux, visc_flux, prsgrad_flux);
         });
     }
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++
-//------- Setup the RHS -----------------------
-//-- For the Poisson equation -----------------
-//+++++++++++++++++++++++++++++++++++++++++++++
-void Poisson_RHS(amrex::Geometry const& geom,                       
-		 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-		 amrex::MultiFab& rhs)
-{
-  amrex::Print() << "Setting up the right hand side of the Poisson equation\n";
-
-  
-    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(rhs); mfi.isValid(); ++mfi )
-    {
-        const Box& vbx = mfi.validbox();
-        auto const& vrhs  = rhs.array(mfi);
-
-	auto const& xcont = velCont[0].array(mfi);
-        auto const& ycont = velCont[1].array(mfi);
-
-
-        amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-
-	  
-#if (AMREX_SPACEDIM > 2)
-          auto const& zcont = velCont[2].array(mfi);
-          compute_flux_divergence_3D(i, j, k, vrhs, xcont, ycont, zcont, dx);
-#else
-  	  compute_flux_divergence_2D(i, j, k, vrhs, xcont, ycont, dx);
-
-#endif
-
-        });
-    }
-
-    amrex::Print() << "Setting up completes.....\n";
-
-}
-
-//--------------------------------------
-//++++++++++++++++++++++++++++++++++++++
-//++++++++++++++++++++++++++++++++++++++
-
-void Set_Phi_To_Zero(amrex::MultiFab& phi)
-{
-  
- 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(phi); mfi.isValid(); ++mfi )
-    {
-        const Box& vbx = mfi.validbox();
-        auto const& vphi  = phi.array(mfi);
-
-
-        amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-
-	  vphi(i,j,k) = 0;
-
-        });
-    }
-
-    amrex::Print() << "Setting up completes.....\n";
-
 }
