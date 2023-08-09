@@ -65,8 +65,8 @@ struct amress_solver
       Real ren;
       Real vis;
 
-      int phy_bc_lo[AMREX_SPACEDIM];
-      int phy_bc_hi[AMREX_SPACEDIM];
+      //      int phy_bc_lo[AMREX_SPACEDIM];
+      //      int phy_bc_hi[AMREX_SPACEDIM];
 
       // // Declaring params for boundary conditon type
       int bc_lo[AMREX_SPACEDIM];
@@ -172,8 +172,8 @@ void Input_Parameters(amress_solver *SolverCtx)
 	// -1 is non-slip
 	// 1 is slip
 
-	Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
-	Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
+	//Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
+	//Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
 
 	// Declaring params for boundary conditon type
 	Vector<int> bc_lo(AMREX_SPACEDIM, 0);
@@ -181,8 +181,8 @@ void Input_Parameters(amress_solver *SolverCtx)
 
 
         // // Parsing boundary condition from input file
-        pp.queryarr("phy_bc_lo", phy_bc_lo);
-        pp.queryarr("phy_bc_hi", phy_bc_hi);
+        //pp.queryarr("phy_bc_lo", phy_bc_lo);
+        //pp.queryarr("phy_bc_hi", phy_bc_hi);
 
         pp.queryarr("bc_lo", bc_lo);
         pp.queryarr("bc_hi", bc_hi);
@@ -190,8 +190,8 @@ void Input_Parameters(amress_solver *SolverCtx)
 	// Loop all around the dimensions and assign the values of the BCs
        for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
 	 {
-	  SolverCtx->phy_bc_lo[dir] = phy_bc_lo[dir];
-	  SolverCtx->phy_bc_hi[dir] = phy_bc_hi[dir];
+	   //SolverCtx->phy_bc_lo[dir] = phy_bc_lo[dir];
+	   //SolverCtx->phy_bc_hi[dir] = phy_bc_hi[dir];
 	  SolverCtx->bc_lo[dir] = bc_lo[dir];
 	  SolverCtx->bc_hi[dir] = bc_hi[dir];
        }// End of loop around all dimensions
@@ -199,7 +199,7 @@ void Input_Parameters(amress_solver *SolverCtx)
        // Testing periodicity in all directions
     for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
       {
-        if (SolverCtx->phy_bc_lo[dir] == 0 && SolverCtx->phy_bc_hi[dir] == 0)
+        if (SolverCtx->bc_lo[dir] == 0 && SolverCtx->bc_hi[dir] == 0)
 	  {
             SolverCtx->is_periodic[dir] = 1;
 	  }
@@ -420,8 +420,8 @@ void main_main ()
     // Porting extra params from Julian code
     Real ren, vis, cfl;
     
-    Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
-    Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
+    //Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
+    //Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> bc_hi(AMREX_SPACEDIM, 0);
@@ -445,8 +445,8 @@ void main_main ()
         // Parsing boundary condition from the Context
 	for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
 	  {
-	    phy_bc_lo[dir] == SolverCtx.phy_bc_lo[dir]; 
-	    phy_bc_hi[dir] == SolverCtx.phy_bc_hi[dir]; 
+	    //phy_bc_lo[dir] == SolverCtx.phy_bc_lo[dir]; 
+	    //phy_bc_hi[dir] == SolverCtx.phy_bc_hi[dir]; 
  
 	    bc_lo[dir] == SolverCtx.bc_lo[dir]; 
 	    bc_hi[dir] == SolverCtx.bc_hi[dir]; 
@@ -692,7 +692,7 @@ void main_main ()
         userCtx.FillBoundary(geom.periodicity());
 
 	// Enforce the physical boundary conditions
-        enforce_boundary_conditions(velCart, type1, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        enforce_boundary_conditions(velCart, type1, Nghost, bc_lo, bc_hi, n_cell);
 
 	// Doing the HALO exchange
 	// This is important
@@ -701,7 +701,7 @@ void main_main ()
         velCart.FillBoundary(geom.periodicity());
         
 	// Enforce the boundary conditions again
-        enforce_boundary_conditions(velCart, type2, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        enforce_boundary_conditions(velCart, type2, Nghost, bc_lo, bc_hi, n_cell);
 
         // Convert cartesian velocity to contravariant velocity
 	// after boundary conditions are enfoced
@@ -741,7 +741,7 @@ void main_main ()
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             { 
                 // RUNGE-KUTTA | Calculate Cell-centered Convective terms
-                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velImRK, phy_bc_lo, phy_bc_hi, geom, n_cell);
+                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velImRK, bc_lo, bc_hi, geom, n_cell);
 
                 // RUNGE-KUTTA | Calculate Cell-centered Viscous terms
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
@@ -753,14 +753,14 @@ void main_main ()
                 total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
 
                 fluxTotal.FillBoundary(geom.periodicity());
-                enforce_boundary_conditions(fluxTotal, type3, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                enforce_boundary_conditions(fluxTotal, type3, Nghost, bc_lo, bc_hi, n_cell);
 
                 // RUNGE-KUTTA | Calculate the Face-centered Righ-Hand-Side terms
                 righthand_side_calc(rhs, fluxTotal);
 
 		
                 // RUNGE-KUTTA | Advance
-                km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, phy_bc_lo, phy_bc_hi, n_cell);
+                km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, bc_lo, bc_hi, n_cell);
                 // After advance through 4 sub-step we obtain guessed velCont at next time step
 
                 // RUNGE-KUTTA | Update velCart from the velCont solutions
@@ -768,7 +768,7 @@ void main_main ()
                 // This updated velCart will be used again next sub-iteration
                 // So, we need to re-enforce the boundary conditions
                 velCart.FillBoundary(geom.periodicity());
-                enforce_boundary_conditions(velCart, type4, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
 
             } // RUNGE-KUTTA | END
 	    
