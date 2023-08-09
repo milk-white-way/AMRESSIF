@@ -7,7 +7,7 @@
  * Jul/31/2023 - Trung edited
  */
 
-// ============================== LISTING KERNEL HEADERS ==============================
+// =================== LISTING KERNEL HEADERS ==============================
 #include <AMReX_Gpu.H>
 #include <AMReX_Utility.H>
 #include <AMReX_PlotFileUtil.H>
@@ -20,14 +20,6 @@
 
 #include "main_main.H"
 #include "main.H"
-// #include "./meTh_Fractional_Time/mdl_initialization/fn_init.H"
-// #include "./meTh_Fractional_Time/mdl_momentum/fn_momentum.H"
-// #include "./meTh_Fractional_Time/mdl_poisson/fn_poisson.H"
-// #include "./meTh_Fractional_Time/mdl_advance/fn_advance.H"
-
-// #include "./meTh_Fractional_Time/utl_boundary_conditions/fn_fill_ghostcells.H"
-// #include "./meTh_Fractional_Time/utl_conversion/fn_cart2cont.H"
-// #include "./meTh_Fractional_Time/utl_conversion/fn_cont2cart.H"
 
 // Modulization library
 #include "fn_cart2cont.H"
@@ -420,8 +412,6 @@ void main_main ()
     // Porting extra params from Julian code
     Real ren, vis, cfl;
     
-    //Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
-    //Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> bc_hi(AMREX_SPACEDIM, 0);
@@ -445,9 +435,7 @@ void main_main ()
         // Parsing boundary condition from the Context
 	for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
 	  {
-	    //phy_bc_lo[dir] == SolverCtx.phy_bc_lo[dir]; 
-	    //phy_bc_hi[dir] == SolverCtx.phy_bc_hi[dir]; 
- 
+
 	    bc_lo[dir] == SolverCtx.bc_lo[dir]; 
 	    bc_hi[dir] == SolverCtx.bc_hi[dir]; 
 
@@ -466,6 +454,8 @@ void main_main ()
     //------------------------------------------------------------------
     //------------------------------------------------------------------
     Define_Domain(&SolverCtx);
+
+
     // make BoxArray and Geometry
     BoxArray ba;
     Geometry geom;
@@ -807,6 +797,12 @@ void main_main ()
 
 	// Update velCart from the velCont solutions
         cont2cart(velCart, velImRK, geom);
+
+	// This updated velCart will be used again next sub-iteration
+	// So, we need to re-enforce the boundary conditions
+	// Update the halo exchange points!
+	velCart.FillBoundary(geom.periodicity());
+	enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
 
 	// advance will do all above steps
         time = time + dt;
