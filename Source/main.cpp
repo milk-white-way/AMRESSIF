@@ -803,9 +803,12 @@ void main_main ()
 	// Update the solution
 	// U^{n+1} = v* + grad (\phi)
 	// p^{n+1} = p  + \phi
-        Poisson_Update_Solution (phi_solution, grad_phi, userCtx, velCont, geom, ba, dm, bc);
-	
-        // advance will do all above steps
+        Poisson_Update_Solution (phi_solution, grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
+
+	// Update velCart from the velCont solutions
+        cont2cart(velCart, velImRK, geom);
+
+	// advance will do all above steps
         time = time + dt;
 
         // Write a plotfile of the current data (plot_int was defined in the inputs file)

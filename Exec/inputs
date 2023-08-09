@@ -1,9 +1,9 @@
-nsteps = 2 
-plot_int = 1 
+nsteps = 200 
+plot_int = 10 
 n_cell = 16 
-max_grid_size = 4
+max_grid_size = 4 
 
-cfl = 1.2 
+cfl = 3 
 IterNum = 16
 
 ren = 1

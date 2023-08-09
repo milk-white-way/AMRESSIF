@@ -260,22 +260,30 @@ void Poisson_Update_Solution (
 	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& grad_phi,
 	      MultiFab& userCtx,
 	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImRK,
 	      const Geometry& geom,
               const BoxArray& grids,
               const DistributionMapping& dmap,
-              const Vector<BCRec>& bc)
+              const Vector<BCRec>& bc,
+	      const amrex::Real &dt)
 {
   amrex::Print() << " Updating the solution \n";
+
+  GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
   // Set the grad_phi components to be zeros
   // Scaling the right-hand side to include time-step here
   for ( MFIter mfi(grad_phi[0]); mfi.isValid(); ++mfi )
     {
-         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+        
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
-         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
- #endif
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+	 // is it OK to handle this tile with the 
+	auto const& vphi = phi_solution.array(mfi);
+	auto const& vpressure = userCtx.array(mfi);
 // 	// grad X, Y, and Z
         auto const& grad_x  = grad_phi[0].array(mfi);
    	auto const& grad_y  = grad_phi[1].array(mfi);
@@ -283,6 +291,12 @@ void Poisson_Update_Solution (
 
  	auto const& grad_z  = grad_phi[2].array(mfi);
 #endif
+
+
+	//+++++++++++++++++++++++++++++++++++
+	//--- Zero out the gradient values --
+	//+++++++++++++++++++++++++++++++++++
+	
 	//i direction
         amrex::ParallelFor(xbx,
          [=] AMREX_GPU_DEVICE (int i, int j, int k)
@@ -313,7 +327,106 @@ void Poisson_Update_Solution (
          });
 
 #endif
+
+
+	//============================================
+	//-- Compute the gradient at the face-center--
+	//-- using 2nd order approximation -----------
+	// -----  i direction -----------------------
+        amrex::ParallelFor(xbx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+	   //Gradient of phi at half-node (face-center) i + 1/2
+	   grad_x(i,j,k) = (vphi(i+1,j,k) - vphi(i,j,k))/dx[0];
+	  
+         });
+
+	amrex::ParallelFor(ybx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+	   //Gradient of phi at half-node (face-center) j + 1/2
+	   grad_y(i,j,k) = (vphi(i,j+1,k) - vphi(i,j,k))/dx[1];
+	  
+         });
+
+#if (AMREX_SPACEDIM > 2)
+
+	amrex::ParallelFor(zbx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+	   //Gradient of phi at half-node (face-center) j + 1/2
+	   grad_y(i,j,k) = (vphi(i,j,k+1) - vphi(i,j,k))/dx[2];
+	  
+         });
+
+#endif
+
+	//===============================================
+	//----- Update the pressure field ---------------
+	//+++++++++++++++++++++++++++++++++++++++++++++++
+	const Box& vbx = mfi.validbox();
+	amrex::ParallelFor(vbx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+	   //Update the pressure field
+	   vpressure(i,j,k, 0) = vpressure(i,j,k, 0) + vphi(i,j,k);
+	  
+         });
+
+	// Take the value of the contravariant velocities out!
+	   auto const& xcont = velCont[0].array(mfi);
+	   auto const& ycont = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+	   auto const& zcont = velCont[2].array(mfi);
+#endif
+
+	   auto const& xcontRK = velImRK[0].array(mfi);
+	   auto const& ycontRK = velImRK[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+	   auto const& zcontRK = velImRK[2].array(mfi);
+#endif
+
+	//===============================================
+	//----- Update the velocity field ---------------
+	//----------------------------------------------
+	// Ucont in the i - direction
+	// -----  i direction -----------------------
+        amrex::ParallelFor(xbx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+	   //Gradient of phi at half-node (face-center) i + 1/2
+	   xcont(i,j,k) = xcontRK(i,j,k) + grad_x(i,j,k) * 1.5 /dt;
+	  
+         });
+
+	//----------------------------------------------
+	// Ucont in the j - direction
+	// -----  j direction -----------------------
+        amrex::ParallelFor(ybx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+	   //Gradient of phi at half-node (face-center) i + 1/2
+	   ycont(i,j,k) = ycontRK(i,j,k) + grad_y(i,j,k) * 1.5 /dt;
+	  
+         });
+#if (AMREX_SPACEDIM > 2)
+	//----------------------------------------------
+	// Ucont in the k - direction
+	// -----  k direction -----------------------
+        amrex::ParallelFor(zbx,
+         [=] AMREX_GPU_DEVICE (int i, int j, int k)
+         {
+	   //Gradient of phi at half-node (face-center) i + 1/2
+	   zcont(i,j,k) = zcontRK(i,j,k) + grad_z(i,j,k) * 1.5 /dt;
+	  
+         });
+#endif
+  
+  
     }// End of the loop for boxes
 
+
+
+  
     amrex::Print() << " Updating ends. \n";
 }
