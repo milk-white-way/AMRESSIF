@@ -1,2 +1,2 @@
-CEXE_sources += main.cpp fn_init.cpp fn_flux_calc.cpp fn_enforce_wall_bcs.cpp fn_cart2cont.cpp fn_cont2cart.cpp fn_rhs.cpp poisson.cpp momentum.cpp
-CEXE_headers += myfunc.H mykernel.H myflux.H fn_init.H kn_init.H fn_flux_calc.H kn_flux_calc.H fn_enforce_wall_bcs.H kn_enforce_wall_bcs.H fn_cart2cont.H fn_cont2cart.H kn_conversion.H fn_rhs.H poisson.H
+CEXE_sources += main.cpp fn_init.cpp fn_flux_calc.cpp fn_enforce_wall_bcs.cpp fn_rhs.cpp poisson.cpp momentum.cpp utilities.cpp
+CEXE_headers += myfunc.H mykernel.H myflux.H fn_init.H kn_init.H fn_flux_calc.H kn_flux_calc.H fn_enforce_wall_bcs.H kn_enforce_wall_bcs.H kn_conversion.H poisson.H utilities.H

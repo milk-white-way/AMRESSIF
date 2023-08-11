@@ -1,7 +1,7 @@
 nsteps = 200 
 plot_int = 10 
-n_cell = 16 
-max_grid_size = 4 
+n_cell = 128 
+max_grid_size = 16 
 
 cfl = 3 
 IterNum = 16

@@ -8,6 +8,9 @@
 #include <AMReX_MultiFabUtil.H>
 
 using namespace amrex;
+#include <AMReX_Geometry.H>
+#include <AMReX_MultiFab.H>
+#include <AMReX_BCRec.H>
 
 
 //--------------------------------------
