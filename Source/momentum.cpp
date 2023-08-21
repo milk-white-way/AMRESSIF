@@ -12,7 +12,7 @@ using namespace amrex;
 // Dathi's Module
 
 // ==================================== MODULE | ADVANCE =====================================
-void km_runge_kutta_advance (Vector<Real>& rk,
+void km_runge_kutta_advance (const GpuArray<Real,MAX_RK_ORDER>& rk,
                              int const& sub,
                              Array<MultiFab, AMREX_SPACEDIM>& rhs,
                              Array<MultiFab, AMREX_SPACEDIM>& velImRK,

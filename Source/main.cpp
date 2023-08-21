@@ -662,7 +662,7 @@ void main_main ()
 
     // Setup Runge-Kutta scheme coefficients
     int RungeKuttaOrder = 4;
-    Vector<Real> rk(RungeKuttaOrder, 0);
+    GpuArray<Real,MAX_RK_ORDER> rk;
     {
         rk[0] = Real(0.25);
         rk[1] = Real(1.0)/Real(3.0);
