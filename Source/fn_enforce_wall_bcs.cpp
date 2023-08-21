@@ -30,133 +30,163 @@ void enforce_boundary_conditions (MultiFab& inputMultiFab,
         if ( west_wall_bcs != 0 ) {
             // amrex::Print() << "========================== west wall  ========================= \n";
 
-            amrex::ParallelFor(gbx,
-            [=] AMREX_GPU_DEVICE (int i, int j, int k)
-            {
-                if ( typeMultiFab == "pressure" ) {
+            if ( typeMultiFab == "pressure" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_pres_bcs_west(i, j, k, n_cell, west_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "phi" ) {
+                });
+            } else if ( typeMultiFab == "phi" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_phi_bcs_west(i, j, k, n_cell, west_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "velocity" ) {
+                });
+            } else if ( typeMultiFab == "velocity" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_vel_bcs_west(i, j, k, n_cell, west_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "flux" ) {
+                });
+            } else if ( typeMultiFab == "flux" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_flux_bcs_west(i, j, k, n_cell, west_wall_bcs, gmf);
+                });
+            } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
 
-                } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
-            });
         }
 
         if ( east_wall_bcs != 0 ) {
             // amrex::Print() << "========================== east wall  ========================= \n";
 
-            amrex::ParallelFor(gbx,
-            [=] AMREX_GPU_DEVICE (int i, int j, int k)
-            {
-                if ( typeMultiFab == "pressure" ) {
+            if ( typeMultiFab == "pressure" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_pres_bcs_east(i, j, k, n_cell, east_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "phi" ) {
+                });
+            } else if ( typeMultiFab == "phi" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_phi_bcs_east(i, j, k, n_cell, east_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "velocity" ) {
+                });
+            } else if ( typeMultiFab == "velocity" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_vel_bcs_east(i, j, k, n_cell, east_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "flux" ) {
+                });
+            } else if ( typeMultiFab == "flux" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_flux_bcs_east(i, j, k, n_cell, east_wall_bcs, gmf);
+                });
+            } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
 
-                } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
-            });
         }
 
         if ( south_wall_bcs != 0 ) {
             // amrex::Print() << "========================= south wall  ========================= \n";
 
-            amrex::ParallelFor(gbx,
-            [=] AMREX_GPU_DEVICE (int i, int j, int k)
-            {
-                if ( typeMultiFab == "pressure" ) {
+            if ( typeMultiFab == "pressure" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_pres_bcs_south(i, j, k, n_cell, south_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "phi" ) {
+                });
+            } else if ( typeMultiFab == "phi" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_phi_bcs_south(i, j, k, n_cell, south_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "velocity" ) {
+                });
+            } else if ( typeMultiFab == "velocity" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_vel_bcs_south(i, j, k, n_cell, south_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "flux" ) {
+                });
+            } else if ( typeMultiFab == "flux" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_flux_bcs_south(i, j, k, n_cell, south_wall_bcs, gmf);
+                });
+            } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
 
-                } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
-            });
         }
 
         if ( north_wall_bcs != 0 ) {
             // amrex::Print() << "========================= north wall  ========================= \n";
 
-            amrex::ParallelFor(gbx,
-            [=] AMREX_GPU_DEVICE (int i, int j, int k)
-            {
-                if ( typeMultiFab == "pressure" ) {
+            if ( typeMultiFab == "pressure" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_pres_bcs_north(i, j, k, n_cell, north_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "phi" ) {
+                });
+            } else if ( typeMultiFab == "phi" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_phi_bcs_north(i, j, k, n_cell, north_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "velocity" ) {
+                });
+            } else if ( typeMultiFab == "velocity" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_vel_bcs_north(i, j, k, n_cell, north_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "flux" ) {
+                });
+            } else if ( typeMultiFab == "flux" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_flux_bcs_north(i, j, k, n_cell, north_wall_bcs, gmf);
+                });
+            } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
 
-                } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
-            });
         }
 #if (AMREX_SPACEDIM > 2)
         if ( front_wall_bcs != 0 ) {
             // amrex::Print() << "========================= front wall  ========================= \n";
 
-            amrex::ParallelFor(gbx,
-            [=] AMREX_GPU_DEVICE (int i, int j, int k)
-            {
-                if ( typeMultiFab == "pressure" ) {
-                    enforce_pres_bcs_fron(i, j, k, n_cell, front_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "phi" ) {
+            if ( typeMultiFab == "pressure" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
+                    enforce_pres_bcs_front(i, j, k, n_cell, front_wall_bcs, gmf);
+                });
+            } else if ( typeMultiFab == "phi" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_phi_bcs_front(i, j, k, n_cell, front_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "velocity" ) {
+                });
+            } else if ( typeMultiFab == "velocity" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_vel_bcs_front(i, j, k, n_cell, front_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "flux" ) {
+                });
+            } else if ( typeMultiFab == "flux" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_flux_bcs_front(i, j, k, n_cell, front_wall_bcs, gmf);
+                });
+            } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
 
-                } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
-            });
         }
 
         if ( back_wall_bcs != 0 ) {
             // amrex::Print() << "========================== back wall  ========================= \n";
 
-            amrex::ParallelFor(gbx,
-            [=] AMREX_GPU_DEVICE (int i, int j, int k)
-            {
-                if ( typeMultiFab == "pressure" ) {
+            if ( typeMultiFab == "pressure" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_pres_bcs_back(i, j, k, n_cell, back_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "phi" ) {
+                });
+            } else if ( typeMultiFab == "phi" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_phi_bcs_back(i, j, k, n_cell, back_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "velocity" ) {
+                });
+            } else if ( typeMultiFab == "velocity" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_vel_bcs_back(i, j, k, n_cell, back_wall_bcs, gmf);
-
-                } else if ( typeMultiFab == "flux" ) {
+                });
+            } else if ( typeMultiFab == "flux" ) {
+                amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                {
                     enforce_flux_bcs_back(i, j, k, n_cell, back_wall_bcs, gmf);
+                });
+            } else { amrex::Abort("ABORTING| NOT a Valid Type to enforce boundary conditions! \n"); }
 
-                } else { amrex::Abort("ABORTING| Not a Valid Type to enforce boundary conditions! \n"); }
-            });
         }
 #endif
     }
