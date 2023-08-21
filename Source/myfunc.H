@@ -3,6 +3,9 @@
 #include <AMReX_Geometry.H>
 #include <AMReX_MultiFab.H>
 #include <AMReX_BCRec.H>
+
+#define MAX_RK_ORDER 8
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file contains all the main functions of the AMIBS_2D solver
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -39,7 +42,7 @@ void momentum_km_runge_kutta ( amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rh
 
 
 // ==================================== MODULE | ADVANCE =====================================
-void km_runge_kutta_advance ( amrex::Vector<amrex::Real>& rk,
+void km_runge_kutta_advance ( const amrex::GpuArray<amrex::Real,MAX_RK_ORDER>& rk,
                               int const& sub,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImRK,
