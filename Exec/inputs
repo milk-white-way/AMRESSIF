@@ -19,4 +19,3 @@ bc_hi = 0 0
 
 amrex.v = 1
 amrex.async_out = 0  # If we use more than 64 processes, async_out will require MPI_THREAD_MULTIPLE
-amrex.the_arena_is_managed = 1  # turn on managed memory; working on fixing the code so this isn't necessary
