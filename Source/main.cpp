@@ -18,7 +18,6 @@
 #include <AMReX_MultiFabUtil.H>
 #include <AMReX_VisMF.H>
 
-#include "main_main.H"
 #include "main.H"
 
 // Modulization library
@@ -26,7 +25,6 @@
 #include "fn_init.H"
 #include "fn_enforce_wall_bcs.H"
 #include "fn_flux_calc.H"
-#include "fn_rhs.H"
 
 // Default library
 #include "myfunc.H"
