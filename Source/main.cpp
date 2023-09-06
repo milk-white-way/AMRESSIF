@@ -742,9 +742,8 @@ void main_main ()
                 fluxTotal.FillBoundary(geom.periodicity());
                 enforce_boundary_conditions(fluxTotal, type3, Nghost, bc_lo, bc_hi, n_cell);
 
-                // RUNGE-KUTTA | Calculate the Face-centered Righ-Hand-Side terms
+                // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 righthand_side_calc(rhs, fluxTotal);
-
 		
                 // RUNGE-KUTTA | Advance
                 km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, bc_lo, bc_hi, n_cell);
