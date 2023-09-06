@@ -736,7 +736,7 @@ void main_main ()
                 // RUNGE-KUTTA | Calculate Cell-centered Pressure Gradient terms
                 pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
 
-                // RUNGE-KUTTA | Calculate Cell-centered Total Flux
+                // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
                 total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
 
                 fluxTotal.FillBoundary(geom.periodicity());
@@ -745,11 +745,11 @@ void main_main ()
                 // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 righthand_side_calc(rhs, fluxTotal);
 		
-                // RUNGE-KUTTA | Advance
+                // RUNGE-KUTTA | Advance; increment rhs and use it to update velImRK
                 km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, bc_lo, bc_hi, n_cell);
                 // After advance through 4 sub-step we obtain guessed velCont at next time step
 
-                // RUNGE-KUTTA | Update velCart from the velCont solutions
+                // RUNGE-KUTTA | Update velCart from velImRK
                 cont2cart(velCart, velImRK, geom);
                 // This updated velCart will be used again next sub-iteration
                 // So, we need to re-enforce the boundary conditions
