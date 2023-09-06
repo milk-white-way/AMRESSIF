@@ -698,7 +698,7 @@ void main_main ()
 	// Copy the intermediate values to the next sub-iteration
         for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
         {
-            MultiFab::Copy(velImPrev[comp], velCont[comp], 0, 0, 1, 0);
+            MultiFab::Copy(  velImRK[comp],     velCont[comp], 0, 0, 1, 0);
             MultiFab::Copy(velImDiff[comp], velContDiff[comp], 0, 0, 1, 0);
         }
 
@@ -719,9 +719,9 @@ void main_main ()
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << "\n";
 
 	    // Assign the initial guess as the previous flow field
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp )
+            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
-                MultiFab::Copy(velImRK[comp], velImPrev[comp], 0, 0, 1, 0);
+                MultiFab::Copy(velImPrev[comp], velImRK[comp], 0, 0, 1, 0);
             }
 
 	    // 4 sub-iterations of one RK4 iteration
@@ -757,16 +757,10 @@ void main_main ()
                 enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
 
             } // RUNGE-KUTTA | END
-	    
 
 	    normError = Error_Computation(velImRK, velImPrev, velImDiff, geom);
 	    amrex::Print() << "error norm2 = " << normError << "\n";
-	    
-            // Update contravariant velocity
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
-            {
-                MultiFab::Copy(velImPrev[comp], velImRK[comp], 0, 0, 1, 0);
-            }
+ 
         }// End of the RK-4 LOOP Iteration!
         amrex::Print() << "SOLVING| Momentum | ending Runge-Kutta after " << countIter << " iteration(s) with convergence: " << normError << "\n";
 
