@@ -73,7 +73,7 @@ struct amress_solver
       int Nghost = 2; // 2nd order accuracy scheme is used for convective terms
 
       // Ncomp = number of components for each array
-      // The userCtx has 2 components: phi and pressure
+      // The userCtx has 2 components: pressure and phi
       int Ncomp  = 2;
 
       
