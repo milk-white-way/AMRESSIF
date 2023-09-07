@@ -523,7 +523,7 @@ void main_main ()
      */            
 
     //------------------------------------------------------
-    // 1 of 4 options: 'pressure', 'phi', 'velocity', 'flux'
+    // 1 of 4 options: 'pressure', 'velocity', 'flux', 'velocity'
     //------------------------------------------------------
     const std::string& type1 = "pressure";
     const std::string& type2 = "velocity";
