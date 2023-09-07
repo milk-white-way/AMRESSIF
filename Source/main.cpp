@@ -679,7 +679,7 @@ void main_main ()
         userCtx.FillBoundary(geom.periodicity());
 
 	// Enforce the physical boundary conditions
-        enforce_boundary_conditions(velCart, type1, Nghost, bc_lo, bc_hi, n_cell);
+        enforce_boundary_conditions(userCtx, type1, Nghost, bc_lo, bc_hi, n_cell);
 
 	// Doing the HALO exchange
 	// This is important
