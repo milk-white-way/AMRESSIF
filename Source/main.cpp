@@ -786,6 +786,7 @@ void main_main ()
         Poisson_Update_Solution (phi_solution, grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
 
 	// Update velCart from the velCont solutions
+        // SHOULD THIS BE velCont instead of velImRK?
         cont2cart(velCart, velImRK, geom);
 
 	// This updated velCart will be used again next sub-iteration
