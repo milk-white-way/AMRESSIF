@@ -18,7 +18,6 @@
 #include <AMReX_MultiFabUtil.H>
 #include <AMReX_VisMF.H>
 
-#include "main_main.H"
 #include "main.H"
 
 // Modulization library
@@ -26,7 +25,6 @@
 #include "fn_init.H"
 #include "fn_enforce_wall_bcs.H"
 #include "fn_flux_calc.H"
-#include "fn_rhs.H"
 
 // Default library
 #include "myfunc.H"
@@ -75,7 +73,7 @@ struct amress_solver
       int Nghost = 2; // 2nd order accuracy scheme is used for convective terms
 
       // Ncomp = number of components for each array
-      // The userCtx has 2 components: phi and pressure
+      // The userCtx has 2 components: pressure and phi
       int Ncomp  = 2;
 
       
@@ -525,7 +523,7 @@ void main_main ()
      */            
 
     //------------------------------------------------------
-    // 1 of 4 options: 'pressure', 'phi', 'velocity', 'flux'
+    // 1 of 4 options: 'pressure', 'velocity', 'flux', 'velocity'
     //------------------------------------------------------
     const std::string& type1 = "pressure";
     const std::string& type2 = "velocity";
@@ -681,7 +679,7 @@ void main_main ()
         userCtx.FillBoundary(geom.periodicity());
 
 	// Enforce the physical boundary conditions
-        enforce_boundary_conditions(velCart, type1, Nghost, bc_lo, bc_hi, n_cell);
+        enforce_boundary_conditions(userCtx, type1, Nghost, bc_lo, bc_hi, n_cell);
 
 	// Doing the HALO exchange
 	// This is important
@@ -700,7 +698,7 @@ void main_main ()
 	// Copy the intermediate values to the next sub-iteration
         for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
         {
-            MultiFab::Copy(velImPrev[comp], velCont[comp], 0, 0, 1, 0);
+            MultiFab::Copy(  velImRK[comp],     velCont[comp], 0, 0, 1, 0);
             MultiFab::Copy(velImDiff[comp], velContDiff[comp], 0, 0, 1, 0);
         }
 
@@ -721,9 +719,9 @@ void main_main ()
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << "\n";
 
 	    // Assign the initial guess as the previous flow field
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp )
+            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
-                MultiFab::Copy(velImRK[comp], velImPrev[comp], 0, 0, 1, 0);
+                MultiFab::Copy(velImPrev[comp], velImRK[comp], 0, 0, 1, 0);
             }
 
 	    // 4 sub-iterations of one RK4 iteration
@@ -738,21 +736,20 @@ void main_main ()
                 // RUNGE-KUTTA | Calculate Cell-centered Pressure Gradient terms
                 pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
 
-                // RUNGE-KUTTA | Calculate Cell-centered Total Flux
+                // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
                 total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
 
                 fluxTotal.FillBoundary(geom.periodicity());
                 enforce_boundary_conditions(fluxTotal, type3, Nghost, bc_lo, bc_hi, n_cell);
 
-                // RUNGE-KUTTA | Calculate the Face-centered Righ-Hand-Side terms
+                // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 righthand_side_calc(rhs, fluxTotal);
-
 		
-                // RUNGE-KUTTA | Advance
+                // RUNGE-KUTTA | Advance; increment rhs and use it to update velImRK
                 km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, bc_lo, bc_hi, n_cell);
                 // After advance through 4 sub-step we obtain guessed velCont at next time step
 
-                // RUNGE-KUTTA | Update velCart from the velCont solutions
+                // RUNGE-KUTTA | Update velCart from velImRK
                 cont2cart(velCart, velImRK, geom);
                 // This updated velCart will be used again next sub-iteration
                 // So, we need to re-enforce the boundary conditions
@@ -760,16 +757,10 @@ void main_main ()
                 enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
 
             } // RUNGE-KUTTA | END
-	    
 
 	    normError = Error_Computation(velImRK, velImPrev, velImDiff, geom);
 	    amrex::Print() << "error norm2 = " << normError << "\n";
-	    
-            // Update contravariant velocity
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
-            {
-                MultiFab::Copy(velImPrev[comp], velImRK[comp], 0, 0, 1, 0);
-            }
+ 
         }// End of the RK-4 LOOP Iteration!
         amrex::Print() << "SOLVING| Momentum | ending Runge-Kutta after " << countIter << " iteration(s) with convergence: " << normError << "\n";
 
@@ -795,6 +786,7 @@ void main_main ()
         Poisson_Update_Solution (phi_solution, grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
 
 	// Update velCart from the velCont solutions
+        // SHOULD THIS BE velCont instead of velImRK?
         cont2cart(velCart, velImRK, geom);
 
 	// This updated velCart will be used again next sub-iteration

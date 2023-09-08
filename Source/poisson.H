@@ -1,5 +1,3 @@
-#include "main.H"
-
 #include <AMReX_Geometry.H>
 #include <AMReX_MultiFab.H>
 
