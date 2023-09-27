@@ -1,6 +1,6 @@
 #include <AMReX_MultiFabUtil.H>
 
-#include "fn_rhs.H"
+#include "utilities.H"
 #include "kn_conversion.H"
 
 using namespace amrex;

@@ -2,6 +2,17 @@
 #define MYFUNC_H_
 #include <AMReX_Geometry.H>
 #include <AMReX_MultiFab.H>
+#include <AMReX_BCRec.H>
+
+#define MAX_RK_ORDER 8
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// This file contains all the main functions of the AMIBS_2D solver
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// This includes the momentum solver
+// And the Poisson solver
+// And the Update solution function
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ==================================== MODULE | MOMENTUM ====================================
 // +++++++++++++++++++++++++ Subroutine | Kim and Moine's Runge-Kutta ++++++++++++++++++++++++
@@ -29,11 +40,9 @@ void momentum_km_runge_kutta ( amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rh
                                int const& IterNum,
                                amrex::Real const& Tol);
 
-// ==================================== MODULE | POISSON =====================================
-// Dathi's Module
 
 // ==================================== MODULE | ADVANCE =====================================
-void km_runge_kutta_advance ( amrex::Vector<amrex::Real>& rk,
+void km_runge_kutta_advance ( const amrex::GpuArray<amrex::Real,MAX_RK_ORDER>& rk,
                               int const& sub,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImRK,
@@ -78,4 +87,25 @@ void fill_physical_ghost_cells (amrex::MultiFab& velCart,
                                 int const& n_cell,
                                 amrex::Vector<int> const& bc_lo,
                                 amrex::Vector<int> const& bc_hi);
+
+void Export_Flow_Field (       amrex::BoxArray& ba,
+			       amrex::DistributionMapping& dm,
+			       amrex::Geometry& geom,
+			       amrex::MultiFab& userCtx,
+                               amrex::MultiFab& velCart,
+                               int const& timestep,
+			       amrex::Real const& time);
+
+
+// ==================================== MODULE | POISSON =====================================
+// Dathi's Module
+
+void Poisson_Solver(
+	      amrex::MultiFab& phi_solution,
+	      amrex::MultiFab& rhs_ptr,
+              const amrex::Geometry& geom,
+              const amrex::BoxArray& grids,
+              const amrex::DistributionMapping& dmap,
+              const amrex::Vector<amrex::BCRec>& bc);
+
 #endif

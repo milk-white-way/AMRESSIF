@@ -1,6 +1,6 @@
 #include <AMReX_MultiFabUtil.H>
 
-#include "fn_cart2cont.H"
+#include "utilities.H"
 #include "kn_conversion.H"
 
 using namespace amrex;
@@ -35,3 +35,13 @@ void cart2cont (MultiFab& velCart,
 #endif
     }
 }
+
+// =========== UTILITY | CONVERSION  =====================
+void cont2cart (MultiFab& velCart,
+                Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                const Geometry& geom)
+{
+    average_face_to_cellcenter(velCart, amrex::GetArrOfConstPtrs(velCont), geom);
+}
+
+

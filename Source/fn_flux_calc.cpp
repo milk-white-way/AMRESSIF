@@ -2,6 +2,7 @@
 
 #include "fn_flux_calc.H"
 #include "kn_flux_calc.H"
+#include "kn_poisson.H"
 
 using namespace amrex;
 

@@ -1,27 +1,21 @@
-nsteps = 1
-plot_int = 2
-n_cell = 128
-max_grid_size = 16
+nsteps = 200 
+plot_int = 10 
+n_cell = 128 
+max_grid_size = 16 
 
-cfl = 0.99
+cfl = 3 
 IterNum = 16
 
 ren = 1
 vis = 1
-
-# 0 - periodic
-# 2 - homogeneous Neumann (zero flux)
-# 3 - Diriclet (prescribed value)
-bc_lo = 0 0
-bc_hi = 0 0
 
 # phy_bc params declare the type of wall
 # 0 - periodic
 # -1 - non-slip
 # 1 - slip
 
-phy_bc_lo = 0 0
-phy_bc_hi = 0 0
+bc_lo = 0 0
+bc_hi = 0 0
 
 amrex.v = 1
 amrex.async_out = 0  # If we use more than 64 processes, async_out will require MPI_THREAD_MULTIPLE
