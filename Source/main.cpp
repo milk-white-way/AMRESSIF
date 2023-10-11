@@ -1,8 +1,8 @@
-/** 
+/**
  * Incompressible Flow Solver
- * Testing .... 
+ * Testing ....
 
- * 
+ *
  * Trung Edited
  * Jul/31/2023 - Trung edited
  */
@@ -20,13 +20,13 @@
 
 #include "main.H"
 
-// Modulization library
+// Custom Library
 #include "utilities.H"
 #include "fn_init.H"
 #include "fn_enforce_wall_bcs.H"
 #include "fn_flux_calc.H"
 
-// Default library
+// Default Library
 #include "myfunc.H"
 #include "momentum.H"
 #include "poisson.H"
@@ -34,61 +34,56 @@
 using namespace amrex;
 
 /*
- * This is the solver context, which stores all the information about 
+ * This is the solver context, which stores all the information about
  * the solver and the associated grid
  */
-struct amress_solver
-    {
-      // Grid information
-      int n_cell;
-      int max_grid_size;
+struct amress_solver {
+    // Grid information
+    int n_cell;
+    int max_grid_size;
 
-      int IterNum;
+    int IterNum;
 
+    // Plotting results variables
+    int plot_int;
+    int nsteps;
 
-      // Plotting results variables
-      int plot_int;
-      int nsteps;
+    Real cfl;
+    Real ren;
+    Real vis;
 
-      Real cfl;
-      Real ren;
-      Real vis;
+    int phy_bc_lo[AMREX_SPACEDIM];
+    int phy_bc_hi[AMREX_SPACEDIM];
 
-      //      int phy_bc_lo[AMREX_SPACEDIM];
-      //      int phy_bc_hi[AMREX_SPACEDIM];
+    // // Declaring params for boundary conditon type
+    // int bc_lo[AMREX_SPACEDIM];
+    // int bc_hi[AMREX_SPACEDIM];
 
-      // // Declaring params for boundary conditon type
-      int bc_lo[AMREX_SPACEDIM];
-      int bc_hi[AMREX_SPACEDIM];
+    int is_periodic[AMREX_SPACEDIM];
 
-      int is_periodic[AMREX_SPACEDIM];
+    // The declaration for the box domain
+    BoxArray ba;
+    Geometry geom;
+    Box domain;
 
-      // The declaration for the box domain
-      BoxArray ba;
-      Geometry geom;
-      Box domain;
+    // Ghost points and computational components
+    // Nghost = number of ghost cells for each array
+    int Nghost = 2; // 2nd order accuracy scheme is used for convective terms
 
-      // Ghost points and computational components
-      // Nghost = number of ghost cells for each array
-      int Nghost = 2; // 2nd order accuracy scheme is used for convective terms
+    // Ncomp = number of components for each array
+    // The userCtx has 2 components: pressure and phi
+    int Ncomp  = 2;
 
-      // Ncomp = number of components for each array
-      // The userCtx has 2 components: pressure and phi
-      int Ncomp  = 2;
-
-      
     // How Boxes are distrubuted among MPI processes
     // Distribution mapping between the processors
     // This is for volume-center variables
     DistributionMapping dm;
 
-
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     MultiFab userCtx;
     MultiFab userCtxPrev;
 
-
-    };
+};
 
 // ============================== MAIN SECTION ==============================//
 /**
@@ -99,19 +94,13 @@ struct amress_solver
  */
 int main (int argc, char* argv[])
 {
-    // Initialization
-    //    amrex::Print() << "Code initialization .... " <<  "\n";
-
     amrex::Initialize(argc,argv);
-    // Solver
     main_main();
-    // Finalization
     amrex::Finalize();
-    // Error handeling
     return 0;
 }
 
-/* 
+/*
  *------------------------------------------------
  *------ This function reads the inputs file -----
  *----and set the parameters for the simulation---
@@ -120,16 +109,15 @@ int main (int argc, char* argv[])
 
 void Input_Parameters(amress_solver *SolverCtx)
 {
-      
-        // ParmParse is way of reading inputs from the inputs file
-        ParmParse pp;
+    // ParmParse is way of fetching parameters from the input file
+    ParmParse pp;
 
-        // We need to get n_cell from the inputs file -
+    pp.get("n_cell", SolverCtx->n_cell);
+    // We need to get n_cell from the inputs file -
 	// this is the number of cells on each side of
-        //   a square (or cubic) domain.
+    //   a square (or cubic) domain.
 	// AMReX only allows the logical domain to have a square or cubic shape
-	// 
-        pp.get("n_cell", SolverCtx->n_cell);
+	//
 
         pp.get("IterNum", SolverCtx->IterNum);
 
@@ -154,56 +142,54 @@ void Input_Parameters(amress_solver *SolverCtx)
 
 
 	// Physical boundary condition mapping
-	/* These are the types of boundary conditions 
+	/* These are the types of boundary conditions
 	 * supported by the codes
 	 */
 	// 0 is periodic
 	// -1 is non-slip
 	// 1 is slip
 
-	//Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
-	//Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
+	Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
+	Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
 
 	// Declaring params for boundary conditon type
-	Vector<int> bc_lo(AMREX_SPACEDIM, 0);
-	Vector<int> bc_hi(AMREX_SPACEDIM, 0);
+	// Vector<int> bc_lo(AMREX_SPACEDIM, 0);
+	// Vector<int> bc_hi(AMREX_SPACEDIM, 0);
 
 
-        // // Parsing boundary condition from input file
-        //pp.queryarr("phy_bc_lo", phy_bc_lo);
-        //pp.queryarr("phy_bc_hi", phy_bc_hi);
+    // Parsing boundary condition from input file
+    pp.queryarr("phy_bc_lo", phy_bc_lo);
+    pp.queryarr("phy_bc_hi", phy_bc_hi);
 
-        pp.queryarr("bc_lo", bc_lo);
-        pp.queryarr("bc_hi", bc_hi);
+    // pp.queryarr("bc_lo", bc_lo);
+    // pp.queryarr("bc_hi", bc_hi);
 
 	// Loop all around the dimensions and assign the values of the BCs
-       for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
-	 {
-	   //SolverCtx->phy_bc_lo[dir] = phy_bc_lo[dir];
-	   //SolverCtx->phy_bc_hi[dir] = phy_bc_hi[dir];
-	  SolverCtx->bc_lo[dir] = bc_lo[dir];
-	  SolverCtx->bc_hi[dir] = bc_hi[dir];
-       }// End of loop around all dimensions
+    for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+	{
+	   SolverCtx->phy_bc_lo[dir] = phy_bc_lo[dir];
+	   SolverCtx->phy_bc_hi[dir] = phy_bc_hi[dir];
+    }// End of loop around all dimensions
 
        // Testing periodicity in all directions
-    for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
-      {
-        if (SolverCtx->bc_lo[dir] == 0 && SolverCtx->bc_hi[dir] == 0)
-	  {
-            SolverCtx->is_periodic[dir] = 1;
-	  }
-      }// End of all directions
+    // for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+     // {
+     //   if (SolverCtx->bc_lo[dir] == 0 && SolverCtx->bc_hi[dir] == 0)
+//	  {
+//            SolverCtx->is_periodic[dir] = 1;
+//	  }
+//      }// End of all directions
 
 }// End of function
 /*
  * Define the geometrical characteristics of the domain
- * Define the MPI processes among all compute nodes 
+ * Define the MPI processes among all compute nodes
 */
 void Define_Domain(amress_solver *SolverCtx)
 {
     BoxArray ba;
     Geometry geom;
-    
+
         IntVect dom_lo(AMREX_D_DECL(       0,        0,        0));
         IntVect dom_hi(AMREX_D_DECL(SolverCtx->n_cell-1, SolverCtx->n_cell-1, SolverCtx->n_cell-1));
         Box domain(dom_lo, dom_hi);
@@ -223,7 +209,6 @@ void Define_Domain(amress_solver *SolverCtx)
 	std::vector<int> is_periodic(std::begin(SolverCtx->is_periodic), std::end(SolverCtx->is_periodic));
 
         geom.define(domain, &real_box, CoordSys::cartesian, is_periodic.data());
-    
 
 	// How Boxes are distrubuted among MPI processes
 	// Distribution mapping between the processors
@@ -235,12 +220,9 @@ void Define_Domain(amress_solver *SolverCtx)
     SolverCtx->domain = domain;
     SolverCtx->dm     = dm;
 
-    
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     SolverCtx->userCtx.define(ba, dm, SolverCtx->Ncomp, SolverCtx->Nghost);
     SolverCtx->userCtxPrev.define(ba, dm, SolverCtx->Ncomp, SolverCtx->Nghost);
-
-    
 }
 //-------------------------------------------------
 //+++++++++++++++++++++++++++++++++++++++++++++++++
@@ -278,7 +260,7 @@ void Export_Flow_Field (
         MultiFab::Copy(plt, velCart, 2, 3, 1, 0);
 #endif
 
-        
+
         const std::string& pltfile = amrex::Concatenate("Fields", timestep, 5); //5 spaces
 #if (AMREX_SPACEDIM > 2)
         WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V", "W"}, geom, timestep, 0);
@@ -286,7 +268,7 @@ void Export_Flow_Field (
         WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V"}, geom, timestep, 0);
 #endif
 
-  
+
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //------- EXPORT FLUXES -------------------------------------------
@@ -315,7 +297,6 @@ void Export_Fluxes(
             const std::string& plt_flux = amrex::Concatenate("pltFlux", timestep, 5);
             WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, timestep);
 
-  
 }
 
 
@@ -329,12 +310,12 @@ amrex::Real Error_Computation( amrex::Array<MultiFab, AMREX_SPACEDIM>  &velImRK,
 			       amrex::Geometry const &geom)
 {
   amrex::Real normError;
-  
- 	
+
+
            //  // MOMENTUM |3| UPDATE ERROR
             for ( MFIter mfi(velImRK[0]); mfi.isValid(); ++mfi )
               {
-		
+
                   const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
                   const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 
@@ -375,7 +356,7 @@ amrex::Real Error_Computation( amrex::Array<MultiFab, AMREX_SPACEDIM>  &velImRK,
                   });
   #endif
 	      }// End of all loops for Multi-Fabs
-	   
+
             Real xerror = velImDiff[0].norm2(0, geom.periodicity());
             Real yerror = velImDiff[1].norm2(0, geom.periodicity());
             // Real xerror = velImDiff[0].norminf(0, 0);
@@ -388,7 +369,7 @@ amrex::Real Error_Computation( amrex::Array<MultiFab, AMREX_SPACEDIM>  &velImRK,
              normError = std::max(normError, zerror);
  #endif
 
-   
+
 	    return normError;
 }
 
@@ -408,7 +389,7 @@ void main_main ()
 
     // Porting extra params from Julian code
     Real ren, vis, cfl;
-    
+
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> bc_hi(AMREX_SPACEDIM, 0);
@@ -418,7 +399,7 @@ void main_main ()
     //-------------------------------------------------------------
     amress_solver SolverCtx;
     Input_Parameters(&SolverCtx);
-	
+
     // Temporary here!
        	n_cell = SolverCtx.n_cell;
 	IterNum = SolverCtx.IterNum;
@@ -430,19 +411,16 @@ void main_main ()
 	vis = SolverCtx.vis;
 
         // Parsing boundary condition from the Context
-	for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
-	  {
+	//for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+	//  {
+	//    bc_lo[dir] == SolverCtx.bc_lo[dir];
+	//    bc_hi[dir] == SolverCtx.bc_hi[dir];
+	//  }
 
-	    bc_lo[dir] == SolverCtx.bc_lo[dir]; 
-	    bc_hi[dir] == SolverCtx.bc_hi[dir]; 
-
-	  }
-
-	    
         amrex::Print() << "INFO| number of cells in each side of the domain: " << n_cell << "\n";
-	
 
-    for (int dir=0; dir < AMREX_SPACEDIM; ++dir)        
+
+    for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
 	amrex::Print() << "INFO| periodicity in " << dir << "th dim " << SolverCtx.is_periodic[dir] << "\n";
 
     //------------------------------------------------------------------
@@ -457,11 +435,11 @@ void main_main ()
     BoxArray ba;
     Geometry geom;
     Box domain;
-    
+
     ba = SolverCtx.ba;
     geom = SolverCtx.geom;
     domain = SolverCtx.domain;
-    
+
       // Nghost = number of ghost cells for each array
     int Nghost = SolverCtx.Nghost; // 2nd order accuracy scheme is used for convective terms
 
@@ -475,26 +453,26 @@ void main_main ()
     DistributionMapping dm = SolverCtx.dm;
 
     /*
-     * ----------------------- 
-     *   Volume center 
+     * -----------------------
+     *   Volume center
      *  ----------------------
      *  |                    |
      *  |                    |
      *  |          0         |
      *  |                    |
      *  |                    |
-     *  ---------------------- 
+     *  ----------------------
      */
 
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     MultiFab userCtx(ba, dm, Ncomp, Nghost);
     MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
 
-    
+
     // Define the RHS for the Poisson equation - Just one component
     MultiFab Poisson_RHS_Vector(ba, dm, 1, Nghost);
     MultiFab phi_solution(ba, dm, 1, Nghost);
-   
+
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
@@ -518,9 +496,9 @@ void main_main ()
      *             |             |---> velCont
      *             |    0 velCart|
      *             |             |
-     *              _____________      
+     *              _____________
      *
-     */            
+     */
 
     //------------------------------------------------------
     // 1 of 4 options: 'pressure', 'velocity', 'flux', 'velocity'
@@ -546,7 +524,7 @@ void main_main ()
     Array<MultiFab, AMREX_SPACEDIM> velImDiff;
     // gradient of phi
     Array<MultiFab, AMREX_SPACEDIM> grad_phi;
-	
+
     // Due to the mismatch between the volume-center and face-center variables
     // The physical quantities living at the face center need to be blowed out one once in the respective direction
     for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
@@ -610,18 +588,13 @@ void main_main ()
             }
         }
     }
-
-
-
-
-    
     // Print desired variables for debugging
     amrex::Print() << "INFO| number of dimensions: " << AMREX_SPACEDIM << "\n";
     amrex::Print() << "INFO| geometry: " << geom << "\n";
     amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
     amrex::Print() << "PARAMS| number of components for each array: " << Ncomp << "\n";
 
-   //--------------------------------------------------------------------------------------// 
+   //--------------------------------------------------------------------------------------//
    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------//
    //--------------------------------------------------------------------------------------//
     amrex::Print() << "==== INITIALIZATION STEP =========== \n";
@@ -634,23 +607,23 @@ void main_main ()
                                + 1./(dx[1]*dx[1]),
                                + 1./(dx[2]*dx[2]) );
     Real dt = cfl/(2.0*coeff);
-    
+
     // time = starting time in the simulation
     Real time = 0.0;
 
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    //------------------------------------------------------------------//    
+    //------------------------------------------------------------------//
     // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Plotting =-=-=-=-=-=-=-=-=-=-=-=-=-//
     // -----------------------    Initial state ----------------------- //
     //------------------------------------------------------------------//
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
-    if (plot_int > 0)      
+    if (plot_int > 0)
       Export_Flow_Field( ba, dm, geom, userCtx, velCart, 0, time); // Export the initial flow field
-      
+
     //====== MODULE | ADVANCE =====================================
     // ++++++++++ KIM AND MOINE'S RUNGE-KUTTA +++++++++++++++++++++
     amrex::Print() << "======= ADVANCING STEP  ==================== \n";
@@ -686,7 +659,7 @@ void main_main ()
 	// If the physical boundary are not periodic
 	// Then the update will not touch those grid points
         velCart.FillBoundary(geom.periodicity());
-        
+
 	// Enforce the boundary conditions again
         enforce_boundary_conditions(velCart, type2, Nghost, bc_lo, bc_hi, n_cell);
 
@@ -726,7 +699,7 @@ void main_main ()
 
 	    // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
-            { 
+            {
                 // RUNGE-KUTTA | Calculate Cell-centered Convective terms
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velImRK, bc_lo, bc_hi, geom, n_cell);
 
@@ -744,7 +717,7 @@ void main_main ()
 
                 // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 righthand_side_calc(rhs, fluxTotal);
-		
+
                 // RUNGE-KUTTA | Advance; increment rhs and use it to update velImRK
                 km_runge_kutta_advance(rk, sub, rhs, velImRK, velCont, velContDiff, dt, bc_lo, bc_hi, n_cell);
                 // After advance through 4 sub-step we obtain guessed velCont at next time step
@@ -760,7 +733,7 @@ void main_main ()
 
 	    normError = Error_Computation(velImRK, velImPrev, velImDiff, geom);
 	    amrex::Print() << "error norm2 = " << normError << "\n";
- 
+
         }// End of the RK-4 LOOP Iteration!
         amrex::Print() << "SOLVING| Momentum | ending Runge-Kutta after " << countIter << " iteration(s) with convergence: " << normError << "\n";
 
@@ -768,7 +741,7 @@ void main_main ()
         // MOMENTUM |4| PLOTTING
 	// This is just for debugging only !
 	//---------------------------------------
-        if (plot_int > 0 )	  
+        if (plot_int > 0 )
 	    Export_Fluxes( fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, n, time);
 
         amrex::Print() << "SOLVING| Momentum | finished time step: " << n << "\n";
@@ -776,18 +749,18 @@ void main_main ()
 	// Setup the RHS
 	Poisson_RHS(geom, velImRK, Poisson_RHS_Vector, dt);
 	Set_Phi_To_Zero(phi_solution);
-	
+
         //POISSON SOLVER
 	Poisson_Solver (phi_solution, Poisson_RHS_Vector, geom, ba, dm, bc);
 
 	// Update the solution
 	// U^{n+1} = v* + grad (\phi)
 	// p^{n+1} = p  + \phi
-        Poisson_Update_Solution (phi_solution, grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
+    Poisson_Update_Solution (phi_solution, grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
 
 	// Update velCart from the velCont solutions
-        // SHOULD THIS BE velCont instead of velImRK?
-        cont2cart(velCart, velImRK, geom);
+    // SHOULD THIS BE velCont instead of velImRK?
+    cont2cart(velCart, velCont, geom);
 
 	// This updated velCart will be used again next sub-iteration
 	// So, we need to re-enforce the boundary conditions
@@ -801,7 +774,7 @@ void main_main ()
         // Write a plotfile of the current data (plot_int was defined in the inputs file)
         if (plot_int > 0 && n%plot_int == 0)
 	  Export_Flow_Field(ba, dm, geom, userCtx, velCart, n, time);
-	
+
     }//end of time loop - this is the (n) loop!
 
     // Call the timer again and compute the maximum difference
