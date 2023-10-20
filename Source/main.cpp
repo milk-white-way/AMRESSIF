@@ -629,7 +629,7 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    dt = 1e-3;
+    dt = 1e-4;
     amrex::Print() << "INFO| override dt value: " << dt << "\n";
 
 
@@ -780,8 +780,10 @@ void main_main ()
         // Update velCart from the velCont solutions
         // cont2cart(velCart, velCont, geom);
         cont2cart(velCart, velImRK, geom);
-        amrex::Print() << "SOLVING| Export middle line here \n";
-        line_extract(velCart, n_cell);
+        if (plot_int > 0 && n%plot_int == 0) {
+            amrex::Print() << "SOLVING| Export middle line here \n";
+            line_extract(velCart, n_cell, n);
+        }
 
         // This updated velCart will be used again next sub-iteration
         // So, we need to re-enforce the boundary conditions

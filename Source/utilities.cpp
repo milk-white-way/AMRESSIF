@@ -36,24 +36,6 @@ void cart2cont (MultiFab& velCart,
     }
 }
 
-void write_midline_solution (const double& vcart_value)
-{
-    // Open a file for writing
-    std::ofstream outfile("midline.txt", std::ios::app);
-
-    // Check if the file was opened successfully
-    if (!outfile.is_open())
-    {
-        std::cerr << "Failed to open file for writing\n";
-    }
-
-    // Write data to the file
-    outfile << vcart_value << "\n";
-
-    // Close the file
-    outfile.close();
-}
-
 // =========== UTILITY | CONVERSION  =====================
 void cont2cart (MultiFab& velCart,
                 Array<MultiFab, AMREX_SPACEDIM>& velCont,
@@ -62,8 +44,34 @@ void cont2cart (MultiFab& velCart,
     average_face_to_cellcenter(velCart, amrex::GetArrOfConstPtrs(velCont), geom);
 }
 
+void write_midline_solution (Real const& midx,
+                             Real const& v_analytic,
+                             double const& velx,
+                             double const& vely,
+                             int const& timestep)
+{
+    // Construct the filename for this iteration
+    std::string filename = "midline_" + std::to_string(timestep) + ".txt";
+
+    // Open a file for writing
+    std::ofstream outfile(filename, std::ios::app);
+
+    // Check if the file was opened successfully
+    if (!outfile.is_open())
+    {
+        std::cerr << "Failed to open file for writing\n";
+    }
+
+    // Write data to the file
+    outfile << midx << ";" << velx << ";" << vely << ";" << v_analytic << "\n";
+
+    // Close the file
+    outfile.close();
+}
+
 void line_extract (MultiFab& velCart,
-                   int const& n_cell)
+                   int const& n_cell,
+                   int const& timestep)
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -77,7 +85,9 @@ void line_extract (MultiFab& velCart,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k)
         {
             if (j == n_cell / 2) {
-                write_midline_solution(vcart(i, j, k));
+                amrex::Real const& midx = 0.03125*i;
+                amrex::Real const& v_analytic = -std::sin(2.0 * M_PI * midx)*std::exp(-2*timestep*1e-4);
+                write_midline_solution(midx, v_analytic, vcart(i, j, k, 0), vcart(i, j, k, 1), timestep);
             }
 
         });

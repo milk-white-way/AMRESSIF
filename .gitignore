@@ -6,3 +6,8 @@ Documentations/html
 Documentations/latex
 
 cmake-build-debug/*
+
+# Unneccessary components in the Exec folder
+Exec/*.png
+Exec/*.log
+Exec/tmp_build_dir
