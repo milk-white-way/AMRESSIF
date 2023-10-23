@@ -16,8 +16,9 @@ void init_userCtx (int i, int j, int k,
     Real y = prob_lo[1] + (j+Real(0.5)) * dx[1];
     // ctx[0] is pressure
     // ctx[1] is intermediate Phi
-    ctx(i, j, k, 0) = - 0.25 * ( std::cos(Real(2.0) * M_PI * x) + std::cos(Real(2.0) * M_PI * y) );
-    ctx(i, j, k, 1) = 0.0;
+    // ctx(i, j, k, 0) = - 0.25 * ( std::cos(Real(2.0) * M_PI * x) + std::cos(Real(2.0) * M_PI * y) );
+    ctx(i, j, k, 0) = Real(0.0); 
+    ctx(i, j, k, 1) = Real(0.0);
 #if (AMREX_SPACEDIM > 2)
     Real z = prob_lo[2] + (k+Real(0.5))*dx[2];
 #endif
@@ -36,6 +37,9 @@ void init_cartesian_velocity (int i, int j, int k,
     // vcart is volume-centered Cartesian velocity
     vcart(i, j, k, 0) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y);
     vcart(i, j, k, 1) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y);
+
+    // vcart(i, j, k, 0) = 1;
+    // vcart(i, j, k, 1) = 0;
 #if (AMREX_SPACEDIM > 2)
     Real z = prob_lo[2] + (k+Real(0.5))*dx[2];
     vcart(i, j, k, 2) = Real(0.0);

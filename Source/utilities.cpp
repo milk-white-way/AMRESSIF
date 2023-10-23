@@ -48,10 +48,10 @@ void write_midline_solution (Real const& midx,
                              Real const& v_analytic,
                              double const& velx,
                              double const& vely,
-                             int const& timestep)
+                             int const& current_step)
 {
     // Construct the filename for this iteration
-    std::string filename = "midline_" + std::to_string(timestep) + ".txt";
+    std::string filename = "midline_" + std::to_string(current_step) + ".txt";
 
     // Open a file for writing
     std::ofstream outfile(filename, std::ios::app);
@@ -71,12 +71,16 @@ void write_midline_solution (Real const& midx,
 
 void line_extract (MultiFab& velCart,
                    int const& n_cell,
-                   int const& timestep)
+                   int const& current_step,
+                   Real const& dt,
+                   const Geometry& geom)
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-    // auto const& midy = n_cell/2;
+    GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
+    GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+
     for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
@@ -85,9 +89,9 @@ void line_extract (MultiFab& velCart,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k)
         {
             if (j == n_cell / 2) {
-                amrex::Real const& midx = 0.03125*i;
-                amrex::Real const& v_analytic = -std::sin(2.0 * M_PI * midx)*std::exp(-2*timestep*1e-4);
-                write_midline_solution(midx, v_analytic, vcart(i, j, k, 0), vcart(i, j, k, 1), timestep);
+                amrex::Real const& midx = prob_lo[0] + (i+Real(0.5)) * dx[0];
+                amrex::Real const& v_analytic = -std::sin(2.0 * M_PI * midx)*std::exp(-2*current_step*dt);
+                write_midline_solution(midx, v_analytic, vcart(i, j, k, 0), vcart(i, j, k, 1), current_step);
             }
 
         });

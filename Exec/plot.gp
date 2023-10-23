@@ -11,6 +11,6 @@ set ylabel "Y Axis"
 
 # Plot the second column from the file with a red line
 set multiplot
-plot "midline_1000.txt" using 1:3 with lines lw 3 linecolor "red" title "Numerical"
-replot "midline_1000.txt" using 1:4 with lines lw 2 linecolor "blue" title "Analytical"
+plot "midline_200.txt" using 1:3 with lines lw 3 linecolor "red" title "Numerical"
+replot "midline_200.txt" using 1:4 with lines lw 2 linecolor "blue" title "Analytical"
 

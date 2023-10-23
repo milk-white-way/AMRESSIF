@@ -671,7 +671,7 @@ void main_main ()
         userCtx.FillBoundary(geom.periodicity());
 
         // Enforce the physical boundary conditions
-        enforce_boundary_conditions(userCtx, type1, Nghost, bc_lo, bc_hi, n_cell);
+        // enforce_boundary_conditions(userCtx, type1, Nghost, bc_lo, bc_hi, n_cell);
 
         // Doing the HALO exchange
         // This is important
@@ -680,7 +680,7 @@ void main_main ()
         velCart.FillBoundary(geom.periodicity());
 
         // Enforce the boundary conditions again
-        enforce_boundary_conditions(velCart, type2, Nghost, bc_lo, bc_hi, n_cell);
+        // enforce_boundary_conditions(velCart, type2, Nghost, bc_lo, bc_hi, n_cell);
 
         // Convert cartesian velocity to contravariant velocity
         // after boundary conditions are enfoced
@@ -732,7 +732,7 @@ void main_main ()
                 total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
 
                 fluxTotal.FillBoundary(geom.periodicity());
-                enforce_boundary_conditions(fluxTotal, type3, Nghost, bc_lo, bc_hi, n_cell);
+                // enforce_boundary_conditions(fluxTotal, type3, Nghost, bc_lo, bc_hi, n_cell);
 
                 // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 righthand_side_calc(rhs, fluxTotal);
@@ -746,7 +746,7 @@ void main_main ()
                 // This updated velCart will be used again next sub-iteration
                 // So, we need to re-enforce the boundary conditions
                 velCart.FillBoundary(geom.periodicity());
-                enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
+                // enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
 
             } // RUNGE-KUTTA | END
 
@@ -761,7 +761,7 @@ void main_main ()
         // This is just for debugging only !
         //---------------------------------------
         if (plot_int > 0 && n%plot_int == 0)
-            Export_Fluxes( fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, n, time);
+            Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, n, time);
 
         amrex::Print() << "SOLVING| Momentum | finished time step: " << n << "\n";
 
@@ -770,26 +770,26 @@ void main_main ()
         Set_Phi_To_Zero(phi_solution);
 
         //POISSON SOLVER
-        Poisson_Solver (phi_solution, Poisson_RHS_Vector, geom, ba, dm, bc);
+        Poisson_Solver(userCtx, Poisson_RHS_Vector, geom, ba, dm, bc);
 
         // Update the solution
         // U^{n+1} = v* + grad (\phi)
         // p^{n+1} = p  + \phi
-        Poisson_Update_Solution (phi_solution, grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
+        Poisson_Update_Solution(phi_solution, grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
 
         // Update velCart from the velCont solutions
         // cont2cart(velCart, velCont, geom);
         cont2cart(velCart, velImRK, geom);
         if (plot_int > 0 && n%plot_int == 0) {
             amrex::Print() << "SOLVING| Export middle line here \n";
-            line_extract(velCart, n_cell, n);
+            line_extract(velCart, n_cell, n, dt, geom);
         }
 
         // This updated velCart will be used again next sub-iteration
         // So, we need to re-enforce the boundary conditions
         // Update the halo exchange points!
         velCart.FillBoundary(geom.periodicity());
-        enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
+        // enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
 
         // advance will do all above steps
         amrex::Print() << "SOLVING| finished at time: " << time << "\n";

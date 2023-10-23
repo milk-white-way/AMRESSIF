@@ -17,11 +17,13 @@ void write_midline_solution (amrex::Real const& midx,
                              amrex::Real const& v_analytic,
                              double const& velx,
                              double const& vely,
-                             int const& timestep);
+                             int const& current_step);
 
 void line_extract (amrex::MultiFab& velCart,
                    int const& n_cell,
-                   int const& timestep);
+                   int const& current_step,
+                   amrex::Real const& dt,
+                   amrex::Geometry const& geom);
 
 // ===== MODULE | MOMENTUM ============//
 void righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
