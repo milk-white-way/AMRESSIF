@@ -1,18 +1,19 @@
 #include <AMReX_Geometry.H>
 #include <AMReX_MultiFab.H>
+#include <AMReX_PlotFileUtil.H>
 
 #include <iostream>
 #include <fstream>
 
-// ===== UTILITY | CONVERSION  =========//
+// ===================== UTILITY | CONVERSION  =====================
 void cart2cont (amrex::MultiFab& velCart,
                 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont);
 
-// ==== UTILITY | CONVERSION  ==========//
 void cont2cart (amrex::MultiFab& velCart,
                 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                 amrex::Geometry const& geom);
 
+// ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
 void write_midline_solution (amrex::Real const& midx,
                              amrex::Real const& v_analytic,
                              double const& velx,
@@ -25,6 +26,21 @@ void line_extract (amrex::MultiFab& velCart,
                    amrex::Real const& dt,
                    amrex::Geometry const& geom);
 
-// ===== MODULE | MOMENTUM ============//
-void righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
-                          amrex::MultiFab& fluxTotal);
+// ===================== UTILITY | EXPORT  =====================
+void Export_Fluxes (amrex::MultiFab& fluxConvect,
+                    amrex::MultiFab& fluxViscous,
+                    amrex::MultiFab& fluxPrsGrad,
+                    amrex::BoxArray const& ba,
+                    amrex::DistributionMapping const& dm,
+                    amrex::Geometry const& geom,
+                    amrex::Real const& time,
+                    int const& timestep);
+
+void Export_Flow_Field (std::string const& nameofFile,
+                        amrex::MultiFab& userCtx,
+                        amrex::MultiFab& velCart,
+                        amrex::BoxArray const& ba,
+                        amrex::DistributionMapping const& dm,
+                        amrex::Geometry const& geom,
+                        amrex::Real const& time,
+                        int const& timestep);

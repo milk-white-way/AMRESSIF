@@ -1,10 +1,10 @@
-nsteps = 1000
-plot_int = 20
+nsteps = 40
+plot_int = 10
 n_cell = 33
 max_grid_size = 33
 
 cfl = 3 
-IterNum = 16
+IterNum = 20
 
 ren = 1
 vis = 1

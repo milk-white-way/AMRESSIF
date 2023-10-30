@@ -6,32 +6,20 @@
 #include <AMReX_MLABecLaplacian.H>
 #include <AMReX_MultiFabUtil.H>
 
-using namespace amrex;
-
 //-------------------------------------------------------
-void Poisson_Solver (
-	      amrex::MultiFab& phi_solution,
-	      amrex::MultiFab& rhs_ptr,
-              const Geometry& geom,
-              const BoxArray& grids,
-              const DistributionMapping& dmap,
-              const Vector<BCRec>& bc);
+void poisson_advance (amrex::MultiFab& poisson_sol,
+                      amrex::MultiFab& poisson_rhs,
+                      amrex::Geometry const& geom,
+                      amrex::BoxArray const& grids,
+                      amrex::DistributionMapping const& dmap,
+                      amrex::Vector<amrex::BCRec> const& bc);
 
-void Poisson_RHS(amrex::Geometry const& geom,                       
-		 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-		 amrex::MultiFab& rhs,
-		 amrex::Real& dt);
+void init_phi (amrex::MultiFab& phi);
 
-void Set_Phi_To_Zero(amrex::MultiFab& phi);
-
-void Poisson_Update_Solution (
-	      amrex::MultiFab& phi_solution,
-	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& grad_phi,
-	      MultiFab& userCtx,
-	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImRK,
-	      const Geometry& geom,
-              const BoxArray& grids,
-              const DistributionMapping& dmap,
-              const Vector<BCRec>& bc,
-	      const amrex::Real &dt);
+void Poisson_Update_Solution(amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &grad_phi,
+                             amrex::MultiFab &userCtx,
+                             amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velCont,
+                             amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velImRK,
+                             amrex::Geometry const &geom, amrex::BoxArray const &grids,
+                             amrex::DistributionMapping const &dmap,
+                             amrex::Vector<amrex::BCRec> const &bc, amrex::Real const &dt);

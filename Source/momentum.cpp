@@ -1,7 +1,6 @@
 #include <AMReX_MultiFabUtil.H>
 
-#include "myfunc.H"
-#include "mykernel.H"
+#include "momentum.H"
 
 using namespace amrex;
 

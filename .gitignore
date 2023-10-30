@@ -10,4 +10,7 @@ cmake-build-debug/*
 # Unneccessary components in the Exec folder
 Exec/*.png
 Exec/*.log
+Exec/*ex
 Exec/tmp_build_dir
+Exec/build.sh
+Exec/clean_before_push.sh

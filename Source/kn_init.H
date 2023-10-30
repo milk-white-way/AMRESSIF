@@ -38,8 +38,9 @@ void init_cartesian_velocity (int i, int j, int k,
     vcart(i, j, k, 0) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y);
     vcart(i, j, k, 1) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y);
 
-    // vcart(i, j, k, 0) = 1;
-    // vcart(i, j, k, 1) = 0;
+    // Test case 2
+    // vcart(i, j, k, 0) = 0;
+    // vcart(i, j, k, 1) = 1;
 #if (AMREX_SPACEDIM > 2)
     Real z = prob_lo[2] + (k+Real(0.5))*dx[2];
     vcart(i, j, k, 2) = Real(0.0);
