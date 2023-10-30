@@ -333,7 +333,7 @@ void main_main ()
     // ++++++++++++++++++++ KIM AND MOINE'S RUNGE-KUTTA +++++++++++++++++++++
     amrex::Print() << "======= ADVANCING STEP  ==================== \n";
     // Setup stopping criteria
-    Real Tol = 1.0e-8;
+    Real Tol = 1.0e-10;
     // int IterNum = 10;
 
     // Setup Runge-Kutta scheme coefficients
@@ -386,7 +386,7 @@ void main_main ()
 
         // MOMENTUM |1| Setup counter
         int countIter = 0;
-        Real normError = 1.0e6;
+        Real normError = 1.0;
 
         //-----------------------------------------------
         // This is the sub-iteration of the implicit RK4
@@ -452,27 +452,30 @@ void main_main ()
         {
             Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
         }
-
-        amrex::Print() << "SOLVING| Momentum | finished time step: " << n << "\n";
+        amrex::Print() << "SOLVING| finished solving Momentum equation. \n";
 
         // Poisson solver
         //    Laplacian(\phi) = (Real(1.5)/dt)*Div(V*)
 
         // POISSON |1| Calculating the RSH
-        amrex::Print() << "SOLVING| Poisson[1] Setting up the RHS of Poisson equation for Phi \n";
         poisson_righthand_side_calc(poisson_rhs, velImRK, geom, dt);
+        // VisMF::Write(poisson_rhs, "pltPoissonRHS");
         // POISSON |2| Init Phi at the begining of the Poisson solver
         // --Don't see why
         // ================================= DEBUGGING BELOW ===================================
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
+        amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
+        const std::string& phi_export = amrex::Concatenate("pltPoissonSolution", n, 5);
+        WriteSingleLevelPlotfile(phi_export, poisson_sol, {"Phi"}, geom, time, n);
+
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
-        // const std::string& pressure_field = amrex::Concatenate("UserContext", n, 5);
-        // WriteSingleLevelPlotfile(pressure_field, userCtx, {"Pressure", "Phi"}, geom, time, n);
+        userCtx.FillBoundary(geom.periodicity());
 
         // Update the solution
         // U^{n+1} = v* + grad (\phi)
         // p^{n+1} = p  + \phi
-        Poisson_Update_Solution(grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
+        update_solution(grad_phi, userCtx, velCont, velImRK, geom, ba, dm, bc, dt);
+        amrex::Print() << "SOLVING| finished updating all fields \n";
 
         // Update velCart from the velCont solutions
         cont2cart(velCart, velCont, geom);

@@ -16,10 +16,10 @@ void poisson_advance (amrex::MultiFab& poisson_sol,
 
 void init_phi (amrex::MultiFab& phi);
 
-void Poisson_Update_Solution(amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &grad_phi,
-                             amrex::MultiFab &userCtx,
-                             amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velCont,
-                             amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velImRK,
-                             amrex::Geometry const &geom, amrex::BoxArray const &grids,
-                             amrex::DistributionMapping const &dmap,
-                             amrex::Vector<amrex::BCRec> const &bc, amrex::Real const &dt);
+void update_solution (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &grad_phi,
+                      amrex::MultiFab &userCtx,
+                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velCont,
+                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velImRK,
+                      amrex::Geometry const &geom, amrex::BoxArray const &grids,
+                      amrex::DistributionMapping const &dmap,
+                      amrex::Vector<amrex::BCRec> const &bc, amrex::Real const &dt);

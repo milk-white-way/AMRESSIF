@@ -1,4 +1,3 @@
-rm -rf ./plt* ./tmp_build_dir 
-rm main*
-
-make -j5 DIM=2
+rm -rf ./tmp_build_dir 
+rm -rf plt*
+make -j17 DIM=2 DEBUG=TRUE
