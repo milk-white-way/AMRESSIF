@@ -1,7 +1,7 @@
-nsteps = 2
-plot_int = 1
-n_cell = 33
-max_grid_size = 33
+steps = 1
+plot_int = -1
+n_cell = 129
+max_grid_size = 129
 
 cfl = 3 
 IterNum = 20

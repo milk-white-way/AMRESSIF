@@ -1,3 +1,2 @@
-rm -rf ./tmp_build_dir 
-rm -rf plt*
+#rm -rf ./tmp_build_dir 
 make -j17 DIM=2 DEBUG=TRUE

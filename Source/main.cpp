@@ -320,8 +320,8 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    dt = 1e-4;
-    amrex::Print() << "INFO| override dt value: " << dt << "\n";
+    //dt = 2e-4;
+    //amrex::Print() << "INFO| override dt value: " << dt << "\n";
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
@@ -459,14 +459,20 @@ void main_main ()
 
         // POISSON |1| Calculating the RSH
         poisson_righthand_side_calc(poisson_rhs, velImRK, geom, dt);
-        // VisMF::Write(poisson_rhs, "pltPoissonRHS");
+        if (plot_int > 0 && n%plot_int == 0) {
+            const std::string& rhs_export = amrex::Concatenate("pltPoissonRHS", n, 5);
+            WriteSingleLevelPlotfile(rhs_export, poisson_rhs, {"RHS"}, geom, time, n);
+        }
+        VisMF::Write(poisson_rhs, "dbgRHS");
         // POISSON |2| Init Phi at the begining of the Poisson solver
         // --Don't see why
         // ================================= DEBUGGING BELOW ===================================
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
+        if (plot_int > 0 && n%plot_int == 0) {
+            const std::string& phi_export = amrex::Concatenate("pltPoissonSolution", n, 5);
+            WriteSingleLevelPlotfile(phi_export, poisson_sol, {"Phi"}, geom, time, n);
+        }
         amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
-        const std::string& phi_export = amrex::Concatenate("pltPoissonSolution", n, 5);
-        WriteSingleLevelPlotfile(phi_export, poisson_sol, {"Phi"}, geom, time, n);
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
         userCtx.FillBoundary(geom.periodicity());
