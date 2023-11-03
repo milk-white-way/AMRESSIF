@@ -1,2 +1,15 @@
-.idea
-.vscode
+.ccls-cache/*
+.vscode/*
+.idea/*
+
+Documentations/html
+Documentations/latex
+
+cmake-build-debug/*
+
+# Unneccessary components in the Exec folder
+Exec/*.png
+Exec/*.log
+Exec/*.ex
+Exec/*.sh
+Exec/tmp_build_dir

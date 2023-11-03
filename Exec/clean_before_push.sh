@@ -1,3 +1,4 @@
-rm -rf Field* plt* tmp_build_dir
-
-#rm Backtrace.0
+rm -rf plt* midline_*
+rm *.ex
+rm *.log  
+rm Backtrace.0
