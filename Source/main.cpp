@@ -320,39 +320,15 @@ void main_main ()
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
     dt = 1e-5;
+    ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| dt overided: " << dt << "\n";
+    amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
     
-    // Calculate analytic solution here
-    Real final_time = 0.01;
-    GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
-    for ( MFIter mfi(analyticSol); mfi.isValid(); ++mfi )
-    {
-        const Box& vbx = mfi.validbox();
-        auto const& analytic = analyticSol.array(mfi);
-        amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k)
-        {
-
-            Real x = prob_lo[0] + (i+Real(0.5)) * dx[0];
-            Real y = prob_lo[1] + (j+Real(0.5)) * dx[1];
-
-            // u velocity
-            analytic(i, j, k, 0) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(4.0) * M_PI * M_PI * final_time);
-            // v velocity
-            analytic(i, j, k, 1) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-Real(4.0) * M_PI * M_PI * final_time);
-            // pressure
-            analytic(i, j, k, 2) = 0.25 * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(8.0) * M_PI * M_PI * final_time);
-
-        });
-    }
-
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
     if (plot_int > 0)
     {
         Export_Flow_Field("pltInit", userCtx, velCart, ba, dm, geom, time, 0);
-        const std::string& analytic_export = amrex::Concatenate("pltAnalytic", 0, 5);
-        WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, final_time, 0);
     }
 
     // ++++++++++++++++++++ KIM AND MOINE'S RUNGE-KUTTA +++++++++++++++++++++
@@ -376,6 +352,9 @@ void main_main ()
     //+++++++++++++++++++++++++++++++++++++++++
     for (int n = 1; n <= nsteps; ++n)
     {
+        // Update the time
+        time = time + dt;
+
         MultiFab::Copy(userCtxPrev, userCtx, 0, 0, Ncomp, Nghost);
         MultiFab::Copy(velCartPrev, velCart, 0, 0, AMREX_SPACEDIM, Nghost);
         // Forming boundary conditions
@@ -529,11 +508,51 @@ void main_main ()
 
         // advance will do all above steps
         amrex::Print() << "SOLVING| finished at time: " << time << "\n";
-        time = time + dt;
+
+        if (n == nsteps)
+        {
+            MultiFab l2norm(ba, dm, 1, 0);
+
+            GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+            for ( MFIter mfi(analyticSol); mfi.isValid(); ++mfi )
+            {
+                const Box& vbx = mfi.validbox();
+                auto const& analytic = analyticSol.array(mfi);
+                auto const& numel = velCart.array(mfi);
+                auto const& e2norm = l2norm.array(mfi);
+                amrex::ParallelFor(vbx,
+                [=] AMREX_GPU_DEVICE(int i, int j, int k)
+                {
+
+                    Real x = prob_lo[0] + (i+Real(0.5)) * dx[0];
+                    Real y = prob_lo[1] + (j+Real(0.5)) * dx[1];
+
+                    // u velocity
+                    analytic(i, j, k, 0) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+                    // v velocity
+                    analytic(i, j, k, 1) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+                    // pressure
+                    analytic(i, j, k, 2) = - 0.25 * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(16.0) * M_PI * M_PI * time);
+
+                    // L2 norm (square)
+                    e2norm(i, j, k) = ( (numel(i, j, k, 0) - analytic(i, j, k, 0)) * (numel(i, j, k, 0) - analytic(i, j, k, 0)) + (numel(i, j, k, 1) - analytic(i, j, k, 1)) * (numel(i, j, k, 1) - analytic(i, j, k, 1)) ) / ( (analytic(i, j, k, 0) * analytic(i, j, k, 0)) + (analytic(i, j, k, 1) * analytic(i, j, k, 1)) );
+                    // L2 norm
+                    e2norm(i, j, k) = std::sqrt(e2norm(i, j, k));
+                });
+            }
+            amrex::Print() << "BENCHMARKING| L2 norm: " << l2norm.norm0() << "\n";
+            if (plot_int > 0)
+            {
+                const std::string& analytic_export = amrex::Concatenate("pltAnalytic", n, 5);
+                WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, time, n);
+            }
+        }
 
         // Write a plotfile of the current data (plot_int was defined in the inputs file)
         if (plot_int > 0 && n%plot_int == 0)
+        {
             Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
+        }
 
     }//end of time loop - this is the (n) loop!
 

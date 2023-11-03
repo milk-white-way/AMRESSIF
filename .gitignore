@@ -1,15 +1,28 @@
+#|--------------------- List of components to ignore -------------------------|
+#|                        IDE AUTO CONFIG FOLDERS                             |
+#|____________________________________________________________________________|
 .ccls-cache/*
 .vscode/*
 .idea/*
+cmake-build-debug/*
 
+#|--------------------- List of components to ignore -------------------------|
+#|                         DOCUMENTATIONS FOLDER                              |
+#|____________________________________________________________________________|
 Documentations/html
 Documentations/latex
 
-cmake-build-debug/*
-
-# Unneccessary components in the Exec folder
+#|--------------------- List of components to ignore -------------------------|
+#|                               EXEC FOLDER                                  |
+#|____________________________________________________________________________|
 Exec/*.png
 Exec/*.log
 Exec/*.ex
 Exec/*.sh
 Exec/tmp_build_dir
+
+#|--------------------- List of components to ignore -------------------------|
+#|                              TOOLS FOLDER                                  |
+#|____________________________________________________________________________|
+Tools/*.ex
+Tools/tmp_build_dir
