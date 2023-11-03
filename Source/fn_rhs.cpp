@@ -26,7 +26,7 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 #endif
         auto const& total_flux = fluxTotal.array(mfi);
 
-        int const& box_id = mfi.LocalIndex();
+        //int const& box_id = mfi.LocalIndex();
         //print_box(box_id);
 
         amrex::ParallelFor(xbx,
@@ -68,7 +68,7 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k) {
 #if (AMREX_SPACEDIM > 2)
-            compute_flux_divergence_3D(i, j, k, vrhs, xcont, ycont, zcont, dx);
+            //compute_flux_divergence_3D(i, j, k, vrhs, xcont, ycont, zcont, dx);
 #else
             //compute_flux_divergence_2D(i, j, k, vrhs, xcont, ycont, dx);
             rhs(i, j, k) = ( xcont(i+1, j, k) - xcont(i, j, k) )/dx[0] + ( ycont(i, j+1, k) - ycont(i, j, k) )/dx[1];

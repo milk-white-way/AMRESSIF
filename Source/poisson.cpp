@@ -147,7 +147,6 @@ void poisson_advance( MultiFab& poisson_sol,
 
 
     // build an MLMG solver
-    /*
     MLMG mlmg(mlabec);
 
     // set solver parameters
@@ -162,14 +161,13 @@ void poisson_advance( MultiFab& poisson_sol,
 
     int bottom_verbose = 0;
     mlmg.setBottomVerbose(bottom_verbose);
-    */
     // relative and absolute tolerances for linear solve
     const Real tol_rel = 1.0e-10;
     const Real tol_abs = 0.0;
 
     // Solve linear system
-    // mlmg.solve({&phi_solution}, {&rhs_ptr}, tol_rel, tol_abs);
-    Real solve(amrex::MultiFab& poisson_sol, amrex::MultiFab& poisson_rhs, amrex::Real tol_rel, amrex::Real tol_abs);
+    mlmg.solve({&poisson_sol}, {&poisson_rhs}, tol_rel, tol_abs);
+    //Real solve(amrex::MultiFab& poisson_sol, amrex::MultiFab& poisson_rhs, amrex::Real tol_rel, amrex::Real tol_abs);
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++

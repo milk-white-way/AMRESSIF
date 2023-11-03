@@ -190,7 +190,6 @@ void Export_Fluxes( MultiFab& fluxConvect,
     WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, timestep);
 }
 
-
 void Export_Flow_Field (std::string const& nameofFile,
                         MultiFab& userCtx,
                         MultiFab& velCart,
