@@ -16,8 +16,8 @@ vis = 1
 phy_bc_lo = 0 0
 phy_bc_hi = 0 0
 
-bc_lo = 0 0
-bc_hi = 0 0
+bc_lo = -1 -1
+bc_hi = -1 -1
 
 amrex.v = 1
 amrex.async_out = 0  # If we use more than 64 processes, async_out will require MPI_THREAD_MULTIPLE

@@ -1,8 +1,8 @@
-/** 
+/**
  * Incompressible Flow Solver
- * Testing .... 
+ * Testing ....
 
- * 
+ *
  * Trung Edited
  * Jul/31/2023 - Trung edited
  */
@@ -40,13 +40,10 @@ using namespace amrex;
  */
 int main (int argc, char* argv[])
 {
-    // Initialization
+
     amrex::Initialize(argc,argv);
-    // Solver
     main_main();
-    // Finalization
     amrex::Finalize();
-    // Error handeling
     return 0;
 }
 
@@ -160,15 +157,15 @@ void main_main ()
     DistributionMapping dm(ba);
 
     /*
-     * ----------------------- 
-     *   Volume center 
+     * -----------------------
+     *   Volume center
      *  ----------------------
      *  |                    |
      *  |                    |
      *  |          0         |
      *  |                    |
      *  |                    |
-     *  ---------------------- 
+     *  ----------------------
      */
 
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
@@ -242,7 +239,7 @@ void main_main ()
      *             |             |---> velCont
      *             |    0 velCart|
      *             |             |
-     *              _____________      
+     *              _____________
      *
      */
 
@@ -302,6 +299,7 @@ void main_main ()
     //--------------------------------------------------------------------------------------//
     // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------//
     //--------------------------------------------------------------------------------------//
+
     amrex::Print() << "==== INITIALIZATION STEP =========== \n";
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
@@ -322,6 +320,7 @@ void main_main ()
 
     dt = 1e-4;
     amrex::Print() << "INFO| override dt value: " << dt << "\n";
+
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
