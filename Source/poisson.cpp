@@ -1,4 +1,3 @@
-#include "myfunc.H"
 #include "poisson.H"
 #include "kn_poisson.H"
 
@@ -7,139 +6,58 @@
 #include <AMReX_MLABecLaplacian.H>
 #include <AMReX_MultiFabUtil.H>
 
-using namespace amrex;
 #include <AMReX_Geometry.H>
 #include <AMReX_MultiFab.H>
 #include <AMReX_BCRec.H>
 
-
+using namespace amrex;
 //--------------------------------------
 //++++++++++++++++++++++++++++++++++++++
 //++++++++++++++++++++++++++++++++++++++
 
-void Set_Phi_To_Zero(amrex::MultiFab& phi)
+void init_phi(MultiFab& userCtx)
 {
-  
- 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-    for ( MFIter mfi(phi); mfi.isValid(); ++mfi )
-    {
-      // This includes one ghost cell
-        const Box& vbx = mfi.growntilebox(1);
-        auto const& vphi  = phi.array(mfi);
-
-
-        amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-
-	  vphi(i,j,k) = 0;
-
-        });
-    }
-
-    amrex::Print() << "Setting up Phi to Zero completes.....\n";
-
-}
-
-
-//+++++++++++++++++++++++++++++++++++++++++++++
-//------- Setup the RHS -----------------------
-//-- For the Poisson equation -----------------
-//+++++++++++++++++++++++++++++++++++++++++++++
-void Poisson_RHS(amrex::Geometry const& geom,                       
-		 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-		 amrex::MultiFab& rhs, amrex::Real &dt)
-{
-  amrex::Print() << "Setting up the right hand side of the Poisson equation\n";
-
-  
-    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-
-    // Loop for all boxes
-    for ( MFIter mfi(rhs); mfi.isValid(); ++mfi )
+    for( MFIter mfi(userCtx); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
-        auto const& vrhs  = rhs.array(mfi);
-
-	auto const& xcont = velCont[0].array(mfi);
-        auto const& ycont = velCont[1].array(mfi);
-
-	//Loop for all i,j,k in the local domain
-        amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-
-	  
-#if (AMREX_SPACEDIM > 2)
-          auto const& zcont = velCont[2].array(mfi);
-          compute_flux_divergence_3D(i, j, k, vrhs, xcont, ycont, zcont, dx);
-#else
-  	  compute_flux_divergence_2D(i, j, k, vrhs, xcont, ycont, dx);
-
-#endif
-
-        });
-    }// End of all box loops
-
-
-    // Scaling the right-hand side to include time-step here
-   for ( MFIter mfi(rhs); mfi.isValid(); ++mfi )
-    {
-        const Box& vbx = mfi.validbox();
-        auto const& vrhs  = rhs.array(mfi);
+        auto const& ctx  = userCtx.array(mfi);
 
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-
-	  vrhs(i,j,k) = vrhs(i,j,k) * 1.5 / dt;
-
+            ctx(i, j, k, 1) = Real(0.0);
         });
     }
-
-    amrex::Print() << "Setting up completes.....\n";
-
 }
-
-
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //----- Poisson solver -- main one ---------------------------
 //------------------------------------------------------------
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void Poisson_Solver (
-	      amrex::MultiFab& phi_solution,
-	      amrex::MultiFab& rhs_ptr,
-              const Geometry& geom,
-              const BoxArray& grids,
-              const DistributionMapping& dmap,
-              const Vector<BCRec>& bc)
+void poisson_advance( MultiFab& poisson_sol,
+                      MultiFab& poisson_rhs,
+                      Geometry const& geom,
+                      BoxArray const& grids,
+                      DistributionMapping const& dmap,
+                      Vector<BCRec> const& bc )
 {
-    /*
-      We use an MLABecLaplacian operator:
-
-      (ascalar*acoef - bscalar div bcoef grad) phi = RHS
-
-      for an implicit discretization of the heat equation
-
-      (I - div dt grad) phi^{n+1} = phi^n
-     */
-
+/*
+ * We use an MLABecLaplacian operator:
+ * (ascalar*acoef - bscalar div bcoef grad) phi = RHS
+ * for an implicit discretization of the heat equation
+ * (I - div dt grad) phi^{n+1} = phi^n
+*/
 
     // Fill the ghost cells of each grid from the other grids
     // includes periodic domain boundaries
-     phi_solution.FillBoundary(geom.periodicity());
+    poisson_sol.FillBoundary(geom.periodicity());
 
     // Fill non-periodic physical boundaries
-     FillDomainBoundary(phi_solution, geom, bc);
+    FillDomainBoundary(poisson_sol, geom, bc);
 
     // assorment of solver and parallization options and parameters
     // see AMReX_MLLinOp.H for the defaults, accessors, and mutators
@@ -157,48 +75,47 @@ void Poisson_Solver (
     std::array<LinOpBCType,AMREX_SPACEDIM> LinOp_bc_lo;
     std::array<LinOpBCType,AMREX_SPACEDIM> LinOp_bc_hi;
 
-     for (int n = 0; n < phi_solution.nComp(); ++n)
-     {
-         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim)
-         {
-             // lo-side BCs
-             if (bc[n].lo(idim) == BCType::int_dir) {
-                 LinOp_bc_lo[idim] = LinOpBCType::Periodic;
-             }
-             else if (bc[n].lo(idim) == BCType::foextrap) {
-                 LinOp_bc_lo[idim] = LinOpBCType::Neumann;
-             }
-             else if (bc[n].lo(idim) == BCType::ext_dir) {
-                 LinOp_bc_lo[idim] = LinOpBCType::Dirichlet;
-             }
-             else {
-                 amrex::Abort("Invalid bc_lo");
-             }
+    for (int n = 0; n < poisson_sol.nComp(); ++n)
+    {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim)
+        {
+            // lo-side BCs
+            if (bc[n].lo(idim) == BCType::int_dir) {
+                LinOp_bc_lo[idim] = LinOpBCType::Periodic;
+            }
+            else if (bc[n].lo(idim) == BCType::foextrap) {
+                LinOp_bc_lo[idim] = LinOpBCType::Neumann;
+            }
+            else if (bc[n].lo(idim) == BCType::ext_dir) {
+                LinOp_bc_lo[idim] = LinOpBCType::Dirichlet;
+            }
+            else {
+                amrex::Abort("Invalid bc_lo");
+            }
 
-             // hi-side BCs
-             if (bc[n].hi(idim) == BCType::int_dir) {
-                 LinOp_bc_hi[idim] = LinOpBCType::Periodic;
-             }
-             else if (bc[n].hi(idim) == BCType::foextrap) {
-                 LinOp_bc_hi[idim] = LinOpBCType::Neumann;
-             }
-             else if (bc[n].hi(idim) == BCType::ext_dir) {
-                 LinOp_bc_hi[idim] = LinOpBCType::Dirichlet;
-             }
-             else {
-                 amrex::Abort("Invalid bc_hi");
-             }
-         }
-     }
+            // hi-side BCs
+            if (bc[n].hi(idim) == BCType::int_dir) {
+                LinOp_bc_hi[idim] = LinOpBCType::Periodic;
+            }
+            else if (bc[n].hi(idim) == BCType::foextrap) {
+                LinOp_bc_hi[idim] = LinOpBCType::Neumann;
+            }
+            else if (bc[n].hi(idim) == BCType::ext_dir) {
+                LinOp_bc_hi[idim] = LinOpBCType::Dirichlet;
+            }
+            else {
+                amrex::Abort("Invalid bc_hi");
+            }
+        }
+    }
 
     // tell the solver what the domain boundary conditions are
-   
     mlabec.setDomainBC(LinOp_bc_lo, LinOp_bc_hi);
 
     // set the boundary conditions
     // This loads the value of the Neumman boundary condition at the ghost cells
     // Ghost cell stores the value of the BCs for the Neumann
-    mlabec.setLevelBC(0, &phi_solution);
+    mlabec.setLevelBC(0, &poisson_sol);
 
     // scaling factors
     Real ascalar = 0.0;
@@ -230,7 +147,7 @@ void Poisson_Solver (
 
 
     // build an MLMG solver
-   MLMG mlmg(mlabec);
+    MLMG mlmg(mlabec);
 
     // set solver parameters
     int max_iter = 100;
@@ -244,192 +161,150 @@ void Poisson_Solver (
 
     int bottom_verbose = 0;
     mlmg.setBottomVerbose(bottom_verbose);
-
     // relative and absolute tolerances for linear solve
     const Real tol_rel = 1.0e-10;
     const Real tol_abs = 0.0;
 
     // Solve linear system
-     mlmg.solve({&phi_solution}, {&rhs_ptr}, tol_rel, tol_abs);
-   
+    mlmg.solve({&poisson_sol}, {&poisson_rhs}, tol_rel, tol_abs);
+    //Real solve(amrex::MultiFab& poisson_sol, amrex::MultiFab& poisson_rhs, amrex::Real tol_rel, amrex::Real tol_abs);
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++
 //-- Update the pressure and velocity field---
 //-- After the projection step ---------------
 //++++++++++++++++++++++++++++++++++++++++++++
-void Poisson_Update_Solution (
-	      amrex::MultiFab& phi_solution,
-	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& grad_phi,
-	      MultiFab& userCtx,
-	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-	      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImRK,
-	      const Geometry& geom,
-              const BoxArray& grids,
-              const DistributionMapping& dmap,
-              const Vector<BCRec>& bc,
-	      const amrex::Real &dt)
+void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
+                      MultiFab& userCtx,
+                      Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                      Array<MultiFab, AMREX_SPACEDIM>& velImRK,
+                      const Geometry& geom,
+                      const BoxArray& grids,
+                      const DistributionMapping& dmap,
+                      const Vector<BCRec>& bc,
+                      const Real &dt )
 {
-  amrex::Print() << " Updating the solution \n";
+    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
-  GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-
-  // Set the grad_phi components to be zeros
-  // Scaling the right-hand side to include time-step here
-  for ( MFIter mfi(grad_phi[0]); mfi.isValid(); ++mfi )
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(grad_phi[0]); mfi.isValid(); ++mfi )
     {
-        
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
-	 // is it OK to handle this tile with the 
-	auto const& vphi = phi_solution.array(mfi);
-	auto const& vpressure = userCtx.array(mfi);
-// 	// grad X, Y, and Z
-        auto const& grad_x  = grad_phi[0].array(mfi);
-   	auto const& grad_y  = grad_phi[1].array(mfi);
+        auto const& phigrad_x = grad_phi[0].array(mfi);
+        auto const& phigrad_y = grad_phi[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-
- 	auto const& grad_z  = grad_phi[2].array(mfi);
+        auto const& phigrad_z = grad_phi[2].array(mfi);
 #endif
+        /*
+        //+++++++++++++++++++++++++++++++++++
+        //--- Zero out the gradient values --
+        //+++++++++++++++++++++++++++++++++++
 
-
-	//+++++++++++++++++++++++++++++++++++
-	//--- Zero out the gradient values --
-	//+++++++++++++++++++++++++++++++++++
-	
-	//i direction
+        //i direction
         amrex::ParallelFor(xbx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            grad_x(i,j,k) = 0;
+        });
 
-	   grad_x(i,j,k) = 0;
-	  
-         });
-
-	//j direction
+        //j direction
         amrex::ParallelFor(ybx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-
-	   grad_y(i,j,k) = 0;
-	  
-         });
-
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            grad_y(i,j,k) = 0;
+        });
 
 #if (AMREX_SPACEDIM > 2)
-
-	//k direction
+        //k direction
         amrex::ParallelFor(zbx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-	   grad_z(i,j,k) = 0;
-
-         });
-
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+           grad_z(i,j,k) = 0;
+        });
 #endif
+        */
 
-
-	//============================================
-	//-- Compute the gradient at the face-center--
-	//-- using 2nd order approximation -----------
-	// -----  i direction -----------------------
+        //============================================
+        //-- Compute the gradient at the face-center--
+        //-- using 2nd order approximation -----------
+        auto const& ctx = userCtx.array(mfi);
         amrex::ParallelFor(xbx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-	   //Gradient of phi at half-node (face-center) i + 1/2
-	   grad_x(i,j,k) = (vphi(i+1,j,k) - vphi(i,j,k))/dx[0];
-	  
-         });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            phigrad_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+        });
 
-	amrex::ParallelFor(ybx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-	   //Gradient of phi at half-node (face-center) j + 1/2
-	   grad_y(i,j,k) = (vphi(i,j+1,k) - vphi(i,j,k))/dx[1];
-	  
-         });
-
-#if (AMREX_SPACEDIM > 2)
-
-	amrex::ParallelFor(zbx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-	   //Gradient of phi at half-node (face-center) j + 1/2
-	   grad_y(i,j,k) = (vphi(i,j,k+1) - vphi(i,j,k))/dx[2];
-	  
-         });
-
-#endif
-
-	//===============================================
-	//----- Update the pressure field ---------------
-	//+++++++++++++++++++++++++++++++++++++++++++++++
-	const Box& vbx = mfi.validbox();
-	amrex::ParallelFor(vbx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-	   //Update the pressure field
-	   vpressure(i,j,k, 0) = vpressure(i,j,k, 0) + vphi(i,j,k);
-	  
-         });
-
-	// Take the value of the contravariant velocities out!
-	   auto const& xcont = velCont[0].array(mfi);
-	   auto const& ycont = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-	   auto const& zcont = velCont[2].array(mfi);
-#endif
-
-	   auto const& xcontRK = velImRK[0].array(mfi);
-	   auto const& ycontRK = velImRK[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-	   auto const& zcontRK = velImRK[2].array(mfi);
-#endif
-
-	//===============================================
-	//----- Update the velocity field ---------------
-	//----------------------------------------------
-	// Ucont in the i - direction
-	// -----  i direction -----------------------
-        amrex::ParallelFor(xbx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-	   //Gradient of phi at half-node (face-center) i + 1/2
-	   xcont(i,j,k) = xcontRK(i,j,k) + grad_x(i,j,k) * 1.5 /dt;
-	  
-         });
-
-	//----------------------------------------------
-	// Ucont in the j - direction
-	// -----  j direction -----------------------
         amrex::ParallelFor(ybx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-	   //Gradient of phi at half-node (face-center) i + 1/2
-	   ycont(i,j,k) = ycontRK(i,j,k) + grad_y(i,j,k) * 1.5 /dt;
-	  
-         });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            phigrad_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+        });
+
 #if (AMREX_SPACEDIM > 2)
-	//----------------------------------------------
-	// Ucont in the k - direction
-	// -----  k direction -----------------------
+
         amrex::ParallelFor(zbx,
-         [=] AMREX_GPU_DEVICE (int i, int j, int k)
-         {
-	   //Gradient of phi at half-node (face-center) i + 1/2
-	   zcont(i,j,k) = zcontRK(i,j,k) + grad_z(i,j,k) * 1.5 /dt;
-	  
-         });
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+           phigrad_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+        });
+
 #endif
-  
-  
-    }// End of the loop for boxes
+        //==============================================
+        //----- Update the contravariant velocity ------
+        //----------------------------------------------
+        auto const& ximrk = velImRK[0].array(mfi);
+        auto const& yimrk = velImRK[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& zimrk = velImRK[2].array(mfi);
+#endif
 
+        auto const& xcont = velCont[0].array(mfi);
+        auto const& ycont = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& zcont = velCont[2].array(mfi);
+#endif
+        amrex::ParallelFor(xbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            xcont(i, j, k) = ximrk(i, j, k) - phigrad_x(i, j, k) * dt / Real(1.5);
+        });
 
+        amrex::ParallelFor(ybx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            ycont(i, j, k) = yimrk(i, j, k) - phigrad_y(i, j, k) * dt / Real(1.5);
+        });
+#if (AMREX_SPACEDIM > 2)
+        amrex::ParallelFor(zbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            zcont(i, j, k) = zimrk(i, j, k) - phigrad_z(i, j, k) * dt / Real(1.5);
+        });
+#endif
+    } // End of the loop for boxes
 
-  
-    amrex::Print() << " Updating ends. \n";
+        //==============================================
+        //----- Update the pressure field --------------
+        //----------------------------------------------
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(userCtx); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& ctx = userCtx.array(mfi);
+        amrex::ParallelFor(vbx,
+        [=] AMREX_GPU_DEVICE (int i, int j, int k)
+        {
+            //Update the pressure field
+            ctx(i, j, k, 0) = ctx(i, j, k, 0) + ctx(i, j, k, 1);
+
+        });
+    } // End of the loop for boxes
 }
