@@ -1,0 +1,24 @@
+HyperCLaw-V1.1
+6
+conv_fluxx
+conv_fluxy
+visc_fluxx
+visc_fluxy
+press_gradx
+press_grady
+2
+0.0047899999999999731
+0
+0 0 
+1 1 
+
+((0,0) (63,63) (0,0)) 
+480 
+0.015625 0.015625 
+0
+0
+0 1 0.0047899999999999731
+480
+0 1
+0 1
+Level_0/Cell

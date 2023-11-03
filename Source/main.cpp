@@ -171,6 +171,7 @@ void main_main ()
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     MultiFab userCtx(ba, dm, Ncomp, Nghost);
     MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
+    MultiFab analyticSol(ba, dm, 3, 0);
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
@@ -318,19 +319,44 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    //dt = 2e-4;
-    //amrex::Print() << "INFO| override dt value: " << dt << "\n";
+    dt = 1e-5;
+    amrex::Print() << "INFO| dt overided: " << dt << "\n";
+    
+    // Calculate analytic solution here
+    Real final_time = 0.01;
+    GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+    for ( MFIter mfi(analyticSol); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& analytic = analyticSol.array(mfi);
+        amrex::ParallelFor(vbx,
+        [=] AMREX_GPU_DEVICE(int i, int j, int k)
+        {
 
+            Real x = prob_lo[0] + (i+Real(0.5)) * dx[0];
+            Real y = prob_lo[1] + (j+Real(0.5)) * dx[1];
+
+            // u velocity
+            analytic(i, j, k, 0) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(4.0) * M_PI * M_PI * final_time);
+            // v velocity
+            analytic(i, j, k, 1) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-Real(4.0) * M_PI * M_PI * final_time);
+            // pressure
+            analytic(i, j, k, 2) = 0.25 * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(8.0) * M_PI * M_PI * final_time);
+
+        });
+    }
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
     if (plot_int > 0)
     {
         Export_Flow_Field("pltInit", userCtx, velCart, ba, dm, geom, time, 0);
+        const std::string& analytic_export = amrex::Concatenate("pltAnalytic", 0, 5);
+        WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, final_time, 0);
     }
 
     // ++++++++++++++++++++ KIM AND MOINE'S RUNGE-KUTTA +++++++++++++++++++++
-    amrex::Print() << "======= ADVANCING STEP  ==================== \n";
+    amrex::Print() << "================= ADVANCING STEP  ==================== \n";
     // Setup stopping criteria
     Real Tol = 1.0e-10;
     // int IterNum = 10;
@@ -458,19 +484,23 @@ void main_main ()
 
         // POISSON |1| Calculating the RSH
         poisson_righthand_side_calc(poisson_rhs, velImRK, geom, dt);
+        /*
         if (plot_int > 0 && n%plot_int == 0) {
             const std::string& rhs_export = amrex::Concatenate("pltPoissonRHS", n, 5);
             WriteSingleLevelPlotfile(rhs_export, poisson_rhs, {"RHS"}, geom, time, n);
         }
-        VisMF::Write(poisson_rhs, "dbgRHS");
+        */
+        //VisMF::Write(poisson_rhs, "dbgRHS");
         // POISSON |2| Init Phi at the begining of the Poisson solver
         // --Don't see why
         // ================================= DEBUGGING BELOW ===================================
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
+        /*
         if (plot_int > 0 && n%plot_int == 0) {
             const std::string& phi_export = amrex::Concatenate("pltPoissonSolution", n, 5);
             WriteSingleLevelPlotfile(phi_export, poisson_sol, {"Phi"}, geom, time, n);
         }
+        */
         amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
@@ -484,13 +514,12 @@ void main_main ()
 
         // Update velCart from the velCont solutions
         cont2cart(velCart, velCont, geom);
-        // DEBUG: nan appears here
-        
-        // cont2cart(velCart, velImRK, geom);
+        /*
         if (plot_int > 0 && n%plot_int == 0) {
             amrex::Print() << "SOLVING| Export middle line here \n";
             line_extract(velCart, n_cell, n, dt, geom);
         }
+        */
 
         // This updated velCart will be used again next sub-iteration
         // So, we need to re-enforce the boundary conditions
