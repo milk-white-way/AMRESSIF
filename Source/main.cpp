@@ -319,8 +319,8 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    dt = 1e-5;
-    ren = ren*Real(2.0)*M_PI;
+    dt = Real(5.0)*1E-7;
+    //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| dt overided: " << dt << "\n";
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
     
@@ -509,21 +509,19 @@ void main_main ()
         // advance will do all above steps
         amrex::Print() << "SOLVING| finished at time: " << time << "\n";
 
-        if (n == nsteps)
+        if ( n%plot_int == 0 )
         {
-            MultiFab l2norm(ba, dm, 1, 0);
-
             GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
             for ( MFIter mfi(analyticSol); mfi.isValid(); ++mfi )
             {
                 const Box& vbx = mfi.validbox();
                 auto const& analytic = analyticSol.array(mfi);
-                auto const& numel = velCart.array(mfi);
-                auto const& e2norm = l2norm.array(mfi);
+                auto const& numelv = velCart.array(mfi);
+                auto const& numelp = userCtx.array(mfi);
                 amrex::ParallelFor(vbx,
                 [=] AMREX_GPU_DEVICE(int i, int j, int k)
                 {
-
+                    // Real coordinates of the cell center
                     Real x = prob_lo[0] + (i+Real(0.5)) * dx[0];
                     Real y = prob_lo[1] + (j+Real(0.5)) * dx[1];
 
@@ -532,19 +530,70 @@ void main_main ()
                     // v velocity
                     analytic(i, j, k, 1) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
                     // pressure
-                    analytic(i, j, k, 2) = - 0.25 * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(16.0) * M_PI * M_PI * time);
+                    analytic(i, j, k, 2) = - Real(0.25) * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(16.0) * M_PI * M_PI * time);
 
-                    // L2 norm (square)
-                    e2norm(i, j, k) = ( (numel(i, j, k, 0) - analytic(i, j, k, 0)) * (numel(i, j, k, 0) - analytic(i, j, k, 0)) + (numel(i, j, k, 1) - analytic(i, j, k, 1)) * (numel(i, j, k, 1) - analytic(i, j, k, 1)) ) / ( (analytic(i, j, k, 0) * analytic(i, j, k, 0)) + (analytic(i, j, k, 1) * analytic(i, j, k, 1)) );
-                    // L2 norm
-                    e2norm(i, j, k) = std::sqrt(e2norm(i, j, k));
+                    // STEP 1 is to calculate the solution at the middle line
+                    // middle horizontal line (MHL)
+                    if (j == n_cell/2)
+                    {
+                        // u velocity
+                        Real mhlu = Real(0.5) * ( numelv(i, j, k, 0) + numelv(i, j-1, k, 0) );
+                        Real hanu = Real(0.5) * ( analytic(i, j, k, 0) + analytic(i, j-1, k, 0) );
+                        // v velocity
+                        Real mhlv = Real(0.5) * ( numelv(i, j, k, 1) + numelv(i, j-1, k, 1) );
+                        Real hanv = Real(0.5) * ( analytic(i, j, k, 1) + analytic(i, j-1, k, 1) );
+                        // Pressure
+                        Real mhlp = Real(0.5) * ( numelp(i, j, k, 0) + numelp(i, j-1, k, 0) );
+                        Real hanp = Real(0.5) * ( analytic(i, j, k, 2) + analytic(i, j-1, k, 2) );
+                        
+                        // Write the solution to file
+                        write_midline_solution(x, y, mhlu, mhlv, mhlp, hanu, hanv, hanp, n);
+                    }
+                    // middle vertical line (MVL)
+                    if (i == n_cell/2)
+                    {
+                        // u velocity
+                        Real mvlu = Real(0.5) * ( numelv(i, j, k, 0) + numelv(i-1, j, k, 0) );
+                        Real vanu = Real(0.5) * ( analytic(i, j, k, 0) + analytic(i-1, j, k, 0) );
+                        // v velocity
+                        Real mvlv = Real(0.5) * ( numelv(i, j, k, 1) + numelv(i-1, j, k, 1) );
+                        Real vanv = Real(0.5) * ( analytic(i, j, k, 1) + analytic(i-1, j, k, 1) );
+                        // Pressure
+                        Real mvlp = Real(0.5) * ( numelp(i, j, k, 0) + numelp(i-1, j, k, 0) );
+                        Real vanp = Real(0.5) * ( analytic(i, j, k, 2) + analytic(i-1, j, k, 2) );
+                        
+                        // Write the solution to file
+                        write_midline_solution(x, y, mvlu, mvlv, mvlp, vanu, vanv, vanp, n);
+                    }
                 });
+
+                MultiFab l2norm(ba, dm, 3, 0);
+                // Comp 0 is velocity field along x-axis
+                // Comp 1 is velocity field along y-axis
+                // Comp 2 is pressure field
+                MultiFab::Copy(l2norm, velCart, 0, 0, 2, 0);
+                MultiFab::Copy(l2norm, userCtx, 1, 2, 1, 0);
+                MultiFab::Subtract(l2norm, analyticSol, 0, 0, 3, 0);
+
             }
-            amrex::Print() << "BENCHMARKING| L2 norm: " << l2norm.norm0() << "\n";
+
+            Box domain = geom.Domain();
+            #if (AMREX_SPACEDIM == 2)
+                long npts = (domain.length(0)*domain.length(1));
+            #elif (AMREX_SPACEDIM == 3)
+                npts = (domain.length(0)*domain.length(1)*domain.length(2));
+            #endif
+
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for x-velocity: " << l2norm.norm2(0) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure: " << l2norm.norm2(2) << "\n";
             if (plot_int > 0)
             {
                 const std::string& analytic_export = amrex::Concatenate("pltAnalytic", n, 5);
                 WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, time, n);
+                
+                const std::string& error_export = amrex::Concatenate("pltL2_Norm", n, 5);
+                WriteSingleLevelPlotfile(error_export, l2norm, {"error-norm-velocity", "error-norm-pressure"}, geom, time, n);
             }
         }
 

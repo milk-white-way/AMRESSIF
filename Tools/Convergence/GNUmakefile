@@ -12,8 +12,8 @@ DEBUG	      = FALSE
 DIM	       = 2
 #DIM           = 1
 COMP          = g++
-#USE_MPI       = TRUE 
-USE_MPI       = FALSE
+USE_MPI       = TRUE 
+#USE_MPI       = FALSE
 #
 # Base name of the executable.
 #
