@@ -534,6 +534,7 @@ void main_main ()
 
                     // STEP 1 is to calculate the solution at the middle line
                     // middle horizontal line (MHL)
+                    /*
                     if (j == n_cell/2)
                     {
                         // u velocity
@@ -565,35 +566,34 @@ void main_main ()
                         // Write the solution to file
                         write_midline_solution(x, y, mvlu, mvlv, mvlp, vanu, vanv, vanp, n);
                     }
+                    */
                 });
-
-                MultiFab l2norm(ba, dm, 3, 0);
-                // Comp 0 is velocity field along x-axis
-                // Comp 1 is velocity field along y-axis
-                // Comp 2 is pressure field
-                MultiFab::Copy(l2norm, velCart, 0, 0, 2, 0);
-                MultiFab::Copy(l2norm, userCtx, 1, 2, 1, 0);
-                MultiFab::Subtract(l2norm, analyticSol, 0, 0, 3, 0);
 
             }
 
-            Box domain = geom.Domain();
+            MultiFab l2norm(ba, dm, 3, 0);
+            // Comp 0 is velocity field along x-axis
+            // Comp 1 is velocity field along y-axis
+            // Comp 2 is pressure field
+            MultiFab::Copy(l2norm, velCart, 0, 0, 2, 0);
+            MultiFab::Copy(l2norm, userCtx, 1, 2, 1, 0);
+            MultiFab::Subtract(l2norm, analyticSol, 0, 0, 3, 0);
+
+            long npts;
+            Box my_domain = geom.Domain();
             #if (AMREX_SPACEDIM == 2)
-                long npts = (domain.length(0)*domain.length(1));
+                npts = (my_domain.length(0)*my_domain.length(1));
             #elif (AMREX_SPACEDIM == 3)
-                npts = (domain.length(0)*domain.length(1)*domain.length(2));
+                npts = (my_domain.length(0)*my_domain.length(1)*my_domain.length(2));
             #endif
 
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for x-velocity: " << l2norm.norm2(0) << "\n";
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1) << "\n";
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure: " << l2norm.norm2(2) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for x-velocity: " << l2norm.norm2(0)/std::sqrt(npts) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1)/std::sqrt(npts) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure: " << l2norm.norm2(2)/std::sqrt(npts) << "\n";
             if (plot_int > 0)
             {
                 const std::string& analytic_export = amrex::Concatenate("pltAnalytic", n, 5);
                 WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, time, n);
-                
-                const std::string& error_export = amrex::Concatenate("pltL2_Norm", n, 5);
-                WriteSingleLevelPlotfile(error_export, l2norm, {"error-norm-velocity", "error-norm-pressure"}, geom, time, n);
             }
         }
 
