@@ -171,7 +171,6 @@ void main_main ()
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     MultiFab userCtx(ba, dm, Ncomp, Nghost);
     MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
-    MultiFab analyticSol(ba, dm, 3, 0);
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
@@ -188,6 +187,8 @@ void main_main ()
 
     MultiFab poisson_rhs(ba, dm, 1, 1);
     MultiFab poisson_sol(ba, dm, 1, 1);
+
+    MultiFab analyticSol(ba, dm, 3, 1);
 
     //---------------------------------------------------------------
     // Defining the boundary conditions for each face of the domain
@@ -505,9 +506,10 @@ void main_main ()
         // Update the halo exchange points!
         velCart.FillBoundary(geom.periodicity());
         // enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
-
-        // advance will do all above steps
         amrex::Print() << "SOLVING| finished at time: " << time << "\n";
+
+        // Before benchmarking, making sure that halo regions are updated
+        analyticSol.FillBoundary(geom.periodicity());
 
         if ( n%plot_int == 0 )
         {
@@ -534,7 +536,6 @@ void main_main ()
 
                     // STEP 1 is to calculate the solution at the middle line
                     // middle horizontal line (MHL)
-                    /*
                     if (j == n_cell/2)
                     {
                         // u velocity
@@ -548,7 +549,8 @@ void main_main ()
                         Real hanp = Real(0.5) * ( analytic(i, j, k, 2) + analytic(i, j-1, k, 2) );
                         
                         // Write the solution to file
-                        write_midline_solution(x, y, mhlu, mhlv, mhlp, hanu, hanv, hanp, n);
+                        amrex::Print() << "BENCHMARKING| Middle horizontal line: " << i << " " << j << " " << mhlu << " " << mhlv << " " << mhlp << " " << hanu << " " << hanv << " " << hanp << "\n";
+                        // write_midline_solution(x, y, mhlu, mhlv, mhlp, hanu, hanv, hanp, n);
                     }
                     // middle vertical line (MVL)
                     if (i == n_cell/2)
@@ -564,9 +566,9 @@ void main_main ()
                         Real vanp = Real(0.5) * ( analytic(i, j, k, 2) + analytic(i-1, j, k, 2) );
                         
                         // Write the solution to file
-                        write_midline_solution(x, y, mvlu, mvlv, mvlp, vanu, vanv, vanp, n);
+                        amrex::Print() << "BENCHMARKING| Middle vertical line: " << i << " " << j << " " << mvlu << " " << mvlv << " " << mvlp << " " << vanu << " " << vanv << " " << vanp << "\n";
+                        // write_midline_solution(x, y, mvlu, mvlv, mvlp, vanu, vanv, vanp, n);
                     }
-                    */
                 });
 
             }
