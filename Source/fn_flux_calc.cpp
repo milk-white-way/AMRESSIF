@@ -207,8 +207,7 @@ void total_flux_calc ( MultiFab& fluxTotal,
         auto const& total_flux = fluxTotal.array(mfi);
 
         amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
             compute_total_flux(i, j, k, total_flux, conv_flux, visc_flux, prsgrad_flux);
         });
     }

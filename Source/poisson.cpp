@@ -177,7 +177,9 @@ void poisson_advance( MultiFab& poisson_sol,
 void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
                       MultiFab& userCtx,
                       Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                      Array<MultiFab, AMREX_SPACEDIM>& velImRK,
+                      Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
+                      Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
+                      Array<MultiFab, AMREX_SPACEDIM>& velHat,
                       const Geometry& geom,
                       const BoxArray& grids,
                       const DistributionMapping& dmap,
@@ -196,10 +198,10 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
 #if (AMREX_SPACEDIM > 2)
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
-        auto const& phigrad_x = grad_phi[0].array(mfi);
-        auto const& phigrad_y = grad_phi[1].array(mfi);
+        auto const& grad_phix = grad_phi[0].array(mfi);
+        auto const& grad_phiy = grad_phi[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-        auto const& phigrad_z = grad_phi[2].array(mfi);
+        auto const& grad_phiz = grad_phi[2].array(mfi);
 #endif
         /*
         //+++++++++++++++++++++++++++++++++++
@@ -235,33 +237,42 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
         //-- using 2nd order approximation -----------
         auto const& ctx = userCtx.array(mfi);
         amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            phigrad_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            grad_phix(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
         });
 
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            phigrad_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            grad_phiy(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
         });
 
 #if (AMREX_SPACEDIM > 2)
 
         amrex::ParallelFor(zbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-           phigrad_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+           grad_phiz(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
         });
 
 #endif
-        //==============================================
-        //----- Update the contravariant velocity ------
-        //----------------------------------------------
-        auto const& ximrk = velImRK[0].array(mfi);
-        auto const& yimrk = velImRK[1].array(mfi);
+    }
+
+    //==============================================
+    //----- Update the contravariant velocity ------
+    //----------------------------------------------
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
+    {
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
-        auto const& zimrk = velImRK[2].array(mfi);
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+        auto const& xhat = velHat[0].array(mfi);
+        auto const& yhat = velHat[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& zhat = velHat[2].array(mfi);
 #endif
 
         auto const& xcont = velCont[0].array(mfi);
@@ -269,22 +280,24 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
 #if (AMREX_SPACEDIM > 2)
         auto const& zcont = velCont[2].array(mfi);
 #endif
+        auto const& grad_phix = grad_phi[0].array(mfi);
+        auto const& grad_phiy = grad_phi[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& grad_phiz = grad_phi[2].array(mfi);
+#endif
         amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            xcont(i, j, k) = ximrk(i, j, k) - phigrad_x(i, j, k) * dt / Real(1.5);
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            xcont(i, j, k) = xhat(i, j, k) - grad_phix(i, j, k) * dt / Real(1.5);
         });
 
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            ycont(i, j, k) = yimrk(i, j, k) - phigrad_y(i, j, k) * dt / Real(1.5);
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            ycont(i, j, k) = yhat(i, j, k) - grad_phiy(i, j, k) * dt / Real(1.5);
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
-            zcont(i, j, k) = zimrk(i, j, k) - phigrad_z(i, j, k) * dt / Real(1.5);
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            zcont(i, j, k) = zhat(i, j, k) - grad_phiz(i, j, k) * dt / Real(1.5);
         });
 #endif
     } // End of the loop for boxes
@@ -300,11 +313,47 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
         const Box& vbx = mfi.validbox();
         auto const& ctx = userCtx.array(mfi);
         amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
             //Update the pressure field
             ctx(i, j, k, 0) = ctx(i, j, k, 0) + ctx(i, j, k, 1);
-
         });
     } // End of the loop for boxes
+
+    // Update velContDiff from the velCont solutions
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for (MFIter mfi(velContDiff[0]); mfi.isValid(); ++mfi) {
+        const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1, 0, 0)));
+        const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0, 1, 0)));
+#if (AMREX_SPACEDIM > 2)
+        const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0, 0, 1)));
+#endif
+        auto const &xcont_diff = velContDiff[0].array(mfi);
+        auto const &ycont_diff = velContDiff[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const &zcont_diff = velContDiff[2].array(mfi);
+#endif
+        auto const &xcont = velCont[0].array(mfi);
+        auto const &ycont = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const &zcont = velCont[2].array(mfi);
+#endif
+        auto const &xcont_prev = velContPrev[0].array(mfi);
+        auto const &ycont_prev = velContPrev[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const &zcont_prev = velContPrev[2].array(mfi);
+#endif
+        amrex::ParallelFor(xbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+          xcont_diff(i, j, k) = xcont(i, j, k) - xcont_prev(i, j, k);
+        });
+        amrex::ParallelFor(ybx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+          ycont_diff(i, j, k) = ycont(i, j, k) - ycont_prev(i, j, k);
+        });
+#if (AMREX_SPACEDIM > 2)
+        amrex::ParallelFor(zbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+          zcont_diff(i, j, k) = zcont(i, j, k) - zcont_prev(i, j, k);
+        });
+#endif
+    }
 }

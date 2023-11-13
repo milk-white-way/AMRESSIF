@@ -42,3 +42,7 @@ void Export_Flow_Field (std::string const& nameofFile,
                         amrex::Geometry const& geom,
                         amrex::Real const& time,
                         int const& timestep);
+
+void analytic_solution_calc (amrex::MultiFab& analyticSol,
+                             amrex::Geometry const& geom,
+                             amrex::Real const& time);

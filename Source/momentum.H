@@ -13,7 +13,7 @@ amrex::Real Error_Computation (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& ve
                                amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImPrev,
                                amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImDiff,
                                amrex::Geometry const& geom);
-
+/*
 void momentum_km_runge_kutta (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
                               amrex::MultiFab& fluxConvect,
                               amrex::MultiFab& fluxViscous,
@@ -28,14 +28,17 @@ void momentum_km_runge_kutta (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs
                               amrex::Geometry const& geom,
                               int const& n_cell,
                               amrex::Real const& ren);
+*/
 
 // ==================================== MODULE | ADVANCE =====================================
 void km_runge_kutta_advance ( const amrex::GpuArray<amrex::Real,MAX_RK_ORDER>& rk,
                               int const& sub,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
-                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velImRK,
+                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velHat,
+                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velHatDiff,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
+                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velStar,
                               amrex::Real const& dt,
                               amrex::Vector<int> const& phy_bc_lo,
                               amrex::Vector<int> const& phy_bc_hi,
