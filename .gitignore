@@ -15,11 +15,15 @@ Documentations/latex
 #|--------------------- List of components to ignore -------------------------|
 #|                               EXEC FOLDER                                  |
 #|____________________________________________________________________________|
+Exec/Backtrace.*
 Exec/*.png
 Exec/*.log
 Exec/*.ex
 Exec/*.sh
 Exec/tmp_build_dir
+Exec/ncell*
+Exec/plt*
+Exec/outputs
 
 #|--------------------- List of components to ignore -------------------------|
 #|                              TOOLS FOLDER                                  |

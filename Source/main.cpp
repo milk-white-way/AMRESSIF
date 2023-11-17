@@ -323,7 +323,7 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    dt = 1E-5;
+    dt = 1E-4;
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| dt overided: " << dt << "\n";
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -348,9 +348,9 @@ void main_main ()
         rk[3] = Real(1.0);
     }
 
-    //+++++++++++++++++++++++++++++++++++++++++
-    //+++++   Begin time loop +++++++++++++++++
-    //+++++++++++++++++++++++++++++++++++++++++
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++
+    //+++++++++++++++   Begin time loop +++++++++++++++++
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++
     for (int n = 1; n <= nsteps; ++n)
     {
         amrex::Print() << "============================ ADVANCE STEP " << n << " ============================ \n";
@@ -392,11 +392,12 @@ void main_main ()
         while ( countIter < IterNum && normError > Tol )
         {
             countIter++;
-            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << " => ";
+            //amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << " => ";
 
             // Immidiate velocity at the beginning of the RK4 sub-iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
+                // Check the boundary conditions of velHat
                 MultiFab::Copy(velHat[comp], velStar[comp], 0, 0, 1, 0);
             }
 
@@ -472,7 +473,7 @@ void main_main ()
 
             // RUNGE-KUTTA | Calculate the error norm
             normError = Error_Computation(velHat, velStar, velStarDiff, geom);
-            amrex::Print() << "error norm2 = " << normError << "\n";
+            //amrex::Print() << "error norm2 = " << normError << "\n";
 
             // Re-assign guess for the next iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
@@ -480,7 +481,7 @@ void main_main ()
                 MultiFab::Copy(velStar[comp], velHat[comp], 0, 0, 1, 0);
             }
 
-        }// End of the RK-4 LOOP Iteration!
+        }// End of the Momentum loop iteration!
         //---------------------------------------
         // MOMENTUM |4| PLOTTING
         // This is just for debugging only !
@@ -498,8 +499,8 @@ void main_main ()
         poisson_righthand_side_calc(poisson_rhs, velHat, geom, dt);
 
         // POISSON |2| Init Phi at the begining of the Poisson solver
-        // --Don't see why
-        // ================================= DEBUGGING BELOW ===================================
+        poisson_sol.setVal(0.0);
+        poisson_sol.FillBoundary(geom.periodicity());
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
         amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
 
@@ -541,9 +542,9 @@ void main_main ()
             //amrex::Print() << my_domain.length(0) << "\n";
             //amrex::Print() << my_domain.length(1) << "\n";
 
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for x-velocity: " << l2norm.norm2(0) / std::sqrt(npts) << "\n";
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1) / std::sqrt(npts) << "\n";
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure: " << l2norm.norm2(2) / std::sqrt(npts) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for x-velocity: " << l2norm.norm2(0)/std::sqrt(npts) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1)/std::sqrt(npts) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure: " << l2norm.norm2(2)/std::sqrt(npts) << "\n";
 
             if (plot_int > 0) {
                 const std::string &analytic_export = amrex::Concatenate("pltAnalytic", n, 5);
@@ -551,56 +552,6 @@ void main_main ()
                 const std::string &benchmark_error_export = amrex::Concatenate("pltBenchmark", n, 5);
                 WriteSingleLevelPlotfile(benchmark_error_export, l2norm, {"x-vel-err-norm", "y-vel-err-norm", "pressure-err-norm"}, geom, time, n);
             }
-/*
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-            for ( MFIter mfi(analyticSol); mfi.isValid(); ++mfi )
-            {
-                const Box& vbx = mfi.validbox();
-                auto const& numelv = velCart.array(mfi);
-                auto const& numelp = userCtx.array(mfi);
-                auto const& analytic = analyticSol.array(mfi);
-                // STEP 1 is to calculate the solution at the middle line
-                amrex::ParallelFor(vbx,
-                                   [=] AMREX_GPU_DEVICE(int i, int j, int k){
-                    // middle horizontal line (MHL)
-                    if (j == n_cell/2)
-                    {
-                        // u velocity
-                        Real mhlu = Real(0.5) * ( numelv(i, j, k, 0) + numelv(i, j-1, k, 0) );
-                        Real hanu = Real(0.5) * ( analytic(i, j, k, 0) + analytic(i, j-1, k, 0) );
-                        // v velocity
-                        Real mhlv = Real(0.5) * ( numelv(i, j, k, 1) + numelv(i, j-1, k, 1) );
-                        Real hanv = Real(0.5) * ( analytic(i, j, k, 1) + analytic(i, j-1, k, 1) );
-                        // Pressure
-                        Real mhlp = Real(0.5) * ( numelp(i, j, k, 0) + numelp(i, j-1, k, 0) );
-                        Real hanp = Real(0.5) * ( analytic(i, j, k, 2) + analytic(i, j-1, k, 2) );
-                        
-                        // Write the solution to file
-                        amrex::Print() << "BENCHMARKING| Middle horizontal line: " << i << " " << j << " " << mhlu << " " << mhlv << " " << mhlp << " " << hanu << " " << hanv << " " << hanp << "\n";
-                        // write_midline_solution(x, y, mhlu, mhlv, mhlp, hanu, hanv, hanp, n);
-                    }
-                    // middle vertical line (MVL)
-                    if (i == n_cell/2)
-                    {
-                        // u velocity
-                        Real mvlu = Real(0.5) * ( numelv(i, j, k, 0) + numelv(i-1, j, k, 0) );
-                        Real vanu = Real(0.5) * ( analytic(i, j, k, 0) + analytic(i-1, j, k, 0) );
-                        // v velocity
-                        Real mvlv = Real(0.5) * ( numelv(i, j, k, 1) + numelv(i-1, j, k, 1) );
-                        Real vanv = Real(0.5) * ( analytic(i, j, k, 1) + analytic(i-1, j, k, 1) );
-                        // Pressure
-                        Real mvlp = Real(0.5) * ( numelp(i, j, k, 0) + numelp(i-1, j, k, 0) );
-                        Real vanp = Real(0.5) * ( analytic(i, j, k, 2) + analytic(i-1, j, k, 2) );
-                        
-                        // Write the solution to file
-                        amrex::Print() << "BENCHMARKING| Middle vertical line: " << i << " " << j << " " << mvlu << " " << mvlv << " " << mvlp << " " << vanu << " " << vanv << " " << vanp << "\n";
-                        // write_midline_solution(x, y, mvlu, mvlv, mvlp, vanu, vanv, vanp, n);
-                    }
-                });
-            }
-*/
         } // End of benchmark
 
         // Write a plotfile of the current data (plot_int was defined in the inputs file)

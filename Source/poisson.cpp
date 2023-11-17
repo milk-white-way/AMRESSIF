@@ -126,7 +126,7 @@ void poisson_advance( MultiFab& poisson_sol,
     MultiFab acoef(grids, dmap, 1, 0);
 
     // fill in the acoef MultiFab and load this into the solver
-    acoef.setVal(1.0);
+    acoef.setVal(0.0);
     mlabec.setACoeffs(0, acoef);
     // We need to check this ? What is the coefficent for b for ??
     // bcoef.setVal(1.0);

@@ -60,35 +60,4 @@ void init_cartesian_velocity_difference (int i, int j, int k,
 #endif
 }
 
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void init_contravariant_velocity_difference (int i, int j, int k,
-                                             amrex::Array4<amrex::Real> const& cf_cont_diff)
-{
-    using amrex::Real;
-
-    // cf_cont_diff live in face center
-    cf_cont_diff(i, j, k) = Real(0.0);
-}
-
 #endif
-
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void analytic_solution (int i, int j, int k,
-                        amrex::Array4<amrex::Real> const& analytic,
-                        amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dx,
-                        amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& prob_lo,
-                        amrex::Real const& time)
-{
-    using amrex::Real;
-
-    Real x = prob_lo[0] + (i+Real(0.5)) * dx[0];
-    Real y = prob_lo[1] + (j+Real(0.5)) * dx[1];
-
-    // u velocity
-    analytic(i, j, k, 0) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-4.0 * M_PI * M_PI * time);
-    // v velocity
-    analytic(i, j, k, 1) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-4.0 * M_PI * M_PI * time);
-    // pressure
-    analytic(i, j, k, 2) = - 0.25 * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-8.0 * M_PI * M_PI * time);
-
-}
