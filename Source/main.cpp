@@ -323,7 +323,7 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    dt = 1E-4;
+    dt = 1E-6;
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| dt overided: " << dt << "\n";
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -513,7 +513,6 @@ void main_main ()
         // p^{n+1} = p^n  + \phi^{n+1}
         update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, ba, dm, bc, dt);
         amrex::Print() << "SOLVING| finished updating all fields \n";
-        
 
         // Update velCart from the velCont solutions
         cont2cart(velCart, velCont, geom);
@@ -525,10 +524,9 @@ void main_main ()
         analyticSol.FillBoundary(geom.periodicity());
         analytic_solution_calc(analyticSol, geom, time);
 
-        if ( n%plot_int == 0 )
         {
             MultiFab::Copy(l2norm, velCart, 0, 0, 2, 0);
-            MultiFab::Copy(l2norm, userCtx, 1, 2, 1, 0);
+            MultiFab::Copy(l2norm, userCtx, 0, 2, 1, 0);
             MultiFab::Subtract(l2norm, analyticSol, 0, 0, 3, 0);
 
             long npts;
@@ -546,7 +544,8 @@ void main_main ()
             amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1)/std::sqrt(npts) << "\n";
             amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure: " << l2norm.norm2(2)/std::sqrt(npts) << "\n";
 
-            if (plot_int > 0) {
+            if (plot_int > 0 && n%plot_int == 0)
+            {
                 const std::string &analytic_export = amrex::Concatenate("pltAnalytic", n, 5);
                 WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, time, n);
                 const std::string &benchmark_error_export = amrex::Concatenate("pltBenchmark", n, 5);
