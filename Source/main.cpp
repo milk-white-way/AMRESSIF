@@ -402,7 +402,7 @@ void main_main ()
             }
 
             // 4 sub-iterations of one RK4 iteration
-            for (int sub = 0; sub < RungeKuttaOrder; ++sub )
+            for (int sub = 0; sub < 1; ++sub ) // hack to 1 iteration
             {
                 // RUNGE-KUTTA | Calculate Cell-centered Convective terms
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, bc_lo, bc_hi, geom, n_cell);
@@ -421,47 +421,12 @@ void main_main ()
 
                 // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 momentum_righthand_side_calc(momentum_rhs, fluxTotal);
-                // Is there a faster way to subtract two face-centered MultiFab?
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-                for (MFIter mfi(velHatDiff[0]); mfi.isValid(); ++mfi)
-                {
-                    const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1, 0, 0)));
-                    const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0, 1, 0)));
-#if (AMREX_SPACEDIM > 2)
-                    const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0, 0, 1)));
-#endif
-                    auto const &xhat_diff = velHatDiff[0].array(mfi);
-                    auto const &yhat_diff = velHatDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &zhat_diff = velHatDiff[2].array(mfi);
-#endif
-                    auto const &xhat = velHat[0].array(mfi);
-                    auto const &yhat = velHat[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &zhat = velHat[2].array(mfi);
-#endif
-                    auto const &xcont = velCont[0].array(mfi);
-                    auto const &ycont = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &zcont = velCont[2].array(mfi);
-#endif
-                    amrex::ParallelFor(xbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        xhat_diff(i, j, k) = xhat(i, j, k) - xcont(i, j, k);
-                    });
-                    amrex::ParallelFor(ybx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        yhat_diff(i, j, k) = yhat(i, j, k) - ycont(i, j, k);
-                    });
-#if (AMREX_SPACEDIM > 2)
-                    amrex::ParallelFor(zbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        zhat_diff(i, j, k) = zhat(i, j, k) - zcont(i, j, k);
-                    });
-#endif
-                }
 
-                // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velImRK
-                km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velCont, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
+                momentum_rhs[0].mult(dt,0,1,0);
+                momentum_rhs[1].mult(dt,0,1,0);
+
+                MultiFab::Add(velHat[0],momentum_rhs[0],0,0,1,0);
+                MultiFab::Add(velHat[1],momentum_rhs[1],0,0,1,0);
 
                 // RUNGE-KUTTA | Update velCart from velImRK
                 cont2cart(velCart, velHat, geom);
