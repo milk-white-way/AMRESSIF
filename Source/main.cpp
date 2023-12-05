@@ -323,7 +323,7 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    dt = 1E-6;
+    dt = 1E-3;
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| dt overided: " << dt << "\n";
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -336,7 +336,7 @@ void main_main ()
     }
 
     // Setup stopping criteria
-    Real Tol = 1.0e-10;
+    Real Tol = 1.0e-19;
 
     // Setup Runge-Kutta scheme coefficients
     int RungeKuttaOrder = 4;

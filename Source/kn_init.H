@@ -19,8 +19,8 @@ void init_userCtx (int i, int j, int k,
 #endif
     // ctx[0] is pressure
     // ctx[1] is intermediate Phi
-    // ctx(i, j, k, 0) = - 0.25 * ( std::cos(Real(2.0) * M_PI * x) + std::cos(Real(2.0) * M_PI * y) );
-    ctx(i, j, k, 0) = Real(0.0); 
+    ctx(i, j, k, 0) = - Real(0.25) * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) );
+    // ctx(i, j, k, 0) = Real(0.0);
     ctx(i, j, k, 1) = Real(0.0);
 }
 
