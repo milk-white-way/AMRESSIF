@@ -456,7 +456,7 @@ void main_main ()
                 }
 
                 // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velHat
-                km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velCont, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
+                km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
 
                 // RUNGE-KUTTA | Update velCart from velHat
                 cont2cart(velCart, velHat, geom);
@@ -505,7 +505,10 @@ void main_main ()
 
         // Update the solution
         // u_i^{n+1} = \hat{u}_i- 2dt/3 * grad(\phi^{n+1})
+        // (velCont = velHat - 2dt/3 grad_phi)
         // p^{n+1} = p^n  + \phi^{n+1}
+        // (userCtx(comp=0) += userCtx(comp=1))
+        // also update velContDiff = velCont-velContPrev
         update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, dt);
         amrex::Print() << "SOLVING| finished updating all fields \n";
 
