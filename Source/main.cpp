@@ -160,13 +160,10 @@ void main_main ()
 
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     MultiFab userCtx(ba, dm, Ncomp, Nghost);
-    MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
     MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartPrev(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartPrevPrev(ba, dm, AMREX_SPACEDIM, Nghost);
 
     // Three type of fluxes contributing the the total flux live in the cell center
     MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, Nghost);
@@ -357,9 +354,6 @@ void main_main ()
         // Update the time
         time = time + dt;
 
-        MultiFab::Copy(userCtxPrev, userCtx, 0, 0, Ncomp, Nghost);
-        MultiFab::Copy(velCartPrev, velCart, 0, 0, AMREX_SPACEDIM, Nghost);
-
         // Forming boundary conditions
         userCtx.FillBoundary(geom.periodicity());
         // Enforce the physical boundary conditions
@@ -392,7 +386,8 @@ void main_main ()
         while ( countIter < IterNum && normError > Tol )
         {
             countIter++;
-            //amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << " => ";
+            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter
+                           << " => normError = " << normError << "\n";
 
             // Immidiate velocity at the beginning of the RK4 sub-iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
@@ -460,10 +455,10 @@ void main_main ()
 #endif
                 }
 
-                // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velImRK
+                // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velHat
                 km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velCont, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
 
-                // RUNGE-KUTTA | Update velCart from velImRK
+                // RUNGE-KUTTA | Update velCart from velHat
                 cont2cart(velCart, velHat, geom);
                 // Re-enforce the boundary conditions
                 velCart.FillBoundary(geom.periodicity());
@@ -511,7 +506,7 @@ void main_main ()
         // Update the solution
         // u_i^{n+1} = \hat{u}_i- 2dt/3 * grad(\phi^{n+1})
         // p^{n+1} = p^n  + \phi^{n+1}
-        update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, ba, dm, bc, dt);
+        update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, dt);
         amrex::Print() << "SOLVING| finished updating all fields \n";
 
         // Update velCart from the velCont solutions
