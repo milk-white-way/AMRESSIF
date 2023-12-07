@@ -48,7 +48,7 @@ void main_main ()
     int IterNum;
 
     // Porting extra params from Julian code
-    Real ren, vis, cfl;
+    Real ren, vis, cfl, fixed_dt;
 
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
@@ -87,6 +87,9 @@ void main_main ()
 
         cfl = 0.9;
         pp.query("cfl", cfl);
+
+        fixed_dt = -1.0;
+        pp.query("fixed_dt",fixed_dt);
 
         // Parsing the Reynolds number and viscosity from input file also
         pp.get("ren", ren);
@@ -320,9 +323,12 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    dt = 1E-3;
+    if (fixed_dt != -1.0) {
+        dt = fixed_dt;
+        amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
+    }
+
     //ren = ren*Real(2.0)*M_PI;
-    amrex::Print() << "INFO| dt overided: " << dt << "\n";
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
     
     // Write a plotfile of the initial data if plot_int > 0
