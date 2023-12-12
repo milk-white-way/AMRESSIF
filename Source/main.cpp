@@ -309,6 +309,12 @@ void main_main ()
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
+
+    velCart.FillBoundary(geom.periodicity());
+    // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
+    // velCont is the main variable to be used in the momentum solver
+    cart2cont(velCart, velCont);
+
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
@@ -366,12 +372,7 @@ void main_main ()
         // enforce_boundary_conditions(userCtx, type1, Nghost, bc_lo, bc_hi, n_cell);
 
         velCart.FillBoundary(geom.periodicity());
-        // Enforce the boundary conditions again
-        // enforce_boundary_conditions(velCart, type2, Nghost, bc_lo, bc_hi, n_cell);
 
-        // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
-        // velCont is the main variable to be used in the momentum solver
-        cart2cont(velCart, velCont);
         for (int comp=0; comp < AMREX_SPACEDIM; ++comp)
         {
             MultiFab::Copy(velContPrev[comp], velCont[comp], 0, 0, 1, 0);
