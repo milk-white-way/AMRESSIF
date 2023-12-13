@@ -48,7 +48,7 @@ void main_main ()
     int IterNum;
 
     // Porting extra params from Julian code
-    Real ren, vis, cfl;
+    Real ren, vis, cfl, fixed_dt;
 
     // Declaring params for boundary conditon type
     Vector<int> bc_lo(AMREX_SPACEDIM, 0);
@@ -87,6 +87,9 @@ void main_main ()
 
         cfl = 0.9;
         pp.query("cfl", cfl);
+
+        fixed_dt = -1.0;
+        pp.query("fixed_dt",fixed_dt);
 
         // Parsing the Reynolds number and viscosity from input file also
         pp.get("ren", ren);
@@ -160,13 +163,10 @@ void main_main ()
 
     // User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
     MultiFab userCtx(ba, dm, Ncomp, Nghost);
-    MultiFab userCtxPrev(ba, dm, Ncomp, Nghost);
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
     MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartPrev(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartPrevPrev(ba, dm, AMREX_SPACEDIM, Nghost);
 
     // Three type of fluxes contributing the the total flux live in the cell center
     MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, Nghost);
@@ -309,6 +309,12 @@ void main_main ()
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
     init(userCtx, velCart, velCartDiff, velContDiff, geom);
+
+    velCart.FillBoundary(geom.periodicity());
+    // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
+    // velCont is the main variable to be used in the momentum solver
+    cart2cont(velCart, velCont);
+
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
@@ -323,9 +329,12 @@ void main_main ()
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
 
-    dt = 1E-3;
+    if (fixed_dt != -1.0) {
+        dt = fixed_dt;
+        amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
+    }
+
     //ren = ren*Real(2.0)*M_PI;
-    amrex::Print() << "INFO| dt overided: " << dt << "\n";
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
     
     // Write a plotfile of the initial data if plot_int > 0
@@ -357,21 +366,13 @@ void main_main ()
         // Update the time
         time = time + dt;
 
-        MultiFab::Copy(userCtxPrev, userCtx, 0, 0, Ncomp, Nghost);
-        MultiFab::Copy(velCartPrev, velCart, 0, 0, AMREX_SPACEDIM, Nghost);
-
         // Forming boundary conditions
         userCtx.FillBoundary(geom.periodicity());
         // Enforce the physical boundary conditions
         // enforce_boundary_conditions(userCtx, type1, Nghost, bc_lo, bc_hi, n_cell);
 
         velCart.FillBoundary(geom.periodicity());
-        // Enforce the boundary conditions again
-        // enforce_boundary_conditions(velCart, type2, Nghost, bc_lo, bc_hi, n_cell);
 
-        // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
-        // velCont is the main variable to be used in the momentum solver
-        cart2cont(velCart, velCont);
         for (int comp=0; comp < AMREX_SPACEDIM; ++comp)
         {
             MultiFab::Copy(velContPrev[comp], velCont[comp], 0, 0, 1, 0);
@@ -392,7 +393,8 @@ void main_main ()
         while ( countIter < IterNum && normError > Tol )
         {
             countIter++;
-            //amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter << " => ";
+            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter
+                           << " => normError = " << normError << "\n";
 
             // Immidiate velocity at the beginning of the RK4 sub-iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
@@ -460,10 +462,10 @@ void main_main ()
 #endif
                 }
 
-                // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velImRK
-                km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velCont, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
+                // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velHat
+                km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
 
-                // RUNGE-KUTTA | Update velCart from velImRK
+                // RUNGE-KUTTA | Update velCart from velHat
                 cont2cart(velCart, velHat, geom);
                 // Re-enforce the boundary conditions
                 velCart.FillBoundary(geom.periodicity());
@@ -510,8 +512,11 @@ void main_main ()
 
         // Update the solution
         // u_i^{n+1} = \hat{u}_i- 2dt/3 * grad(\phi^{n+1})
+        // (velCont = velHat - 2dt/3 grad_phi)
         // p^{n+1} = p^n  + \phi^{n+1}
-        update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, ba, dm, bc, dt);
+        // (userCtx(comp=0) += userCtx(comp=1))
+        // also update velContDiff = velCont-velContPrev
+        update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, dt);
         amrex::Print() << "SOLVING| finished updating all fields \n";
 
         // Update velCart from the velCont solutions

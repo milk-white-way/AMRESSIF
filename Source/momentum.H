@@ -36,7 +36,6 @@ void km_runge_kutta_advance ( const amrex::GpuArray<amrex::Real,MAX_RK_ORDER>& r
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velHat,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velHatDiff,
-                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velStar,
                               amrex::Real const& dt,

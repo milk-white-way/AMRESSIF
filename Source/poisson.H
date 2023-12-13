@@ -22,6 +22,5 @@ void update_solution (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &grad_phi,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velContPrev,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velContDiff,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velHat,
-                      amrex::Geometry const &geom, amrex::BoxArray const &grids,
-                      amrex::DistributionMapping const &dmap,
-                      amrex::Vector<amrex::BCRec> const &bc, amrex::Real const &dt);
+                      amrex::Geometry const &geom,
+                      amrex::Real const &dt);

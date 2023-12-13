@@ -16,7 +16,6 @@ void km_runge_kutta_advance (const GpuArray<Real,MAX_RK_ORDER>& rk,
                              Array<MultiFab, AMREX_SPACEDIM>& rhs,
                              Array<MultiFab, AMREX_SPACEDIM>& velHat,
                              Array<MultiFab, AMREX_SPACEDIM>& velHatDiff,
-                             Array<MultiFab, AMREX_SPACEDIM>& velCont,
                              Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
                              Array<MultiFab, AMREX_SPACEDIM>& velStar,
                              Real const& dt,
@@ -55,11 +54,6 @@ void km_runge_kutta_advance (const GpuArray<Real,MAX_RK_ORDER>& rk,
         auto const& yhat_diff = velHatDiff[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
         auto const& zhat_diff = velHatDiff[2].array(mfi);
-#endif
-        auto const& xcont = velCont[0].array(mfi);
-        auto const& ycont = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const& zcont = velCont[2].array(mfi);
 #endif
         auto const& xcont_diff = velContDiff[0].array(mfi);
         auto const& ycont_diff = velContDiff[1].array(mfi);

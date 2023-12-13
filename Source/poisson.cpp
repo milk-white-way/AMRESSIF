@@ -181,9 +181,6 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
                       Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
                       Array<MultiFab, AMREX_SPACEDIM>& velHat,
                       const Geometry& geom,
-                      const BoxArray& grids,
-                      const DistributionMapping& dmap,
-                      const Vector<BCRec>& bc,
                       const Real &dt )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
