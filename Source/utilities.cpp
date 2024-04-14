@@ -30,6 +30,7 @@ void cart2cont (MultiFab& velCart,
 
         amrex::ParallelFor(ybx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_y(i, j, k, ycont, vcart); });
+
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(ybx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_z(i, j, k, zcont, vcart); });
@@ -46,9 +47,13 @@ void cont2cart (MultiFab& velCart,
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
 void write_midline_solution (Real const& midx,
-                             Real const& v_analytic,
-                             double const& velx,
-                             double const& vely,
+                             Real const& midy,
+                             Real const& mdlu,
+                             Real const& mdlv,
+                             Real const& mdlp,
+                             double const& anau,
+                             double const& anav,
+                             double const& anap,
                              int const& current_step)
 {
     // Construct the filename for this iteration
@@ -64,103 +69,69 @@ void write_midline_solution (Real const& midx,
     }
 
     // Write data to the file
-    outfile << midx << ";" << velx << ";" << vely << ";" << v_analytic << "\n";
+    outfile << midx << " " << midy << " " << mdlu << " " << mdlv << " " << mdlp << " " << anau << " " << anav << " " << anap << "\n";
 
     // Close the file
     outfile.close();
 }
 
-void line_extract (MultiFab& velCart,
-                   int const& n_cell,
-                   int const& current_step,
-                   Real const& dt,
-                   const Geometry& geom)
-{
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
-    GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
-
-    for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
-    {
-        const Box& vbx = mfi.validbox();
-        auto const& vcart = velCart.array(mfi);
-        amrex::ParallelFor(vbx,
-                           [=] AMREX_GPU_DEVICE(int i, int j, int k)
-        {
-            if (j == n_cell / 2) {
-                amrex::Real const& midx = prob_lo[0] + (i+Real(0.5)) * dx[0];
-                amrex::Real const& v_analytic = -std::sin(2.0 * M_PI * midx)*std::exp(-2*current_step*dt);
-                write_midline_solution(midx, v_analytic, vcart(i, j, k, 0), vcart(i, j, k, 1), current_step);
-            }
-
-        });
-    }
-}
-
 // ===================== UTILITY | ERROR NORM  =====================
-amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velImRK,
-                               Array<MultiFab, AMREX_SPACEDIM>& velImPrev,
-                               Array<MultiFab, AMREX_SPACEDIM>& velImDiff,
+amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velHat,
+                               Array<MultiFab, AMREX_SPACEDIM>& velStar,
+                               Array<MultiFab, AMREX_SPACEDIM>& velStarDiff,
                                Geometry const& geom)
 {
     amrex::Real normError;
 
-    for ( MFIter mfi(velImRK[0]); mfi.isValid(); ++mfi )
+    for ( MFIter mfi(velStarDiff[0]); mfi.isValid(); ++mfi )
     {
 
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-
 #if (AMREX_SPACEDIM > 2)
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
-        auto const& ximrk = velImRK[0].array(mfi);
-        auto const& yimrk = velImRK[1].array(mfi);
+        auto const& xnext = velHat[0].array(mfi);
+        auto const& ynext = velHat[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& znext = velHat[2].array(mfi);
+#endif
+        auto const& xprev = velStar[0].array(mfi);
+        auto const& yprev = velStar[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& zprev = velStar[2].array(mfi);
+#endif
+        auto const& xdiff = velStarDiff[0].array(mfi);
+        auto const& ydiff = velStarDiff[1].array(mfi);
 
 #if (AMREX_SPACEDIM > 2)
-        auto const& zimrk = velImRK[2].array(mfi);
-#endif
-        auto const& xprev = velImPrev[0].array(mfi);
-        auto const& yprev = velImPrev[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const& zprev = velImPrev[2].array(mfi);
-#endif
-        auto const& xdiff = velImDiff[0].array(mfi);
-        auto const& ydiff = velImDiff[1].array(mfi);
-
-#if (AMREX_SPACEDIM > 2)
-        auto const& zdiff = velImDiff[2].array(mfi);
+        auto const& zdiff = velStarDiff[2].array(mfi);
 #endif
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            xdiff(i, j, k) = xprev(i, j, k) - ximrk(i, j, k);
+            xdiff(i, j, k) = xprev(i, j, k) - xnext(i, j, k);
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k){
-            ydiff(i, j, k) = yprev(i, j, k) - yimrk(i, j, k);
+            ydiff(i, j, k) = yprev(i, j, k) - ynext(i, j, k);
         });
 
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
-                  [=] AMREX_GPU_DEVICE(int i, int j, int k){
-                      zdiff(i, j, k) = zprev(i, j, k) - zimrk(i, j, k);
-                  });
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            zdiff(i, j, k) = zprev(i, j, k) - znext(i, j, k);
+        });
 #endif
     }// End of all loops for Multi-Fabs
 
-    Real xerror = velImDiff[0].norm2(0, geom.periodicity());
-    Real yerror = velImDiff[1].norm2(0, geom.periodicity());
-    // Real xerror = velImDiff[0].norminf(0, 0);
-    // Real yerror = velImDiff[1].norminf(0, 0);
-
+    Real xerror = velStarDiff[0].norm2(0, geom.periodicity());
+    Real yerror = velStarDiff[1].norm2(0, geom.periodicity());
     normError = std::max(xerror, yerror);
 #if (AMREX_SPACEDIM > 2)
-    Real zerror = velContDiff[2].norminf(0, geom.periodicity());
-             // Real zerror = velImDiff[2].norminf(0, 0);
-             normError = std::max(normError, zerror);
+    Real zerror = velStarDiff[2].norminf(0, geom.periodicity());
+    // Real zerror = velImDiff[2].norminf(0, 0);
+    normError = std::max(normError, zerror);
 #endif
 
     return normError;
@@ -227,4 +198,32 @@ void Export_Flow_Field (std::string const& nameofFile,
 #else
     WriteSingleLevelPlotfile(pltfile, plt, {"pressure", "U", "V"}, geom, time, timestep);
 #endif
+}
+
+void analytic_solution_calc (MultiFab& analyticSol,
+                             Geometry const& geom,
+                             Real const& time)
+{
+    GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
+    GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for (MFIter mfi(analyticSol); mfi.isValid(); ++mfi) {
+        const Box &vbx = mfi.validbox();
+        auto const &analytic = analyticSol.array(mfi);
+        amrex::ParallelFor(vbx,
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+          // Real coordinates of the cell center
+          Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+          Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+
+          // u velocity
+          analytic(i, j, k, 0) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+          // v velocity
+          analytic(i, j, k, 1) = -std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+          // pressure
+          analytic(i, j, k, 2) = -Real(0.25) * (std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y)) * std::exp(-Real(16.0) * M_PI * M_PI * time);
+        });
+    }
 }

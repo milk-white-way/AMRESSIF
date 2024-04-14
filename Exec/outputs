@@ -1,0 +1,229 @@
+Initializing AMReX (23.11-5-gd36463103dae-dirty)...
+MPI initialized with 8 MPI processes
+MPI initialized with thread support level 0
+AMReX (23.11-5-gd36463103dae-dirty) initialized
+INFO| number of cells in each side of the domain: 32
+INFO| periodicity in 1th dimension: 1
+INFO| periodicity in 2th dimension: 1
+INFO| number of dimensions: 2
+INFO| geometry: (0 (0,0)(0.03125,0.03125) 1)
+(RealBox 0 1 0 1 )((0,0) (31,31) (0,0))P(1,1)
+PARAMS| number of ghost cells for each array: 2
+PARAMS| number of components for each array: 2
+========================= INITIALIZATION STEP ========================= 
+PARAMS| cfl value: 3
+PARAMS| dt value from above cfl: 0.000732421875
+INFO| dt overided: 0.001
+INFO| Reynolds number from length scale: 1
+============================ ADVANCE STEP 1 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 6.690721513
+MLMG: Initial residual (resid0) = 6.690721513
+MLMG: Iteration   1 Fine resid/bnorm = 0.06015394755
+MLMG: Iteration   2 Fine resid/bnorm = 0.001957345956
+MLMG: Iteration   3 Fine resid/bnorm = 6.384217386e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.084428925e-06
+MLMG: Iteration   5 Fine resid/bnorm = 6.808292308e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.224110979e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.266188621e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 4.861604452e-10, 7.266188621e-11
+MLMG: Timers: Solve = 0.003837472 Iter = 0.003625416 Bottom = 6.5723e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.008696730395
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.008696730395
+BENCHMARKING| L2 ERROR NORM for pressure: 0.01646903895
+========================== FINISH TIME: 0.001 ========================== 
+============================ ADVANCE STEP 2 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 9.566751409
+MLMG: Initial residual (resid0) = 9.566751409
+MLMG: Iteration   1 Fine resid/bnorm = 0.06527161705
+MLMG: Iteration   2 Fine resid/bnorm = 0.002123919064
+MLMG: Iteration   3 Fine resid/bnorm = 6.927626116e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.261871851e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.387915052e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.413470467e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.884874885e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 7.543263791e-10, 7.884874885e-11
+MLMG: Timers: Solve = 0.00384213 Iter = 0.003641015 Bottom = 6.1715e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.008476579806
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.008476579806
+BENCHMARKING| L2 ERROR NORM for pressure: 0.01647683497
+========================== FINISH TIME: 0.002 ========================== 
+============================ ADVANCE STEP 3 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 9.333971764
+MLMG: Initial residual (resid0) = 9.333971764
+MLMG: Iteration   1 Fine resid/bnorm = 0.0649941085
+MLMG: Iteration   2 Fine resid/bnorm = 0.002114889811
+MLMG: Iteration   3 Fine resid/bnorm = 6.898181865e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.252260743e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.356529296e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.40321977e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.851429632e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 7.328502249e-10, 7.851429632e-11
+MLMG: Timers: Solve = 0.003738637 Iter = 0.003537952 Bottom = 6.1995e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.005663311435
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.005663311435
+BENCHMARKING| L2 ERROR NORM for pressure: 0.01281283888
+========================== FINISH TIME: 0.003 ========================== 
+============================ ADVANCE STEP 4 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 8.229831292
+MLMG: Initial residual (resid0) = 8.229831292
+MLMG: Iteration   1 Fine resid/bnorm = 0.06487704127
+MLMG: Iteration   2 Fine resid/bnorm = 0.002111079994
+MLMG: Iteration   3 Fine resid/bnorm = 6.885756314e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.248204158e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.343280378e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.398891958e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.837282995e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 6.449951684e-10, 7.837282995e-11
+MLMG: Timers: Solve = 0.00376164 Iter = 0.003559893 Bottom = 6.5631e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.00239070945
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.00239070945
+BENCHMARKING| L2 ERROR NORM for pressure: 0.008893307929
+========================== FINISH TIME: 0.004 ========================== 
+============================ ADVANCE STEP 5 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 7.023922426
+MLMG: Initial residual (resid0) = 7.023922426
+MLMG: Iteration   1 Fine resid/bnorm = 0.06484590957
+MLMG: Iteration   2 Fine resid/bnorm = 0.002110065115
+MLMG: Iteration   3 Fine resid/bnorm = 6.882445073e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.247122999e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.33974909e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.397738224e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.833456003e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 5.502158729e-10, 7.833456003e-11
+MLMG: Timers: Solve = 0.003839896 Iter = 0.003629954 Bottom = 6.6472e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.0009480256847
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.0009480256847
+BENCHMARKING| L2 ERROR NORM for pressure: 0.005576039915
+========================== FINISH TIME: 0.005 ========================== 
+============================ ADVANCE STEP 6 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 5.926744313
+MLMG: Initial residual (resid0) = 5.926744313
+MLMG: Iteration   1 Fine resid/bnorm = 0.06483931261
+MLMG: Iteration   2 Fine resid/bnorm = 0.00210984684
+MLMG: Iteration   3 Fine resid/bnorm = 6.88172733e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.246887432e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.338976913e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.397487144e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.832597003e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 4.642179974e-10, 7.832597003e-11
+MLMG: Timers: Solve = 0.00387437 Iter = 0.003605499 Bottom = 6.5762e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.003560178805
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.003560178805
+BENCHMARKING| L2 ERROR NORM for pressure: 0.002992983773
+========================== FINISH TIME: 0.006 ========================== 
+============================ ADVANCE STEP 7 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 4.981000543
+MLMG: Initial residual (resid0) = 4.981000543
+MLMG: Iteration   1 Fine resid/bnorm = 0.06482977022
+MLMG: Iteration   2 Fine resid/bnorm = 0.002109532027
+MLMG: Iteration   3 Fine resid/bnorm = 6.880692272e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.246547602e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.337862279e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.397120542e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.831518157e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 3.900879619e-10, 7.831518157e-11
+MLMG: Timers: Solve = 0.003689345 Iter = 0.003489392 Bottom = 6.941e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.005871508769
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.005871508769
+BENCHMARKING| L2 ERROR NORM for pressure: 0.001130023978
+========================== FINISH TIME: 0.007 ========================== 
+============================ ADVANCE STEP 8 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 4.180043662
+MLMG: Initial residual (resid0) = 4.180043662
+MLMG: Iteration   1 Fine resid/bnorm = 0.06481770254
+MLMG: Iteration   2 Fine resid/bnorm = 0.002109135267
+MLMG: Iteration   3 Fine resid/bnorm = 6.879389925e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.246120421e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.336462186e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.396661324e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.829912176e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 3.272937477e-10, 7.829912176e-11
+MLMG: Timers: Solve = 0.003698652 Iter = 0.003485074 Bottom = 6.6452e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.007809116598
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.007809116598
+BENCHMARKING| L2 ERROR NORM for pressure: 0.0007465950177
+========================== FINISH TIME: 0.008 ========================== 
+============================ ADVANCE STEP 9 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 3.505622634
+MLMG: Initial residual (resid0) = 3.505622634
+MLMG: Iteration   1 Fine resid/bnorm = 0.0648109049
+MLMG: Iteration   2 Fine resid/bnorm = 0.00210891071
+MLMG: Iteration   3 Fine resid/bnorm = 6.878650614e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.245877338e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.335663585e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.396397633e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.829226005e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 2.744631189e-10, 7.829226005e-11
+MLMG: Timers: Solve = 0.003849344 Iter = 0.003593056 Bottom = 6.7586e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.009404703562
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.009404703562
+BENCHMARKING| L2 ERROR NORM for pressure: 0.001599214029
+========================== FINISH TIME: 0.009 ========================== 
+============================ ADVANCE STEP 10 ============================ 
+SOLVING| finished solving Momentum equation. 
+MLMG: # of AMR levels: 1
+      # of MG levels on the coarsest AMR level: 5
+MLMG: Initial rhs               = 2.939220881
+MLMG: Initial residual (resid0) = 2.939220881
+MLMG: Iteration   1 Fine resid/bnorm = 0.06480786027
+MLMG: Iteration   2 Fine resid/bnorm = 0.002108809151
+MLMG: Iteration   3 Fine resid/bnorm = 6.878314319e-05
+MLMG: Iteration   4 Fine resid/bnorm = 2.245766224e-06
+MLMG: Iteration   5 Fine resid/bnorm = 7.335297177e-08
+MLMG: Iteration   6 Fine resid/bnorm = 2.396280617e-09
+MLMG: Iteration   7 Fine resid/bnorm = 7.828890245e-11
+MLMG: Final Iter. 7 resid, resid/bnorm = 2.301083768e-10, 7.828890245e-11
+MLMG: Timers: Solve = 0.003854323 Iter = 0.003645072 Bottom = 6.3177e-05
+SOLVING| finished solving Poisson equation. 
+SOLVING| finished updating all fields 
+BENCHMARKING| L2 ERROR NORM for x-velocity: 0.01069671312
+BENCHMARKING| L2 ERROR NORM for y-velocity: 0.01069671312
+BENCHMARKING| L2 ERROR NORM for pressure: 0.002260843079
+========================== FINISH TIME: 0.01 ========================== 
+Run time = 0.177671927
+AMReX (23.11-5-gd36463103dae-dirty) finalized

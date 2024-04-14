@@ -320,7 +320,6 @@ void compute_total_flux (int i, int j, int k,
     for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
     {
         total_flux(i, j, k, dir) = - conv_flux(i, j, k, dir) + visc_flux(i, j, k, dir) - prsgrad_flux(i, j, k, dir);
-        // total_flux(i, j, k, dir) = visc_flux(i, j, k, dir) - prsgrad_flux(i, j, k, dir);
     }
 }
 

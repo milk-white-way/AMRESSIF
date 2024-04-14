@@ -23,7 +23,7 @@ void cart2cont_y (int i, int j, int k,
 
 #if (AMREX_SPACEDIM > 2)
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
-void car2cont_z (int i, int j, int k,
+void cart2cont_z (int i, int j, int k,
                  amrex::Array4<amrex::Real> const& zcont,
                  amrex::Array4<amrex::Real const> const& vcart)
 {

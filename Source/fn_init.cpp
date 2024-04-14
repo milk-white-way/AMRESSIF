@@ -77,20 +77,17 @@ void init (MultiFab& userCtx,
         auto const& zcont_diff = velContDiff[2].array(mfi);
 #endif
         amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k)
-        {
-            init_contravariant_velocity_difference(i, j, k, xcont_diff);
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            xcont_diff(i, j, k) = Real(0.0);
         });
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k)
-        {
-            init_contravariant_velocity_difference(i, j, k, ycont_diff);
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            ycont_diff(i, j, k) = Real(0.0);
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k)
-        {
-            init_contravariant_velocity_difference(i, j, k, zcont_diff);
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            zcont_diff(i, j, k) = Real(0.0);
         });
 #endif
     }
