@@ -16,10 +16,9 @@ fixed_dt = 1.e-4
 #max_grid_size = 64
 #fixed_dt = 0.25e-4
 
-
 cfl = 3
 
-IterNum = 30
+IterNum = 100
 
 ren = 1
 vis = 1

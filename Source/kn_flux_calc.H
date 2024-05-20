@@ -280,16 +280,18 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void compute_viscous_flux_periodic (int i, int j, int k,
                                     amrex::Array4<amrex::Real> const& visc_flux,
                                     amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dx,
-                                    amrex::Array4<amrex::Real> const& vcart,
+                                    amrex::Array4<amrex::Real> const& vel_cart,
                                     amrex::Real const& ren)
 {
     for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
     {
-        auto const& centerMAC = vcart(i, j, k, dir);
-        auto const& northMAC = vcart(i, j+1, k, dir);
-        auto const& southMAC = vcart(i, j-1, k, dir);
-        auto const& westMAC = vcart(i-1, j, k, dir);
-        auto const& eastMAC = vcart(i+1, j, k, dir);
+        //amrex::Print() << "COMPUTING| Viscous Flux | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+
+        auto const& centerMAC = vel_cart(i  , j  , k, dir);
+        auto const& northMAC  = vel_cart(i  , j+1, k, dir);
+        auto const& southMAC  = vel_cart(i  , j-1, k, dir);
+        auto const& westMAC   = vel_cart(i-1, j  , k, dir);
+        auto const& eastMAC   = vel_cart(i+1, j  , k, dir);
 
         visc_flux(i, j, k, dir) = ( (westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]) )/ren;
     }

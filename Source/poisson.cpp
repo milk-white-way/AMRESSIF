@@ -57,7 +57,7 @@ void poisson_advance( MultiFab& poisson_sol,
     poisson_sol.FillBoundary(geom.periodicity());
 
     // Fill non-periodic physical boundaries
-    FillDomainBoundary(poisson_sol, geom, bc);
+    //FillDomainBoundary(poisson_sol, geom, bc);
 
     // assorment of solver and parallization options and parameters
     // see AMReX_MLLinOp.H for the defaults, accessors, and mutators
@@ -150,7 +150,7 @@ void poisson_advance( MultiFab& poisson_sol,
     MLMG mlmg(mlabec);
 
     // set solver parameters
-    int max_iter = 100;
+    int max_iter = 1000;
     mlmg.setMaxIter(max_iter);
 
     int max_fmg_iter = 0;
@@ -162,7 +162,7 @@ void poisson_advance( MultiFab& poisson_sol,
     int bottom_verbose = 0;
     mlmg.setBottomVerbose(bottom_verbose);
     // relative and absolute tolerances for linear solve
-    const Real tol_rel = 1.0e-10;
+    const Real tol_rel = 1.0e-14;
     const Real tol_abs = 0.0;
 
     // Solve linear system
@@ -195,10 +195,10 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
 #if (AMREX_SPACEDIM > 2)
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
-        auto const& grad_phix = grad_phi[0].array(mfi);
-        auto const& grad_phiy = grad_phi[1].array(mfi);
+        auto const& grad_phi_x = grad_phi[0].array(mfi);
+        auto const& grad_phi_y = grad_phi[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-        auto const& grad_phiz = grad_phi[2].array(mfi);
+        auto const& grad_phi_z = grad_phi[2].array(mfi);
 #endif
         /*
         //+++++++++++++++++++++++++++++++++++
@@ -235,19 +235,19 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
         auto const& ctx = userCtx.array(mfi);
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            grad_phix(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+            grad_phi_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            grad_phiy(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+            grad_phi_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
         });
 
 #if (AMREX_SPACEDIM > 2)
 
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-           grad_phiz(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+           grad_phi_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
         });
 
 #endif
@@ -277,24 +277,24 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
 #if (AMREX_SPACEDIM > 2)
         auto const& zcont = velCont[2].array(mfi);
 #endif
-        auto const& grad_phix = grad_phi[0].array(mfi);
-        auto const& grad_phiy = grad_phi[1].array(mfi);
+        auto const& grad_phi_x = grad_phi[0].array(mfi);
+        auto const& grad_phi_y = grad_phi[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-        auto const& grad_phiz = grad_phi[2].array(mfi);
+        auto const& grad_phi_z = grad_phi[2].array(mfi);
 #endif
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            xcont(i, j, k) = xhat(i, j, k) - grad_phix(i, j, k) * dt / Real(1.5);
+            xcont(i, j, k) = xhat(i, j, k) - grad_phi_x(i, j, k) * dt / Real(1.5);
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            ycont(i, j, k) = yhat(i, j, k) - grad_phiy(i, j, k) * dt / Real(1.5);
+            ycont(i, j, k) = yhat(i, j, k) - grad_phi_y(i, j, k) * dt / Real(1.5);
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            zcont(i, j, k) = zhat(i, j, k) - grad_phiz(i, j, k) * dt / Real(1.5);
+            zcont(i, j, k) = zhat(i, j, k) - grad_phi_z(i, j, k) * dt / Real(1.5);
         });
 #endif
     } // End of the loop for boxes

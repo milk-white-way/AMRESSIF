@@ -140,7 +140,7 @@ void main_main ()
     int Nghost = 2; // 2nd order accuracy scheme is used for convective terms
 
     // Ncomp = number of components for userCtx
-    // The userCtx has 03 components:
+    // The userCtx has 02 components:
     // userCtx(0) = Pressure
     // userCtx(1) = Phi
     int Ncomp = 2;
@@ -153,11 +153,11 @@ void main_main ()
      * -----------------------
      *   Volume center
      *  ----------------------
-     *  |                    |
-     *  |                    |
-     *  |          0         |
-     *  |                    |
-     *  |                    |
+     *  |                   |
+     *  |                   |
+     *  |         0         |
+     *  |                   |
+     *  |                   |
      *  ----------------------
      */
 
@@ -231,12 +231,15 @@ void main_main ()
      * Face center variables - FLUXES -------
      * and Variables ------------------------
      *---------------------------------------
-     *              _____________
-     *             |             |
-     *             |             |---> velCont
-     *             |    0 velCart|
-     *             |             |
-     *              _____________
+     *              ______________________
+     *             |                      |
+     *             |                      |
+     *             |                      |
+     *             |----> velCont[1]      |
+     *             |                      |
+     *             |                      |
+     *             |________----> ________|
+     *                      velCont[2]
      *
      */
 
@@ -308,12 +311,12 @@ void main_main ()
     amrex::Print() << "========================= INITIALIZATION STEP ========================= \n";
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
-    init(userCtx, velCart, velCartDiff, velContDiff, geom);
+    staggered_grid_initial_config(userCtx, velCont, velContDiff, geom);
 
     velCart.FillBoundary(geom.periodicity());
     // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
     // velCont is the main variable to be used in the momentum solver
-    cart2cont(velCart, velCont);
+    cont2cart(velCart, velCont, geom);
 
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
 
@@ -324,7 +327,7 @@ void main_main ()
     Real dt = cfl/(2.0*coeff);
 
     // time = starting time in the simulation
-    Real time = 0.0;
+    amrex::Real time = 0.0;
 
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
@@ -345,7 +348,7 @@ void main_main ()
     }
 
     // Setup stopping criteria
-    Real Tol = 1.0e-19;
+    Real Tol = 1.0e-18;
 
     // Setup Runge-Kutta scheme coefficients
     int RungeKuttaOrder = 4;
@@ -360,24 +363,20 @@ void main_main ()
     //+++++++++++++++++++++++++++++++++++++++++++++++++++
     //+++++++++++++++   Begin time loop +++++++++++++++++
     //+++++++++++++++++++++++++++++++++++++++++++++++++++
+    userCtx.FillBoundary(geom.periodicity());
+    velCart.FillBoundary(geom.periodicity());
     for (int n = 1; n <= nsteps; ++n)
     {
         amrex::Print() << "============================ ADVANCE STEP " << n << " ============================ \n";
         // Update the time
         time = time + dt;
 
-        // Forming boundary conditions
-        userCtx.FillBoundary(geom.periodicity());
-        // Enforce the physical boundary conditions
-        // enforce_boundary_conditions(userCtx, type1, Nghost, bc_lo, bc_hi, n_cell);
-
-        velCart.FillBoundary(geom.periodicity());
-
         for (int comp=0; comp < AMREX_SPACEDIM; ++comp)
         {
+            // Save the previous velocity field to update the diff field later
             MultiFab::Copy(velContPrev[comp], velCont[comp], 0, 0, 1, 0);
-            MultiFab::Copy(    velStar[comp], velCont[comp], 0, 0, 1, 0);
             // Assign the initial guess as the previous flow field
+            MultiFab::Copy(    velStar[comp], velCont[comp], 0, 0, 1, 0);
         }
 
         // Momentum solver
@@ -396,16 +395,17 @@ void main_main ()
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter
                            << " => normError = " << normError << "\n";
 
-            // Immidiate velocity at the beginning of the RK4 sub-iteration
+            // Assign intermediate velocity at the beginning of the RK4 sub-iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
-                // Check the boundary conditions of velHat
                 MultiFab::Copy(velHat[comp], velStar[comp], 0, 0, 1, 0);
             }
 
+            //RungeKuttaOrder = 1;
             // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
+                // ---------------------- FLUX CALCULATION ----------------------
                 // RUNGE-KUTTA | Calculate Cell-centered Convective terms
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, bc_lo, bc_hi, geom, n_cell);
 
@@ -418,59 +418,183 @@ void main_main ()
                 // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
                 total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
 
-                fluxTotal.FillBoundary(geom.periodicity());
-                // enforce_boundary_conditions(fluxTotal, type3, Nghost, bc_lo, bc_hi, n_cell);
-
                 // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 momentum_righthand_side_calc(momentum_rhs, fluxTotal);
                 // Is there a faster way to subtract two face-centered MultiFab?
+
+                // ------------------------ MOMENTUM SOLVER ------------------------
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
                 for (MFIter mfi(velHatDiff[0]); mfi.isValid(); ++mfi)
                 {
-                    const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1, 0, 0)));
-                    const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0, 1, 0)));
+                    const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                    const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
-                    const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0, 0, 1)));
+                    const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
-                    auto const &xhat_diff = velHatDiff[0].array(mfi);
-                    auto const &yhat_diff = velHatDiff[1].array(mfi);
+
+                    auto const &vel_hat_diff_x = velHatDiff[0].array(mfi);
+                    auto const &vel_hat_diff_y = velHatDiff[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-                    auto const &zhat_diff = velHatDiff[2].array(mfi);
+                    auto const &vel_hat_diff_z = velHatDiff[2].array(mfi);
 #endif
-                    auto const &xhat = velHat[0].array(mfi);
-                    auto const &yhat = velHat[1].array(mfi);
+
+                    auto const &vel_hat_x = velHat[0].array(mfi);
+                    auto const &vel_hat_y = velHat[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-                    auto const &zhat = velHat[2].array(mfi);
+                    auto const &vel_hat_z = velHat[2].array(mfi);
 #endif
-                    auto const &xcont = velCont[0].array(mfi);
-                    auto const &ycont = velCont[1].array(mfi);
+
+                    auto const &vel_cont_x = velCont[0].array(mfi);
+                    auto const &vel_cont_y = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-                    auto const &zcont = velCont[2].array(mfi);
+                    auto const &vel_cont_z = velCont[2].array(mfi);
 #endif
                     amrex::ParallelFor(xbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        xhat_diff(i, j, k) = xhat(i, j, k) - xcont(i, j, k);
+                        vel_hat_diff_x(i, j, k) = vel_hat_x(i, j, k) - vel_cont_x(i, j, k);
                     });
                     amrex::ParallelFor(ybx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        yhat_diff(i, j, k) = yhat(i, j, k) - ycont(i, j, k);
+                        vel_hat_diff_y(i, j, k) = vel_hat_y(i, j, k) - vel_cont_y(i, j, k);
                     });
 #if (AMREX_SPACEDIM > 2)
                     amrex::ParallelFor(zbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        zhat_diff(i, j, k) = zhat(i, j, k) - zcont(i, j, k);
+                        vel_hat_diff_z(i, j, k) = vel_hat_z(i, j, k) - vel_cont_z(i, j, k);
                     });
 #endif
                 }
 
                 // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velHat
-                km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
+                //km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+                for (MFIter mfi(velHat[0]); mfi.isValid(); ++mfi)
+                {
+                    const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                    const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+                    const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
 
+                    auto const& xrhs = momentum_rhs[0].array(mfi);
+                    auto const& yrhs = momentum_rhs[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const& zrhs = momentum_rhs[2].array(mfi);
+#endif
+
+                    auto const &vel_star_x = velStar[0].array(mfi);
+                    auto const &vel_star_y = velStar[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const &vel_star_z = velStar[2].array(mfi);
+#endif
+
+                    auto const &vel_hat_x = velHat[0].array(mfi);
+                    auto const &vel_hat_y = velHat[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const &vel_hat_z = velHat[2].array(mfi);
+#endif
+
+                    auto const &vel_cont_x = velCont[0].array(mfi);
+                    auto const &vel_cont_y = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const &vel_cont_z = velCont[2].array(mfi);
+#endif
+
+                    auto const &vel_hat_diff_x = velHatDiff[0].array(mfi);
+                    auto const &vel_hat_diff_y = velHatDiff[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const &vel_hat_diff_z = velHatDiff[2].array(mfi);
+#endif
+
+                    auto const &vel_cont_diff_x = velContDiff[0].array(mfi);
+                    auto const &vel_cont_diff_y = velContDiff[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const &vel_cont_diff_z = velContDiff[2].array(mfi);
+#endif
+
+                    amrex::ParallelFor(xbx, 
+                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                        xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_x(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
+                        
+                        // Boundary check:
+                        if (i == 0 || i == xbx.bigEnd(0)) {
+                            xrhs(i, j, k) = xrhs(i, j, k);
+                        }
+
+                        //Print() << "\t vel_hat_diff_x(" << i << ", " << j << "): " << vel_hat_diff_x(i, j, k);
+                        //Print() << "\t vel_cont_diff_x(" << i << ", " << j << "): " << vel_cont_diff_x(i, j, k);
+                        //Print() << "\t xrhs(" << i << ", " << j << "): " << xrhs(i, j, k) << "\n";
+
+                        vel_hat_x(i, j, k) = vel_star_x(i, j, k) + ( rk[sub] * dt * Real(0.4) * xrhs(i, j, k) );
+                    });
+                    amrex::ParallelFor(ybx,
+                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                        yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_y(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
+                        
+                        if (j == 0 || j == ybx.bigEnd(1)) {
+                            yrhs(i, j, k) = yrhs(i, j, k);
+                        }
+                        
+                        vel_hat_y(i, j, k) = vel_star_y(i, j, k) + ( rk[sub] * dt * Real(0.4) * yrhs(i, j, k) );
+                    });
+#if (AMREX_SPACEDIM > 2)
+                    amrex::ParallelFor(zbx,
+                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                        zrhs(i, j, k) = zrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_z(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_z(i, j, k);
+                        
+                        vel_hat_z(i, j, k) = vel_star_z(i, j, k) + ( rk[sub] * dt * Real(0.4) * zrhs(i, j, k) );
+                    });
+#endif
+                }
+
+                // ------------------ FORMING BOUNDARY CONDITIONS ------------------
                 // RUNGE-KUTTA | Update velCart from velHat
                 cont2cart(velCart, velHat, geom);
-                // Re-enforce the boundary conditions
+                // RUNGE-KUTTA | Enforce the boundary conditions on non-staggered grid
                 velCart.FillBoundary(geom.periodicity());
-                // enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
+                // RUNGE-KUTTA | Interpolate the boundary conditions to staggered grid
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+                for ( MFIter mfi(velHat[0]); mfi.isValid(); ++mfi )
+                {
+                    Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                    Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+                    Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
 
+                    auto const& vel_hat_x = velHat[0].array(mfi);
+                    auto const& vel_hat_y = velHat[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                    auto const& vel_hat_z = velHat[2].array(mfi);
+#endif
+                    auto const& vel_cart = velCart.array(mfi);
+
+                    amrex::ParallelFor(xbx,
+                                       [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                        if (i == 0 || i == xbx.bigEnd(0)) {
+                            vel_hat_x(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
+                        }
+                    });
+
+                    amrex::ParallelFor(ybx,
+                                       [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                        if (j == 0 || j == ybx.bigEnd(1)) {
+                            vel_hat_y(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
+                        }
+                    });
+
+#if (AMREX_SPACEDIM > 2)
+                    amrex::ParallelFor(ybx,
+                                       [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                        if (k == 0 || k == zbx.bigEnd(2)) {
+                            vel_hatt_z(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 2) + vel_cart(i, j, k-1, 2) );
+                        }
+                    });
+#endif
+                }
             } // RUNGE-KUTTA | END
 
             // RUNGE-KUTTA | Calculate the error norm
@@ -488,9 +612,11 @@ void main_main ()
         // MOMENTUM |4| PLOTTING
         // This is just for debugging only !
         //---------------------------------------
+        cont2cart(velCart, velStar, geom);
         if (plot_int > 0 && n%plot_int == 0)
         {
             Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
+            Export_Flow_Field("pltMomentum", userCtx, velCart, ba, dm, geom, time, 0);
         }
         amrex::Print() << "SOLVING| finished solving Momentum equation. \n";
 
@@ -498,7 +624,13 @@ void main_main ()
         //    Laplacian(\phi) = (Real(1.5)/dt)*Div(\hat{u}_i)
 
         // POISSON |1| Calculating the RSH
-        poisson_righthand_side_calc(poisson_rhs, velHat, geom, dt);
+        poisson_rhs.setVal(0.0);
+        poisson_righthand_side_calc(poisson_rhs, velStar, geom, dt);
+        if (plot_int > 0 && n%plot_int == 0)
+        {
+            const std::string &rhs_export = amrex::Concatenate("pltPoissonRHS", n, 5);
+            WriteSingleLevelPlotfile(rhs_export, poisson_rhs, {"rhs"}, geom, time, n);
+        }
 
         // POISSON |2| Init Phi at the begining of the Poisson solver
         poisson_sol.setVal(0.0);
@@ -508,7 +640,6 @@ void main_main ()
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
         userCtx.FillBoundary(geom.periodicity());
-        // enforce_boundary_conditions(userCtx, type2, Nghost, bc_lo, bc_hi, n_cell);
 
         // Update the solution
         // u_i^{n+1} = \hat{u}_i- 2dt/3 * grad(\phi^{n+1})
@@ -521,9 +652,48 @@ void main_main ()
 
         // Update velCart from the velCont solutions
         cont2cart(velCart, velCont, geom);
-        // Update the halo exchange points!
         velCart.FillBoundary(geom.periodicity());
-        // enforce_boundary_conditions(velCart, type4, Nghost, bc_lo, bc_hi, n_cell);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
+        {
+            Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+            Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+            Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+
+            auto const& vel_cont_x = velCont[0].array(mfi);
+            auto const& vel_cont_y = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+            auto const& vel_cont_z = velCont[2].array(mfi);
+#endif
+            auto const& vel_cart = velCart.array(mfi);
+
+            amrex::ParallelFor(xbx,
+                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                if (i == 0 || i == xbx.bigEnd(0)) {
+                    vel_cont_x(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
+                }
+            });
+
+            amrex::ParallelFor(ybx,
+                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                if (j == 0 || j == ybx.bigEnd(1)) {
+                    vel_cont_y(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
+                }
+            });
+
+#if (AMREX_SPACEDIM > 2)
+            amrex::ParallelFor(ybx,
+                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                if (k == 0 || k == zbx.bigEnd(2)) {
+                    vel_cont_z(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 2) + vel_cart(i, j, k-1, 2) );
+                }
+            });
+#endif
+        }
 
         // Before benchmarking, making sure that halo regions are updated
         analyticSol.FillBoundary(geom.periodicity());

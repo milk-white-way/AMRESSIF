@@ -17,6 +17,7 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
+
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
         auto const& xrhs = rhs[0].array(mfi);
@@ -24,20 +25,52 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 #if (AMREX_SPACEDIM > 2)
         auto const& zrhs = rhs[2].array(mfi);
 #endif
+
         auto const& total_flux = fluxTotal.array(mfi);
 
         //int const& box_id = mfi.LocalIndex();
         //print_box(box_id);
 
         amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_x(i, j, k, xrhs, total_flux); });
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
+
+            if (i == 0 || i == xbx.bigEnd(0)) {
+                xrhs(i, j, k) = amrex::Real(0.0);
+            }
+
+            //if (i == 1) {
+            //    xrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i-1, j, k, 0) + 6*total_flux(i, j, k, 0) - total_flux(i+1, j, k, 0) );
+            //} else {
+            //    xrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k, 0) + 6*total_flux(i-1, j, k, 0) - total_flux(i-2, j, k, 0) );
+            //}
+        });
 
         amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_y(i, j, k, yrhs, total_flux); });
-
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
+            
+            if (j == 0 || j == ybx.bigEnd(1)) {
+                yrhs(i, j, k) = amrex::Real(0.0);
+            }
+            //if (j == 1) {
+            //    yrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j-1, k, 1) + 6*total_flux(i, j, k, 1) - total_flux(i, j+1, k, 1) );
+            //} else {
+            //    yrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k, 1) + 6*total_flux(i, j-1, k, 1) - total_flux(i, j-2, k, 1) );
+            //}
+        });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_z(i, j, k, zrhs, total_flux); });
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            if (k == 0 || k == zbx.bigEnd(2)) {
+                zrhs(i, j, k) = amrex::Real(0.0);
+            //} else if (k == 1) {
+            //    zrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k-1, 2) + 6*total_flux(i, j, k, 2) - total_flux(i, j, k+1, 2) );
+            } else {
+            //    zrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k, 2) + 6*total_flux(i, j, k-1, 2) - total_flux(i, j, k-2, 2) );
+                zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
+            }
+        });
 #endif
     }
 }
@@ -59,19 +92,19 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
         const Box& vbx = mfi.validbox();
         auto const& rhs  = poisson_rhs.array(mfi);
 
-        auto const& xcont = velCont[0].array(mfi);
-        auto const& ycont = velCont[1].array(mfi);
+        auto const& vel_cont_x = velCont[0].array(mfi);
+        auto const& vel_cont_y = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-        auto const& zcont = velCont[2].array(mfi);
+        auto const& vel_cont_z = velCont[2].array(mfi);
 #endif
         //Loop for all i,j,k in the local domain
         amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
 #if (AMREX_SPACEDIM > 2)
             //compute_flux_divergence_3D(i, j, k, vrhs, xcont, ycont, zcont, dx);
 #else
             //compute_flux_divergence_2D(i, j, k, vrhs, xcont, ycont, dx);
-            rhs(i, j, k) = ( xcont(i+1, j, k) - xcont(i, j, k) )/dx[0] + ( ycont(i, j+1, k) - ycont(i, j, k) )/dx[1];
+            rhs(i, j, k) = ( vel_cont_x(i+1, j, k) - vel_cont_x(i, j, k) )/dx[0] + ( vel_cont_y(i, j+1, k) - vel_cont_y(i, j, k) )/dx[1];
 #endif
             });
     } // End of all box loops
@@ -88,10 +121,7 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            rhs(i,j,k) = (amrex::Real(1.5)/dt) * rhs(i,j,k);
+            rhs(i, j, k) = (amrex::Real(1.5)/dt) * rhs(i, j, k);
         });
     }
-
-    //amrex::Real total_flux = rhs.sum(0);
-    //amrex::Print() << "DEBUGGING MESSAGE|1| Total flux is: " << total_flux << "\n";
 }

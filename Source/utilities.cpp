@@ -42,7 +42,52 @@ void cont2cart (MultiFab& velCart,
                 Array<MultiFab, AMREX_SPACEDIM>& velCont,
                 const Geometry& geom)
 {
-    average_face_to_cellcenter(velCart, amrex::GetArrOfConstPtrs(velCont), geom);
+    //average_face_to_cellcenter(velCart, amrex::GetArrOfConstPtrs(velCont), geom);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& vel_cart  = velCart.array(mfi);
+
+        auto const& vel_cont_x = velCont[0].array(mfi);
+        auto const& vel_cont_y = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& vel_cont_z = velCont[2].array(mfi);
+#endif
+
+        amrex::ParallelFor(vbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            //if (i == 0) {
+            //    if (j == 0 || j == vbx.bigEnd(1)) {
+            //        Print() << "DEBUG | at i = " << i << "; j = " << j << "\n";
+            //        Print() << "contravariant velocity x(" << i   << ", " << j   << "): " << vel_cont_x(i  , j, k) << "\n";
+            //         //Print() << "contravariant velocity x(" << i+1 << ", " << j   << "): " << vel_cont_x(i+1, j, k) << "\n";
+            //        Print() << "contravariant velocity y(" << i   << ", " << j   << "): " << vel_cont_y(i, j  , k) << "\n";
+            //        //Print() << "contravariant velocity y(" << i   << ", " << j+1  << "): " << vel_cont_y(i, j+1, k) << "\n";
+            //    }
+            //}
+            vel_cart(i, j, k, 0) = amrex::Real(0.5)*( vel_cont_x(i, j, k) + vel_cont_x(i+1, j, k) );
+            vel_cart(i, j, k, 1) = amrex::Real(0.5)*( vel_cont_y(i, j, k) + vel_cont_y(i, j+1, k) );
+#if (AMREX_SPACEDIM > 2)
+            vel_cart(i, j, k, 2) = amrex::Real(0.5)*( vel_cont_z(i, j, k) + vel_cont_z(i, j, k+1) );
+#endif
+            //if (i < vbx.bigEnd(0)) {
+            //    vel_cart(i, j, k, 0) = amrex::Real(0.125)*( 3*vel_cont_x(i, j, k) + 6*vel_cont_x(i+1, j, k) - vel_cont_x(i+2, j, k) );
+            //    vel_cart(i, j, k, 1) = amrex::Real(0.125)*( 3*vel_cont_y(i, j, k) + 6*vel_cont_y(i, j+1, k) - vel_cont_y(i, j+2, k) );
+//#if (AMREX_SPACEDIM > 2)
+//                vel_cart(i, j, k, 2) = amrex::Real(0.125)*( 3*vel_cont_z(i, j, k) + 6*vel_cont_z(i, j, k+1) - vel_cont_z(i, j, k+2) );
+//#endif
+            //} else {
+            //    vel_cart(i, j, k, 0) = amrex::Real(0.125)*( 3*vel_cont_x(i+1, j, k) + 6*vel_cont_x(i, j, k) - vel_cont_x(i-1, j, k) );
+            //    vel_cart(i, j, k, 1) = amrex::Real(0.125)*( 3*vel_cont_y(i, j+1, k) + 6*vel_cont_y(i, j, k) - vel_cont_y(i, j-1, k) );
+//#if (AMREX_SPACEDIM > 2)
+//                vel_cart(i, j, k, 2) = amrex::Real(0.125)*( 3*vel_cont_z(i, j, k+1) + 6*vel_cont_z(i, j, k) - vel_cont_z(i, j, k-1) );
+//#endif
+            //}
+        });
+    } 
 }
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
@@ -223,7 +268,7 @@ void analytic_solution_calc (MultiFab& analyticSol,
           // v velocity
           analytic(i, j, k, 1) = -std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
           // pressure
-          analytic(i, j, k, 2) = -Real(0.25) * (std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y)) * std::exp(-Real(16.0) * M_PI * M_PI * time);
+          analytic(i, j, k, 2) = Real(0.25) * (std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y)) * std::exp(-Real(16.0) * M_PI * M_PI * time);
         });
     }
 }

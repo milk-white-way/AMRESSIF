@@ -20,7 +20,8 @@ void convective_flux_calc ( MultiFab& fluxConvect,
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
-    const Real& qkcoef = Real(0.125);
+    const Real& alp = Real(0.5);
+    const Real& bet = Real(0.125);
     // QUICK scheme: Calculation of the half-node fluxes
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -66,9 +67,26 @@ void convective_flux_calc ( MultiFab& fluxConvect,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
             if ( west_wall_bcs==0 && east_wall_bcs==0 ) {
-                compute_halfnode_convective_flux_x_contrib_periodic(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, qkcoef);
+                auto const& ucon = Real(0.5) * xcont(i, j, k);
+                auto const& up = ucon + std::abs(ucon);
+                auto const& um = ucon - std::abs(ucon);
+
+                // West face for Quick scheme
+                auto const& ucat_x_ww = vcart(i-2, j, k, 0);
+                auto const& ucat_x_w  = vcart(i-1, j, k, 0);
+                auto const& ucat_x_p  = vcart(i  , j, k, 0);
+                auto const& ucat_x_e  = vcart(i+1, j, k, 0);
+
+                auto const& ucat_y_ww = vcart(i-2, j, k, 1);
+                auto const& ucat_y_w  = vcart(i-1, j, k, 1);
+                auto const& ucat_y_p  = vcart(i  , j, k, 1);
+                auto const& ucat_y_e  = vcart(i+1, j, k, 1);
+
+                fluxx_xcont(i, j, k) = up * ( alp * (ucat_x_p + ucat_x_w) - bet * (ucat_x_ww - 2*ucat_x_w + ucat_x_p) )  + um * ( alp * (ucat_x_p + ucat_x_w) - bet * (ucat_x_w - 2*ucat_x_p + ucat_x_e) );
+
+                fluxy_xcont(i, j, k) = up * ( alp * (ucat_y_p + ucat_y_w) - bet * (ucat_y_ww - 2*ucat_y_w + ucat_y_p) )  + um * ( alp * (ucat_y_p + ucat_y_w) - bet * (ucat_y_w - 2*ucat_y_p + ucat_y_e) );
             } else {
-                compute_halfnode_convective_flux_x_contrib_wall(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, qkcoef, n_cell);
+                compute_halfnode_convective_flux_x_contrib_wall(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, bet, n_cell);
             }
         });
 
@@ -76,9 +94,26 @@ void convective_flux_calc ( MultiFab& fluxConvect,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
             if ( south_wall_bcs==0 && north_wall_bcs==0 ) {
-                compute_halfnode_convective_flux_y_contrib_periodic(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, qkcoef);
+                auto const& ucon = Real(0.5) * ycont(i, j, k);
+                auto const& up = ucon + std::abs(ucon);
+                auto const& um = ucon - std::abs(ucon);
+
+                // South face for Quick scheme
+                auto const& ucat_x_ss = vcart(i, j-2, k, 0);
+                auto const& ucat_x_s  = vcart(i, j-1, k, 0);
+                auto const& ucat_x_p  = vcart(i, j  , k, 0);
+                auto const& ucat_x_n  = vcart(i, j+1, k, 0);
+
+                auto const& ucat_y_ss = vcart(i, j-2, k, 1);
+                auto const& ucat_y_s  = vcart(i, j-1, k, 1);
+                auto const& ucat_y_p  = vcart(i, j  , k, 1);
+                auto const& ucat_y_n  = vcart(i, j+1, k, 1);
+
+                fluxx_ycont(i, j, k) = um * ( alp * (ucat_x_p + ucat_x_s) - bet * (ucat_x_ss - 2*ucat_x_s + ucat_x_p) )  + up * ( alp * (ucat_x_p + ucat_x_s) - bet * (ucat_x_s - 2*ucat_x_p + ucat_x_n) );
+                
+                fluxy_ycont(i, j, k) = um * ( alp * (ucat_y_p + ucat_y_s) - bet * (ucat_y_ss - 2*ucat_y_s + ucat_y_p) )  + up * ( alp * (ucat_y_p + ucat_y_s) - bet * (ucat_y_s - 2*ucat_y_p + ucat_y_n) );
             } else {
-                compute_halfnode_convective_flux_y_contrib_wall(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, qkcoef, n_cell);
+                compute_halfnode_convective_flux_y_contrib_wall(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, bet, n_cell);
             }
         });
 #if (AMREX_SPACEDIM > 2)
@@ -116,22 +151,22 @@ void convective_flux_calc ( MultiFab& fluxConvect,
 #endif
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-            conv_flux(i, j, k, 0) = (fluxx_xcont(i, j, k) - fluxx_xcont(i+1, j, k))/(dx[0]) + (fluxx_ycont(i, j, k) - fluxx_ycont(i, j+1, k))/(dx[1])
+            conv_flux(i, j, k, 0) = (fluxx_xcont(i+1, j, k) - fluxx_xcont(i, j, k))/(dx[0]) + (fluxx_ycont(i, j+1, k) - fluxx_ycont(i, j, k))/(dx[1])
 #if (AMREX_SPACEDIM > 2)
-                + (fluxx_zcont(i, j, k) - fluxx_zcont(i, j, k+1))/(dx[2]);
+                + (fluxx_zcont(i, j, k+1) - fluxx_zcont(i, j, k))/(dx[2]);
 #else
             ;
 #endif
 
-            conv_flux(i, j, k, 1) = (fluxy_xcont(i, j, k) - fluxy_xcont(i+1, j, k))/(dx[0]) + (fluxy_ycont(i, j, k) - fluxy_ycont(i, j+1, k))/(dx[1])
+            conv_flux(i, j, k, 1) = (fluxy_xcont(i+1, j, k) - fluxy_xcont(i, j, k))/(dx[0]) + (fluxy_ycont(i, j+1, k) - fluxy_ycont(i, j, k))/(dx[1])
 #if (AMREX_SPACEDIM > 2)
-                + (fluxy_zcont(i, j, k) - fluxy_zcont(i, j, k+1))/(dx[2]);
+                + (fluxy_zcont(i, j, k+1) - fluxy_zcont(i, j, k))/(dx[2]);
 #else
             ;
 #endif
 
 #if (AMREX_SPACEDIM > 2)
-            conv_flux(i, j, k, 2) = (fluxz_xcont(i, j, k) - fluxz_xcont(i+1, j, k))/(dx[0]) + (fluxz_ycont(i, j, k) - fluxz_ycont(i, j+1, k))/(dx[1]) + (fluxz_zcont(i, j, k) - fluxz_zcont(i, j, k+1))/(dx[2]);
+            conv_flux(i, j, k, 2) = (fluxz_xcont(i+1, j, k) - fluxz_xcont(i, j, k))/(dx[0]) + (fluxz_ycont(i, j+1, k) - fluxz_ycont(i, j, k))/(dx[1]) + (fluxz_zcont(i, j, k+1) - fluxz_zcont(i, j, k))/(dx[2]);
 #endif
         });
     }
@@ -151,13 +186,13 @@ void viscous_flux_calc ( MultiFab& fluxViscous,
     for ( MFIter mfi(fluxViscous); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
-        auto const& vcart = velCart.array(mfi);
+        auto const& vel_cart = velCart.array(mfi);
         auto const& visc_flux = fluxViscous.array(mfi);
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
             // 2D PERIODIC ONLY
-            compute_viscous_flux_periodic(i, j, k, visc_flux, dx, vcart, ren);
+            compute_viscous_flux_periodic(i, j, k, visc_flux, dx, vel_cart, ren);
         });
     }
 }
