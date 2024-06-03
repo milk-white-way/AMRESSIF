@@ -1,20 +1,29 @@
-nsteps = 100
-plot_int = 100
-n_cell = 32
-max_grid_size = 32
-fixed_dt = 1.e-4
+nsteps = 0
+plot_int = -1000
 
-#nsteps = 200
-#plot_int = 200
+n_cell = 4
+max_grid_size = 4
+
+#n_cell = 16
+#max_grid_size = 16
+
+#n_cell = 32
+#max_grid_size = 32
+
 #n_cell = 64
 #max_grid_size = 64
-#fixed_dt = 0.5e-4
 
-#nsteps = 400
-#plot_int = 400
 #n_cell = 128
-#max_grid_size = 64
-#fixed_dt = 0.25e-4
+#max_grid_size = 128
+
+#n_cell = 256
+#max_grid_size = 256
+
+fixed_dt = 5.e-4
+#fixed_dt = 1.0e-7
+#fixed_dt = 2.0e-6
+#fixed_dt = 4.0e-7
+#fixed_dt = 8.0e-7
 
 cfl = 3
 
@@ -25,10 +34,10 @@ vis = 1
 
 # phy_bc params declare the type of wall
 # 0 - periodic
-# -1 - non-slip
+# -1 - no-slip
 # 1 - slip
-phy_bc_lo = 0 0
-phy_bc_hi = 0 0
+phy_bc_lo = -1 -1
+phy_bc_hi = -1 -1
 
 bc_lo = 0 0
 bc_hi = 0 0

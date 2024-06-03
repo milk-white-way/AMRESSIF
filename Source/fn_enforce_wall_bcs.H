@@ -5,8 +5,8 @@
 #include <AMReX_MultiFab.H>
 
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
-void enforce_boundary_conditions (amrex::MultiFab& inputMultiFab,
-                                  std::string const& typeMultiFab,
+void enforce_boundary_conditions (amrex::MultiFab& velCart,
+                                  amrex::Geometry const& geom,
                                   int const& Nghost,
                                   amrex::Vector<int> const& phy_bc_lo,
                                   amrex::Vector<int> const& phy_bc_hi,

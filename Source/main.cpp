@@ -298,28 +298,6 @@ void main_main ()
         grad_phi[dir].define(edge_ba, dm, 1, 0);
     }
 
-    // Print desired variables for debugging
-    amrex::Print() << "INFO| number of dimensions: " << AMREX_SPACEDIM << "\n";
-    amrex::Print() << "INFO| geometry: " << geom << "\n";
-    amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
-    amrex::Print() << "PARAMS| number of components for each array: " << Ncomp << "\n";
-
-    //--------------------------------------------------------------------------------------//
-    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------//
-    //--------------------------------------------------------------------------------------//
-
-    amrex::Print() << "========================= INITIALIZATION STEP ========================= \n";
-    // Current: Taylor-Green Vortex initial conditions
-    // How partial periodic boundary conditions can be deployed?
-    staggered_grid_initial_config(userCtx, velCont, velContDiff, geom);
-
-    velCart.FillBoundary(geom.periodicity());
-    // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
-    // velCont is the main variable to be used in the momentum solver
-    cont2cart(velCart, velCont, geom);
-
-    MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
-
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
     Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
                                  + 1./(dx[1]*dx[1]),
@@ -340,6 +318,29 @@ void main_main ()
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
     
+
+    // Print desired variables for debugging
+    amrex::Print() << "INFO| number of dimensions: " << AMREX_SPACEDIM << "\n";
+    amrex::Print() << "INFO| geometry: " << geom << "\n";
+    amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
+    amrex::Print() << "PARAMS| number of components for each array: " << Ncomp << "\n";
+
+    //--------------------------------------------------------------------------------------//
+    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------//
+    //--------------------------------------------------------------------------------------//
+
+    amrex::Print() << "========================= INITIALIZATION STEP ========================= \n";
+    // Current: Taylor-Green Vortex initial conditions
+    // How partial periodic boundary conditions can be deployed?
+    staggered_grid_initial_config(userCtx, velCont, velContDiff, geom);
+    // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
+    // velCont is the main variable to be used in the momentum solver
+    cont2cart(velCart, velCont, geom);
+    velCart.FillBoundary(geom.periodicity());
+    enforce_boundary_conditions(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+    MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
+
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
     if (plot_int > 0)
@@ -732,6 +733,9 @@ void main_main ()
         if (plot_int > 0 && n%plot_int == 0)
         {
             Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
+
+            // Export predefined line
+            //export_line
         }
 
         amrex::Print() << "========================== FINISH TIME: " << time << " ========================== \n";

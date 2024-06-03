@@ -61,8 +61,8 @@ void cont2cart (MultiFab& velCart,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
             //if (i == 0) {
             //    if (j == 0 || j == vbx.bigEnd(1)) {
-            //        Print() << "DEBUG | at i = " << i << "; j = " << j << "\n";
-            //        Print() << "contravariant velocity x(" << i   << ", " << j   << "): " << vel_cont_x(i  , j, k) << "\n";
+            //Print() << "DEBUG | at i = " << i << "; j = " << j << "\n";
+            //          Print() << "contravariant velocity x(" << i   << ", " << j   << "): " << vel_cont_x(i  , j, k) << "\n";
             //         //Print() << "contravariant velocity x(" << i+1 << ", " << j   << "): " << vel_cont_x(i+1, j, k) << "\n";
             //        Print() << "contravariant velocity y(" << i   << ", " << j   << "): " << vel_cont_y(i, j  , k) << "\n";
             //        //Print() << "contravariant velocity y(" << i   << ", " << j+1  << "): " << vel_cont_y(i, j+1, k) << "\n";

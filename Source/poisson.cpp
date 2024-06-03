@@ -162,7 +162,7 @@ void poisson_advance( MultiFab& poisson_sol,
     int bottom_verbose = 0;
     mlmg.setBottomVerbose(bottom_verbose);
     // relative and absolute tolerances for linear solve
-    const Real tol_rel = 1.0e-14;
+    const Real tol_rel = 1.0e-12;
     const Real tol_abs = 0.0;
 
     // Solve linear system
