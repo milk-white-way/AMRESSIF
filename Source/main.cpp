@@ -734,8 +734,67 @@ void main_main ()
         {
             Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
 
+            // Construct the filename for this iteration
+            std::string hline_filename = "output_hline_" + std::to_string(n) + ".txt";
+            std::string vline_filename = "output_vline_" + std::to_string(n) + ".txt";
+
             // Export predefined line
-            //export_line
+            GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
+            GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+
+            // Initialize velocity components at face centers
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+            for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
+            {
+                const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+                const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+                auto const& vel_cont_x = velCont[0].array(mfi);
+                auto const& vel_cont_y = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                auto const& vel_cont_z = velCont[2].array(mfi);
+#endif
+                amrex::ParallelFor(xbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k){
+                    amrex::Real x = prob_lo[0] + (i + Real(0.0)) * dx[0];
+                    amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+            
+                    if ( x == 0.250 ) {
+                        amrex::Print() << x << " ";
+                        amrex::Print() << y << " ";
+                        amrex::Print() << vel_cont_x(i, j, k) << "\n";
+
+                        amrex::Real const& analytical_vel_cont_x = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+
+                        write_anyline_solution(x, y, vel_cont_x(i, j, k), analytical_vel_cont_x, hline_filename);
+                    }
+                });
+                amrex::ParallelFor(ybx,
+                                  [=] AMREX_GPU_DEVICE(int i, int j, int k){
+                    amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+                    amrex::Real y = prob_lo[1] + (j + Real(0.0)) * dx[1];
+
+                    if ( y == 0.250 ) {
+                        amrex::Print() << x << " ";
+                        amrex::Print() << y << " ";
+                        amrex::Print() << vel_cont_y(i, j, k) << "\n";
+
+                        amrex::Real const& analytical_vel_cont_y = -std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+
+                        write_anyline_solution(x, y, vel_cont_y(i, j, k), analytical_vel_cont_y, vline_filename);
+                    }
+                });
+#if (AMREX_SPACEDIM > 2)
+                amrex::ParallelFor(zbx,
+                                  [=] AMREX_GPU_DEVICE(int i, int j, int k){
+                    vel_cont_z(i, j, k) = amrex::Real(1.0);
+                });
+#endif
+            }
         }
 
         amrex::Print() << "========================== FINISH TIME: " << time << " ========================== \n";

@@ -1,5 +1,5 @@
-nsteps = 0
-plot_int = -1000
+nsteps = 10
+plot_int = 10
 
 n_cell = 4
 max_grid_size = 4
@@ -36,8 +36,8 @@ vis = 1
 # 0 - periodic
 # -1 - no-slip
 # 1 - slip
-phy_bc_lo = -1 -1
-phy_bc_hi = -1 -1
+phy_bc_lo = 0 0
+phy_bc_hi = 0 0
 
 bc_lo = 0 0
 bc_hi = 0 0

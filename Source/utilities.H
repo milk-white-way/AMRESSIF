@@ -24,6 +24,12 @@ void write_midline_solution (amrex::Real const& midx,
                              double const& anap,
                              int const& current_step);
 
+void write_anyline_solution (amrex::Real const& x,
+                             amrex::Real const& y,
+                             amrex::Real const& num_sol,
+                             amrex::Real const& ana_sol,
+                             std::string const& filename);
+
 // ===================== UTILITY | EXPORT  =====================
 void Export_Fluxes (amrex::MultiFab& fluxConvect,
                     amrex::MultiFab& fluxViscous,

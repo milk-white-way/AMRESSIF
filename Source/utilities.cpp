@@ -120,6 +120,28 @@ void write_midline_solution (Real const& midx,
     outfile.close();
 }
 
+void write_anyline_solution (Real const& x,
+                             Real const& y,
+                             Real const& numerical_sol,
+                             Real const& analytical_sol,
+                             std::string const& filename)
+{
+    // Open a file for writing
+    std::ofstream outfile(filename, std::ios::app);
+
+    // Check if the file was opened successfully
+    if (!outfile.is_open())
+    {
+        std::cerr << "Failed to open file for writing\n";
+    }
+
+    // Write data to the file
+    outfile << x << " " << y << " " << numerical_sol << " " << analytical_sol << "\n";
+
+    // Close the file
+    outfile.close();
+}
+
 // ===================== UTILITY | ERROR NORM  =====================
 amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velHat,
                                Array<MultiFab, AMREX_SPACEDIM>& velStar,
