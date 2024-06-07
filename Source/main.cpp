@@ -59,6 +59,8 @@ void main_main ()
 
     int target_resolution;
 
+    Real momentum_tolerance;
+
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Parsing Inputs =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     {
         // ParmParse is way of reading inputs from the inputs file
@@ -98,7 +100,11 @@ void main_main ()
         pp.queryarr("phy_bc_hi", phy_bc_hi);
 
         // Parsing the target resolution from input file
-        pp.get("target_resolution", target_resolution);
+        target_resolution = -1;
+        pp.query("target_resolution", target_resolution);
+
+        momentum_tolerance = 1.e-10;
+        pp.query("momentum_tolerance",momentum_tolerance);
     }
 
     Vector<int> is_periodic(AMREX_SPACEDIM, 0);
@@ -144,7 +150,7 @@ void main_main ()
     int Ncomp = 2;
 
     // Calculating number of step to reach the targeted resolution
-    int nsteps_target = n_cell/target_resolution - 1;
+    int nsteps_target = target_resolution == -1 ? 0 : n_cell/target_resolution - 1;
     amrex::Print() << "INFO| target resolution: " << target_resolution << "\n";
     amrex::Print() << "INFO| number of steps to reach the target resolution: " << nsteps_target << "\n";
 
@@ -344,9 +350,6 @@ void main_main ()
         Export_Flow_Field("pltInit", userCtx, velCart, ba, dm, geom, time, 0);
     }
 
-    // Setup stopping criteria
-    Real Tol = 1.0e-18;
-
     // Setup Runge-Kutta scheme coefficients
     int RungeKuttaOrder = 4;
     GpuArray<Real, MAX_RK_ORDER> rk;
@@ -379,16 +382,20 @@ void main_main ()
         // Momentum solver
         // MOMENTUM |1| Setup counter
         int countIter = 0;
-        Real normError = 1.0;
+        Real normError = 1.e99;
 
         // After debugging, all the code below will be modulized to the MOMENTUM module i.e.,:
         // momentum_km_runge_kutta();
         //-----------------------------------------------
         // This is the sub-iteration of the implicit RK4
         //-----------------------------------------------
-        while ( countIter < IterNum && normError > Tol )
+        while ( normError > momentum_tolerance )
         {
             countIter++;
+            if (countIter > IterNum) {
+                amrex::Print() << "Exceeded number of momenum iterations; exiting loop\n";
+                break;
+            }
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter
                            << " => normError = " << normError << "\n";
 

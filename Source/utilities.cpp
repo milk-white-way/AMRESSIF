@@ -189,8 +189,7 @@ amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velHat,
     Real yerror = velStarDiff[1].norm2(0, geom.periodicity());
     normError = std::max(xerror, yerror);
 #if (AMREX_SPACEDIM > 2)
-    Real zerror = velStarDiff[2].norminf(0, geom.periodicity());
-    // Real zerror = velImDiff[2].norminf(0, 0);
+    Real zerror = velStarDiff[2].norm2(0, geom.periodicity());
     normError = std::max(normError, zerror);
 #endif
 

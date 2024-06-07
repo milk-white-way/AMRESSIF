@@ -43,26 +43,28 @@ void enforce_boundary_conditions (MultiFab& velCart,
         amrex::Print() << "INFO| hi: " << hi << "\n";
 
 */
+        /*
         amrex::Print() << "INFO| x-smallEnd: " << vbx.smallEnd(0) << "\n";
         amrex::Print() << "INFO| x-bigEnd: " << vbx.bigEnd(0) << "\n";
 
         amrex::Print() << "INFO| y-smallEnd: " << vbx.smallEnd(1) << "\n";
         amrex::Print() << "INFO| y-bigEnd: " << vbx.bigEnd(1) << "\n"; 
+        */
     
         if (vbx.smallEnd(0) < lo) {
             if ( west_wall_bcs == -1 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( i < lo ) {
-                        amrex::Print() << "FILLING | Ghost Cell at i=" << i << " ; j=" << j << " ; k=" << k;
+                        // amrex::Print() << "FILLING | Ghost Cell at i=" << i << " ; j=" << j << " ; k=" << k;
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
                             vel_cart(i, j, k, dir) = - vel_cart(-i-1, j, k, dir);
                         }
                         
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                            amrex::Print() << " | " << vel_cart(i, j, k, dir);
+                            //amrex::Print() << " | " << vel_cart(i, j, k, dir);
                         }
-                        amrex::Print() << "\n";
+                        //amrex::Print() << "\n";
                     }
                 });
             } else if ( west_wall_bcs == 1 ) {
@@ -90,15 +92,15 @@ void enforce_boundary_conditions (MultiFab& velCart,
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( i > hi ) {
-                        amrex::Print() << "FILLING | Ghost Cell at i=" << i << " ; j=" << j << " ; k=" << k;
+                        // amrex::Print() << "FILLING | Ghost Cell at i=" << i << " ; j=" << j << " ; k=" << k;
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
                             vel_cart(i, j, k, dir) = - vel_cart(( (n_cell-i) + (n_cell-1) ), j, k, dir);
                         }
 
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                            amrex::Print() << " | " << vel_cart(i, j, k, dir);
+                            // amrex::Print() << " | " << vel_cart(i, j, k, dir);
                         }
-                        amrex::Print() << "\n";
+                        // amrex::Print() << "\n";
                     }
                 });
 
@@ -130,15 +132,15 @@ void enforce_boundary_conditions (MultiFab& velCart,
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( j < lo ) {
-                        amrex::Print() << "FILLING | Ghost Cell at i=" << i << " ; j=" << j << " ; k=" << k;
+                        // amrex::Print() << "FILLING | Ghost Cell at i=" << i << " ; j=" << j << " ; k=" << k;
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
                             vel_cart(i, j, k, dir) = - vel_cart(i, -j-1, k, dir);
                         }
 
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                            amrex::Print() << " | " << vel_cart(i, j, k, dir);
+                            // amrex::Print() << " | " << vel_cart(i, j, k, dir);
                         }
-                        amrex::Print() << "\n";
+                        // amrex::Print() << "\n";
                     }
                 });
             } else if ( south_wall_bcs == 1 ) {
@@ -166,15 +168,15 @@ void enforce_boundary_conditions (MultiFab& velCart,
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( j > hi ) {
-                        amrex::Print() << "FILLING | Ghost Cell at i=" << i << " ; j=" << j << " ; k=" << k;
+                        //amrex::Print() << "FILLING | Ghost Cell at i=" << i << " ; j=" << j << " ; k=" << k;
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
                             vel_cart(i, j, k, dir) = - vel_cart(i, ( (n_cell-j) + (n_cell-1) ), k, dir);
                         }
 
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                            amrex::Print() << " | " << vel_cart(i, j, k, dir);
+                            // amrex::Print() << " | " << vel_cart(i, j, k, dir);
                         }
-                        amrex::Print() << "\n";
+                        // amrex::Print() << "\n";
                     }
                 });
             } else if ( north_wall_bcs == 1 ) {

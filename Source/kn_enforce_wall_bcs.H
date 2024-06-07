@@ -188,7 +188,7 @@ void enforce_vel_bcs_west (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( i < 0 ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
         if ( j >= 0 && j <= (n_cell - 1) ) {
             if ( bcs == -1 ) {
                 for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
@@ -218,7 +218,7 @@ void enforce_vel_bcs_east (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( i > (n_cell - 1) ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
         if ( j >= 0 && j <= (n_cell - 1) ) {
             if ( bcs == -1 ) {
                 for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
@@ -248,7 +248,7 @@ void enforce_vel_bcs_south (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( j < 0 ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
         if ( i >= 0 && i <= (n_cell - 1) ) {
             if ( bcs == -1 ) {
                 for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
@@ -278,7 +278,7 @@ void enforce_vel_bcs_north (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( j > (n_cell - 1) ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
         if ( i >= 0 && i <= (n_cell - 1) ) {
             if ( bcs == -1 ) {
                 for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
@@ -463,7 +463,7 @@ void enforce_bcs_front (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( k < 0 ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
         if ( j == i || j == (n_cell - i) ) {
             for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
             {
@@ -485,7 +485,7 @@ void enforce_bcs_back (int i, int j, int k, int n_cell, int bcs,
     using amrex::Real;
 
     if ( k > (n_cell - 1) ) {
-        amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+        // amrex::Print() << "FILLING| Ghost Cell | at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
         if ( j == i || j == (n_cell - i) ) {
             for (int dir = 0; dir < AMREX_SPACEDIM; ++dir)
             {
