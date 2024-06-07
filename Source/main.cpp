@@ -50,16 +50,14 @@ void main_main ()
     // Porting extra params from Julian code
     Real ren, vis, cfl, fixed_dt;
 
-    // Declaring params for boundary conditon type
-    Vector<int> bc_lo(AMREX_SPACEDIM, 0);
-    Vector<int> bc_hi(AMREX_SPACEDIM, 0);
-
     // Physical boundary condition mapping
     // 0 is periodic
     // -1 is non-slip
     // 1 is slip
     Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
+
+    int target_resolution;
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Parsing Inputs =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     {
@@ -99,8 +97,8 @@ void main_main ()
         pp.queryarr("phy_bc_lo", phy_bc_lo);
         pp.queryarr("phy_bc_hi", phy_bc_hi);
 
-        pp.queryarr("bc_lo", bc_lo);
-        pp.queryarr("bc_hi", bc_hi);
+        // Parsing the target resolution from input file
+        pp.get("target_resolution", target_resolution);
     }
 
     Vector<int> is_periodic(AMREX_SPACEDIM, 0);
@@ -144,6 +142,11 @@ void main_main ()
     // userCtx(0) = Pressure
     // userCtx(1) = Phi
     int Ncomp = 2;
+
+    // Calculating number of step to reach the targeted resolution
+    int nsteps_target = n_cell/target_resolution - 1;
+    amrex::Print() << "INFO| target resolution: " << target_resolution << "\n";
+    amrex::Print() << "INFO| number of steps to reach the target resolution: " << nsteps_target << "\n";
 
     // How Boxes are distrubuted among MPI processes
     // Distribution mapping between the processors
@@ -193,33 +196,26 @@ void main_main ()
     {
         for(int idim = 0; idim < AMREX_SPACEDIM; ++idim)
         {
+            // If phy_bc_lo == 0 then 209
             //Internal Dirichlet Periodic Boundary conditions, or bc_lo = bc_hi = 0
-            if (bc_lo[idim] == BCType::int_dir) {
+            if (phy_bc_lo[idim] == 0) {
                 bc[n].setLo(idim, BCType::int_dir);
             }
                 //First Order Extrapolation for Neumann boundary conditions or bc_lo, bc_hi = 2
-            else if (bc_lo[idim] == BCType::foextrap) {
+            else if (std::abs(phy_bc_lo[idim]) == 1) {
                 bc[n].setLo(idim, BCType::foextrap);
-            }
-                //External Dirichlet Boundary Condition, or bc_lo, bc_hi = 3
-            else if(bc_lo[idim] == BCType::ext_dir) {
-                bc[n].setLo(idim, BCType::ext_dir);
             }
             else {
                 amrex::Abort("Invalid bc_lo");
             }
 
             //Internal Dirichlet Periodic Boundary conditions, or bc_lo = bc_hi = 0
-            if (bc_hi[idim] == BCType::int_dir) {
+            if (phy_bc_hi[idim] == 0) {
                 bc[n].setHi(idim, BCType::int_dir);
             }
                 //First Order Extrapolation for Neumann boundary conditions or bc_lo, bc_hi = 2
-            else if (bc_hi[idim] == BCType::foextrap) {
+            else if (std::abs(phy_bc_hi[idim]) == 1) {
                 bc[n].setHi(idim, BCType::foextrap);
-            }
-                //External Dirichlet Boundary Condition, or bc_lo, bc_hi = 3
-            else if(bc_hi[idim] == BCType::ext_dir) {
-                bc[n].setHi(idim, BCType::ext_dir);
             }
             else {
                 amrex::Abort("Invalid bc_hi");
@@ -408,7 +404,7 @@ void main_main ()
             {
                 // ---------------------- FLUX CALCULATION ----------------------
                 // RUNGE-KUTTA | Calculate Cell-centered Convective terms
-                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, bc_lo, bc_hi, geom, n_cell);
+                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, phy_bc_lo, phy_bc_hi, geom, n_cell);
 
                 // RUNGE-KUTTA | Calculate Cell-centered Viscous terms
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
@@ -735,12 +731,84 @@ void main_main ()
             Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
 
             // Construct the filename for this iteration
-            std::string hline_filename = "output_hline_" + std::to_string(n) + ".txt";
-            std::string vline_filename = "output_vline_" + std::to_string(n) + ".txt";
+            std::string hline_filename = std::to_string(n_cell) + "n_cell-output_hline_" + std::to_string(n) + ".txt";
+            std::string vline_filename = std::to_string(n_cell) + "n_cell-output_vline_" + std::to_string(n) + ".txt";
 
             // Export predefined line
             GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
             GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+
+            // Here is an interpolation algorithm for contravariant velocity components
+            // Only inner domain values are interpolated using 6 points stencil
+            amrex::Print() << "==================== INTERPOLATION TO TARGET RESOLUTION ==================== \n";
+            if ( nsteps_target == 0 ) {
+                amrex::Print() << "INFO| Already at the target resolution. \n";
+            } else {
+                int current_resolution = n_cell;
+
+                for ( int coarse = 1; coarse <= nsteps_target; ++coarse )
+                {
+                    current_resolution = n_cell/(2*coarse);
+                    amrex::Print() << "INFO| At level " << coarse << "/" << nsteps_target << " and n_cell = " << current_resolution << "\n";
+                    
+                    // Interpolation at each coarsening step
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+                    for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
+                    {
+                        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+                        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+                        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+                        auto const& vel_cont_x = velCont[0].array(mfi);
+                        auto const& vel_cont_y = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+                        auto const& vel_cont_z = velCont[2].array(mfi);
+#endif
+                        amrex::ParallelFor(xbx,
+                                        [=] AMREX_GPU_DEVICE(int i, int j, int k){
+                            if ( i > 0 && i < xbx.bigEnd(0) && i%2 == 0 && j%2 != 0 )
+                            {
+                                
+                                auto const& interp_vel_cont_x = amrex::Real(1/6)*( vel_cont_x(i, j, k) + vel_cont_x(i+1, j, k) + vel_cont_x(i-1, j, k) + vel_cont_x(i, j-1, k) + vel_cont_x(i+1, j-1, k) + vel_cont_x(i-1, j-1, k) );
+
+                                if ( current_resolution == target_resolution ) {
+                                    int const& ii = i/2;
+                                    amrex::Real x = prob_lo[0] + (ii + Real(0.0)) * dx[0];
+                                    amrex::Print() << x << "\n";
+                                    if ( x == 0.250 ) {
+                                        write_interp_line_solution(interp_vel_cont_x, hline_filename);
+                                    }
+                                }
+                            }
+                        });
+                        amrex::ParallelFor(ybx,
+                                        [=] AMREX_GPU_DEVICE(int i, int j, int k){
+                            if ( j > 0 && j < ybx.bigEnd(1) && j%2 == 0 && i%2 != 0 )
+                            {
+                                auto const& interp_vel_cont_y = amrex::Real(1/6)*( vel_cont_y(i, j, k) + vel_cont_y(i, j+1, k) + vel_cont_y(i, j-1, k) + vel_cont_y(i-1, j, k) + vel_cont_y(i-1, j+1, k) + vel_cont_y(i-1, j-1, k) );
+
+                                if ( current_resolution == target_resolution ) {
+                                    int const& jj = j/2;
+                                    amrex::Real y = prob_lo[1] + (jj + Real(0.0)) * dx[1];
+                                    amrex::Print() << y << "\n";
+                                    if ( y == 0.250 ) {
+                                        write_interp_line_solution(interp_vel_cont_y, vline_filename);
+                                    }
+                                }
+                            }
+                        });
+#if (AMREX_SPACEDIM > 2)
+                        amrex::ParallelFor(zbx,
+                                        [=] AMREX_GPU_DEVICE(int i, int j, int k){
+                            vel_cont_z(i, j, k) = amrex::Real(1.0);
+                        });
+#endif
+                    }
+                }
+            }
 
             // Initialize velocity components at face centers
 #ifdef AMREX_USE_OMP
@@ -764,13 +832,13 @@ void main_main ()
                     amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
             
                     if ( x == 0.250 ) {
-                        amrex::Print() << x << " ";
-                        amrex::Print() << y << " ";
-                        amrex::Print() << vel_cont_x(i, j, k) << "\n";
+                        //amrex::Print() << x << " ";
+                        //amrex::Print() << y << " ";
+                        //amrex::Print() << vel_cont_x(i, j, k) << "\n";
 
                         amrex::Real const& analytical_vel_cont_x = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
 
-                        write_anyline_solution(x, y, vel_cont_x(i, j, k), analytical_vel_cont_x, hline_filename);
+                        write_exact_line_solution(x, y, vel_cont_x(i, j, k), analytical_vel_cont_x, hline_filename);
                     }
                 });
                 amrex::ParallelFor(ybx,
@@ -779,13 +847,13 @@ void main_main ()
                     amrex::Real y = prob_lo[1] + (j + Real(0.0)) * dx[1];
 
                     if ( y == 0.250 ) {
-                        amrex::Print() << x << " ";
-                        amrex::Print() << y << " ";
-                        amrex::Print() << vel_cont_y(i, j, k) << "\n";
+                        //amrex::Print() << x << " ";
+                        //amrex::Print() << y << " ";
+                        //amrex::Print() << vel_cont_y(i, j, k) << "\n";
 
                         amrex::Real const& analytical_vel_cont_y = -std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
 
-                        write_anyline_solution(x, y, vel_cont_y(i, j, k), analytical_vel_cont_y, vline_filename);
+                        write_exact_line_solution(x, y, vel_cont_y(i, j, k), analytical_vel_cont_y, vline_filename);
                     }
                 });
 #if (AMREX_SPACEDIM > 2)

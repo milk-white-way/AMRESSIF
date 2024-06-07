@@ -91,21 +91,14 @@ void cont2cart (MultiFab& velCart,
 }
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
-void write_midline_solution (Real const& midx,
-                             Real const& midy,
-                             Real const& mdlu,
-                             Real const& mdlv,
-                             Real const& mdlp,
-                             double const& anau,
-                             double const& anav,
-                             double const& anap,
-                             int const& current_step)
+void write_interp_line_solution (Real const& interp_sol,
+                                 std::string const& filename)
 {
     // Construct the filename for this iteration
-    std::string filename = "midline_" + std::to_string(current_step) + ".txt";
+    std::string interp_filename = "interp_" + filename;
 
     // Open a file for writing
-    std::ofstream outfile(filename, std::ios::app);
+    std::ofstream outfile(interp_filename, std::ios::app);
 
     // Check if the file was opened successfully
     if (!outfile.is_open())
@@ -114,17 +107,17 @@ void write_midline_solution (Real const& midx,
     }
 
     // Write data to the file
-    outfile << midx << " " << midy << " " << mdlu << " " << mdlv << " " << mdlp << " " << anau << " " << anav << " " << anap << "\n";
+    outfile << interp_sol << "\n";
 
     // Close the file
     outfile.close();
 }
 
-void write_anyline_solution (Real const& x,
-                             Real const& y,
-                             Real const& numerical_sol,
-                             Real const& analytical_sol,
-                             std::string const& filename)
+void write_exact_line_solution (Real const& x,
+                                Real const& y,
+                                Real const& numerical_sol,
+                                Real const& analytical_sol,
+                                std::string const& filename)
 {
     // Open a file for writing
     std::ofstream outfile(filename, std::ios::app);

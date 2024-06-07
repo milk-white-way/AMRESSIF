@@ -14,21 +14,14 @@ void cont2cart (amrex::MultiFab& velCart,
                 amrex::Geometry const& geom);
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
-void write_midline_solution (amrex::Real const& midx,
-                             amrex::Real const& midy,
-                             amrex::Real const& mdlu,
-                             amrex::Real const& mdlv,
-                             amrex::Real const& mdlp,
-                             double const& anau,
-                             double const& anav,
-                             double const& anap,
-                             int const& current_step);
+void write_interp_line_solution (amrex::Real const& interp_sol,
+                                 std::string const& filename);
 
-void write_anyline_solution (amrex::Real const& x,
-                             amrex::Real const& y,
-                             amrex::Real const& num_sol,
-                             amrex::Real const& ana_sol,
-                             std::string const& filename);
+void write_exact_line_solution (amrex::Real const& x,
+                                amrex::Real const& y,
+                                amrex::Real const& num_sol,
+                                amrex::Real const& ana_sol,
+                                std::string const& filename);
 
 // ===================== UTILITY | EXPORT  =====================
 void Export_Fluxes (amrex::MultiFab& fluxConvect,
