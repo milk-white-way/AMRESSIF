@@ -421,6 +421,7 @@ void main_main ()
 
                 // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
                 total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
+                fluxTotal.FillBoundary(geom.periodicity());
 
                 // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 momentum_righthand_side_calc(momentum_rhs, fluxTotal);
