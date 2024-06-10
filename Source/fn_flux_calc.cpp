@@ -82,9 +82,11 @@ void convective_flux_calc ( MultiFab& fluxConvect,
                 auto const& ucat_y_p  = vcart(i  , j, k, 1);
                 auto const& ucat_y_e  = vcart(i+1, j, k, 1);
 
-                fluxx_xcont(i, j, k) = up * ( alp * (ucat_x_p + ucat_x_w) - bet * (ucat_x_ww - 2*ucat_x_w + ucat_x_p) )  + um * ( alp * (ucat_x_p + ucat_x_w) - bet * (ucat_x_w - 2*ucat_x_p + ucat_x_e) );
+                fluxx_xcont(i, j, k) = up * ( alp * (ucat_x_p + ucat_x_w) - bet * (ucat_x_ww - 2*ucat_x_w + ucat_x_p) )
+                                     + um * ( alp * (ucat_x_p + ucat_x_w) - bet * (ucat_x_w - 2*ucat_x_p + ucat_x_e) );
 
-                fluxy_xcont(i, j, k) = up * ( alp * (ucat_y_p + ucat_y_w) - bet * (ucat_y_ww - 2*ucat_y_w + ucat_y_p) )  + um * ( alp * (ucat_y_p + ucat_y_w) - bet * (ucat_y_w - 2*ucat_y_p + ucat_y_e) );
+                fluxy_xcont(i, j, k) = up * ( alp * (ucat_y_p + ucat_y_w) - bet * (ucat_y_ww - 2*ucat_y_w + ucat_y_p) )
+                                     + um * ( alp * (ucat_y_p + ucat_y_w) - bet * (ucat_y_w - 2*ucat_y_p + ucat_y_e) );
             } else {
                 compute_halfnode_convective_flux_x_contrib_wall(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, bet, n_cell);
             }
@@ -109,9 +111,11 @@ void convective_flux_calc ( MultiFab& fluxConvect,
                 auto const& ucat_y_p  = vcart(i, j  , k, 1);
                 auto const& ucat_y_n  = vcart(i, j+1, k, 1);
 
-                fluxx_ycont(i, j, k) = um * ( alp * (ucat_x_p + ucat_x_s) - bet * (ucat_x_ss - 2*ucat_x_s + ucat_x_p) )  + up * ( alp * (ucat_x_p + ucat_x_s) - bet * (ucat_x_s - 2*ucat_x_p + ucat_x_n) );
+                fluxx_ycont(i, j, k) = um * ( alp * (ucat_x_p + ucat_x_s) - bet * (ucat_x_ss - 2*ucat_x_s + ucat_x_p) )
+                                     + up * ( alp * (ucat_x_p + ucat_x_s) - bet * (ucat_x_s - 2*ucat_x_p + ucat_x_n) );
                 
-                fluxy_ycont(i, j, k) = um * ( alp * (ucat_y_p + ucat_y_s) - bet * (ucat_y_ss - 2*ucat_y_s + ucat_y_p) )  + up * ( alp * (ucat_y_p + ucat_y_s) - bet * (ucat_y_s - 2*ucat_y_p + ucat_y_n) );
+                fluxy_ycont(i, j, k) = um * ( alp * (ucat_y_p + ucat_y_s) - bet * (ucat_y_ss - 2*ucat_y_s + ucat_y_p) )
+                                     + up * ( alp * (ucat_y_p + ucat_y_s) - bet * (ucat_y_s - 2*ucat_y_p + ucat_y_n) );
             } else {
                 compute_halfnode_convective_flux_y_contrib_wall(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, bet, n_cell);
             }
