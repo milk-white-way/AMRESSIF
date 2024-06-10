@@ -638,7 +638,6 @@ void main_main ()
         }
 
         // POISSON |2| Init Phi at the begining of the Poisson solver
-        poisson_sol.setVal(0.0);
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
         amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
 
