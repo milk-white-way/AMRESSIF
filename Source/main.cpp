@@ -699,8 +699,6 @@ void main_main ()
 #endif
         }
 
-        // Before benchmarking, making sure that halo regions are updated
-        analyticSol.FillBoundary(geom.periodicity());
         analytic_solution_calc(analyticSol, geom, time);
 
         {
@@ -727,6 +725,8 @@ void main_main ()
             {
                 const std::string &analytic_export = amrex::Concatenate("pltAnalytic", n, 5);
                 WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, time, n);
+                const std::string &diff_export = amrex::Concatenate("pltDiff", n, 5);
+                WriteSingleLevelPlotfile(diff_export, l2norm, {"U", "V", "pressure"}, geom, time, n);
                 const std::string &benchmark_error_export = amrex::Concatenate("pltBenchmark", n, 5);
                 WriteSingleLevelPlotfile(benchmark_error_export, l2norm, {"x-vel-err-norm", "y-vel-err-norm", "pressure-err-norm"}, geom, time, n);
             }
