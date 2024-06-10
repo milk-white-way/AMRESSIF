@@ -52,12 +52,8 @@ void poisson_advance( MultiFab& poisson_sol,
  * (I - div dt grad) phi^{n+1} = phi^n
 */
 
-    // Fill the ghost cells of each grid from the other grids
-    // includes periodic domain boundaries
-    poisson_sol.FillBoundary(geom.periodicity());
-
-    // Fill non-periodic physical boundaries
-    //FillDomainBoundary(poisson_sol, geom, bc);
+    // initialize valid and ghost region to zero
+    poisson_sol.setVal(0.0);
 
     // assorment of solver and parallization options and parameters
     // see AMReX_MLLinOp.H for the defaults, accessors, and mutators
@@ -167,7 +163,6 @@ void poisson_advance( MultiFab& poisson_sol,
 
     // Solve linear system
     mlmg.solve({&poisson_sol}, {&poisson_rhs}, tol_rel, tol_abs);
-    //Real solve(amrex::MultiFab& poisson_sol, amrex::MultiFab& poisson_rhs, amrex::Real tol_rel, amrex::Real tol_abs);
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++

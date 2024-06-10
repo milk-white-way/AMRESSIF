@@ -175,19 +175,19 @@ void main_main ()
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, 0);
 
     // Three type of fluxes contributing the the total flux live in the cell center
-    MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab fluxViscous(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, 0);
+    MultiFab fluxViscous(ba, dm, AMREX_SPACEDIM, 0);
+    MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, 0);
 
     MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, Nghost);
 
-    MultiFab poisson_rhs(ba, dm, 1, 1);
+    MultiFab poisson_rhs(ba, dm, 1, 0);
     MultiFab poisson_sol(ba, dm, 1, 1);
 
-    MultiFab analyticSol(ba, dm, 3, 1);
+    MultiFab analyticSol(ba, dm, 3, 0);
 
     MultiFab l2norm(ba, dm, 3, 0);
     // Comp 0 is velocity field along x-axis
@@ -639,7 +639,6 @@ void main_main ()
 
         // POISSON |2| Init Phi at the begining of the Poisson solver
         poisson_sol.setVal(0.0);
-        poisson_sol.FillBoundary(geom.periodicity());
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
         amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
 
