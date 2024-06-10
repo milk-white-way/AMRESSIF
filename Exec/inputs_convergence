@@ -7,19 +7,19 @@ fixed_dt = 8.e-6
 nsteps = 25
 plot_int = 25
 n_cell = 256
-max_grid_size = 256
+max_grid_size = 128
 
 #fixed_dt = 4.e-6
 #nsteps = 50
 #plot_int = 50
 #n_cell = 256
-#max_grid_size = 256
+#max_grid_size = 128
 
 #fixed_dt = 2.e-6
 #nsteps = 100
 #plot_int = 100
 #n_cell = 256
-#max_grid_size = 256
+#max_grid_size = 128
 ##########################
 
 ##########################
@@ -29,19 +29,19 @@ max_grid_size = 256
 #nsteps = 100
 #plot_int = 100
 #n_cell = 64
-#max_grid_size = 64
+#max_grid_size = 32
 
 #fixed_dt = 2.e-6
 #nsteps = 100
 #plot_int = 100
 #n_cell = 128
-#max_grid_size = 128
+#max_grid_size = 64
 
 #fixed_dt = 2.e-6
 #nsteps = 100
 #plot_int = 100
 #n_cell = 256
-#max_grid_size = 256
+#max_grid_size = 128
 ##########################
 
 ##########################
@@ -51,19 +51,19 @@ max_grid_size = 256
 #nsteps = 25
 #plot_int = 25
 #n_cell = 64
-#max_grid_size = 64
+#max_grid_size = 32
 
 #fixed_dt = 4.e-6
 #nsteps = 50
 #plot_int = 50
 #n_cell = 128
-#max_grid_size = 128
+#max_grid_size = 64
 
 #fixed_dt = 2.e-6
 #nsteps = 100
 #plot_int = 100
 #n_cell = 256
-#max_grid_size = 256
+#max_grid_size = 128
 ##########################
 
 IterNum = 100
