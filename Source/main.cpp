@@ -716,9 +716,17 @@ void main_main ()
             //amrex::Print() << my_domain.length(0) << "\n";
             //amrex::Print() << my_domain.length(1) << "\n";
 
+            amrex::Print() << "BENCHMARKING| L0 ERROR NORM for x-velocity: " << l2norm.norm0(0) << "\n";
+            amrex::Print() << "BENCHMARKING| L0 ERROR NORM for y-velocity: " << l2norm.norm0(1) << "\n";
+            amrex::Print() << "BENCHMARKING| L0 ERROR NORM for pressure:   " << l2norm.norm0(2) << "\n";
+
+            amrex::Print() << "BENCHMARKING| L1 ERROR NORM for x-velocity: " << l2norm.norm1(0)/npts << "\n";
+            amrex::Print() << "BENCHMARKING| L1 ERROR NORM for y-velocity: " << l2norm.norm1(1)/npts << "\n";
+            amrex::Print() << "BENCHMARKING| L1 ERROR NORM for pressure:   " << l2norm.norm1(2)/npts << "\n";
+
             amrex::Print() << "BENCHMARKING| L2 ERROR NORM for x-velocity: " << l2norm.norm2(0)/std::sqrt(npts) << "\n";
             amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1)/std::sqrt(npts) << "\n";
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure: " << l2norm.norm2(2)/std::sqrt(npts) << "\n";
+            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure:   " << l2norm.norm2(2)/std::sqrt(npts) << "\n";
 
             if (plot_int > 0 && n%plot_int == 0)
             {
@@ -726,8 +734,6 @@ void main_main ()
                 WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, time, n);
                 const std::string &diff_export = amrex::Concatenate("pltDiff", n, 5);
                 WriteSingleLevelPlotfile(diff_export, l2norm, {"U", "V", "pressure"}, geom, time, n);
-                const std::string &benchmark_error_export = amrex::Concatenate("pltBenchmark", n, 5);
-                WriteSingleLevelPlotfile(benchmark_error_export, l2norm, {"x-vel-err-norm", "y-vel-err-norm", "pressure-err-norm"}, geom, time, n);
             }
         } // End of benchmark
 
