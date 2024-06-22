@@ -523,6 +523,7 @@ void main_main ()
                         xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_x(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
                         
                         // Boundary check:
+                        // FIXME
                         if (i == 0 || i == xbx.bigEnd(0)) {
                             xrhs(i, j, k) = xrhs(i, j, k);
                         }
@@ -537,6 +538,8 @@ void main_main ()
                                        [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                         yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_y(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
                         
+                        // Boundary check:
+                        // FIXME
                         if (j == 0 || j == ybx.bigEnd(1)) {
                             yrhs(i, j, k) = yrhs(i, j, k);
                         }
@@ -556,9 +559,12 @@ void main_main ()
                 // ------------------ FORMING BOUNDARY CONDITIONS ------------------
                 // RUNGE-KUTTA | Update velCart from velHat
                 cont2cart(velCart, velHat, geom);
-                // RUNGE-KUTTA | Enforce the boundary conditions on non-staggered grid
+                // RUNGE-KUTTA | Enforce periodic boundary conditions on non-staggered grid
                 velCart.FillBoundary(geom.periodicity());
+
                 // RUNGE-KUTTA | Interpolate the boundary conditions to staggered grid
+                // FIXME THIS IS NOT RIGHT
+                /*
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -600,6 +606,8 @@ void main_main ()
                     });
 #endif
                 }
+                */
+
             } // RUNGE-KUTTA | END
 
             // RUNGE-KUTTA | Calculate the error norm
