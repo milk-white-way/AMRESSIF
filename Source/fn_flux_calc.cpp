@@ -224,13 +224,16 @@ void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
             compute_pressure_gradient_periodic(i, j, k, presgrad_flux, dx, pressurefield);
         });
     }
+
+    fluxPrsGrad.FillBoundary(geom.periodicity());
 }
 
 // +++++++++++++++++++++++++ Total Flux  +++++++++++++++++++++++++
 void total_flux_calc ( MultiFab& fluxTotal,
                        MultiFab& fluxConvect,
                        MultiFab& fluxViscous,
-                       MultiFab& fluxPrsGrad )
+                       MultiFab& fluxPrsGrad,
+                       const Geometry& geom)
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -250,4 +253,8 @@ void total_flux_calc ( MultiFab& fluxTotal,
             compute_total_flux(i, j, k, total_flux, conv_flux, visc_flux, prsgrad_flux);
         });
     }
+
+    fluxTotal.FillBoundary(geom.periodicity());
+    // FIXME zero fluxes on walls
+
 }

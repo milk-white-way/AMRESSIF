@@ -364,8 +364,6 @@ void main_main ()
     //+++++++++++++++++++++++++++++++++++++++++++++++++++
     //+++++++++++++++   Begin time loop +++++++++++++++++
     //+++++++++++++++++++++++++++++++++++++++++++++++++++
-    userCtx.FillBoundary(geom.periodicity());
-    velCart.FillBoundary(geom.periodicity());
     for (int n = 1; n <= nsteps; ++n)
     {
         amrex::Print() << "============================ ADVANCE STEP " << n << " ============================ \n";
@@ -422,8 +420,7 @@ void main_main ()
                 pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
 
                 // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad);
-                fluxTotal.FillBoundary(geom.periodicity());
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, geom);
 
                 // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 momentum_righthand_side_calc(momentum_rhs, fluxTotal);
@@ -566,52 +563,6 @@ void main_main ()
                 // RUNGE-KUTTA | Update velCart from velHat
                 cont2cart(velCart, velHat, geom);
 
-                // RUNGE-KUTTA | Interpolate the boundary conditions to staggered grid
-                // FIXME I don't know what is going on here but you need to check whether you are at a wall
-                /*
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-                for ( MFIter mfi(velHat[0]); mfi.isValid(); ++mfi )
-                {
-                    Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-                    Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-                    Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
-
-                    auto const& vel_hat_x = velHat[0].array(mfi);
-                    auto const& vel_hat_y = velHat[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const& vel_hat_z = velHat[2].array(mfi);
-#endif
-                    auto const& vel_cart = velCart.array(mfi);
-
-                    amrex::ParallelFor(xbx,
-                                       [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                        if (i == 0 || i == xbx.bigEnd(0)) {
-                            vel_hat_x(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
-                        }
-                    });
-
-                    amrex::ParallelFor(ybx,
-                                       [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                        if (j == 0 || j == ybx.bigEnd(1)) {
-                            vel_hat_y(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
-                        }
-                    });
-
-#if (AMREX_SPACEDIM > 2)
-                    amrex::ParallelFor(ybx,
-                                       [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                        if (k == 0 || k == zbx.bigEnd(2)) {
-                            vel_hatt_z(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 2) + vel_cart(i, j, k-1, 2) );
-                        }
-                    });
-#endif
-                }
-                */
-
             } // RUNGE-KUTTA | END
 
             // RUNGE-KUTTA | Calculate the error norm
@@ -655,6 +606,7 @@ void main_main ()
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
         userCtx.FillBoundary(geom.periodicity());
+        // FIXME add wall case
 
         // Update the solution
         // u_i^{n+1} = \hat{u}_i- 2dt/3 * grad(\phi^{n+1})
@@ -663,6 +615,7 @@ void main_main ()
         // (userCtx(comp=0) += userCtx(comp=1))
         // also update velContDiff = velCont-velContPrev
         update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, dt);
+        userCtx.FillBoundary(geom.periodicity());
         amrex::Print() << "SOLVING| finished updating all fields \n";
 
         // Update velCart from the velCont solutions
