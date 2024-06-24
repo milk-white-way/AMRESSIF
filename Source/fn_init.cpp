@@ -83,6 +83,7 @@ void staggered_grid_initial_config (MultiFab& userCtx,
             init_userCtx(i, j, k, ctx, dx, prob_lo);
         });
     }
+    userCtx.FillBoundary(geom.periodicity());
 }
 
 

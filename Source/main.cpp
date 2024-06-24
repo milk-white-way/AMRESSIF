@@ -416,7 +416,6 @@ void main_main ()
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
 
                 // RUNGE-KUTTA | Calculate Cell-centered Pressure Gradient terms
-                userCtx.FillBoundary(geom.periodicity());
                 pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
 
                 // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
