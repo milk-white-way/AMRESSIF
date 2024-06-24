@@ -35,9 +35,12 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
             xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
 
+            // FIXME - check walls
+            /*
             if (i == 0 || i == xbx.bigEnd(0)) {
                 xrhs(i, j, k) = amrex::Real(0.0);
             }
+            */
 
             //if (i == 1) {
             //    xrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i-1, j, k, 0) + 6*total_flux(i, j, k, 0) - total_flux(i+1, j, k, 0) );
@@ -49,10 +52,13 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
             yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
-            
+
+            // FIXME - check walls
+            /*
             if (j == 0 || j == ybx.bigEnd(1)) {
                 yrhs(i, j, k) = amrex::Real(0.0);
             }
+            */
             //if (j == 1) {
             //    yrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j-1, k, 1) + 6*total_flux(i, j, k, 1) - total_flux(i, j+1, k, 1) );
             //} else {
@@ -62,14 +68,13 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
+            // FIXME - check walls
+            /*
             if (k == 0 || k == zbx.bigEnd(2)) {
                 zrhs(i, j, k) = amrex::Real(0.0);
-            //} else if (k == 1) {
-            //    zrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k-1, 2) + 6*total_flux(i, j, k, 2) - total_flux(i, j, k+1, 2) );
-            } else {
-            //    zrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k, 2) + 6*total_flux(i, j, k-1, 2) - total_flux(i, j, k-2, 2) );
-                zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
             }
+            */
         });
 #endif
     }
