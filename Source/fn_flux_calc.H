@@ -29,7 +29,8 @@ void pressure_gradient_calc (amrex::MultiFab& fluxPrsGrad,
 void total_flux_calc (amrex::MultiFab& fluxTotal,
                       amrex::MultiFab& fluxConvect,
                       amrex::MultiFab& fluxViscous,
-                      amrex::MultiFab& fluxPrsGrad);
+                      amrex::MultiFab& fluxPrsGrad,
+                      amrex::Geometry const& geom);
 
 
 #endif
