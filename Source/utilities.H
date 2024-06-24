@@ -6,12 +6,13 @@
 #include <fstream>
 
 // ===================== UTILITY | CONVERSION  =====================
-void cart2cont (amrex::MultiFab& velCart,
-                amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont);
-
 void cont2cart (amrex::MultiFab& velCart,
                 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-                amrex::Geometry const& geom);
+                amrex::Geometry const& geom,
+                int const& Nghost,
+                amrex::Vector<int> const& phy_bc_lo,
+                amrex::Vector<int> const& phy_bc_hi,
+                int const& n_cell);
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
 void write_interp_line_solution (amrex::Real const& interp_sol,

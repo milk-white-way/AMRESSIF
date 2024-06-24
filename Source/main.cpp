@@ -1,3 +1,13 @@
+/**
+ * @file main.cpp
+ * @author Thien-Tam Nguyen (tam.thien.nguyen@ndsu.edu)
+ * @brief This is the main code
+ * @version 0.3
+ * @date 2024-06-24
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 // =================== LISTING KERNEL HEADERS ==============================
 #include <AMReX_Gpu.H>
 #include <AMReX_Utility.H>
@@ -13,7 +23,6 @@
 
 // Modulization library
 #include "fn_init.H"
-#include "fn_enforce_wall_bcs.H"
 #include "fn_flux_calc.H"
 #include "fn_rhs.H"
 #include "momentum.H"
@@ -104,7 +113,7 @@ void main_main ()
         pp.query("target_resolution", target_resolution);
 
         momentum_tolerance = 1.e-10;
-        pp.query("momentum_tolerance",momentum_tolerance);
+        pp.query("momentum_tolerance", momentum_tolerance);
     }
 
     Vector<int> is_periodic(AMREX_SPACEDIM, 0);
@@ -175,7 +184,8 @@ void main_main ()
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, 0);
+    MultiFab velCartPrev(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);
 
     // Three type of fluxes contributing the the total flux live in the cell center
     MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, 0);
@@ -244,14 +254,6 @@ void main_main ()
      *                      velCont[2]
      *
      */
-
-    //------------------------------------------------------
-    // 1 of 4 options: 'pressure', 'phi', 'flux', 'velocity'
-    //------------------------------------------------------
-    const std::string& type1 = "pressure";
-    const std::string& type2 = "phi";
-    const std::string& type3 = "flux";
-    const std::string& type4 = "velocity";
 
     // Contravariant velocities live in the face center
     Array<MultiFab, AMREX_SPACEDIM> velCont;
@@ -327,20 +329,17 @@ void main_main ()
     amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
     amrex::Print() << "PARAMS| number of components for each array: " << Ncomp << "\n";
 
-    //--------------------------------------------------------------------------------------//
-    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------//
-    //--------------------------------------------------------------------------------------//
+    /**--------------------------------------------------------------------------------------
+     * =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------
+     *--------------------------------------------------------------------------------------
+     */
 
     amrex::Print() << "========================= INITIALIZATION STEP ========================= \n";
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
-    staggered_grid_initial_config(userCtx, velCont, velContDiff, geom);
+    staggered_grid_initial_config(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, dt, n_cell);
     // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
     // velCont is the main variable to be used in the momentum solver
-    cont2cart(velCart, velCont, geom);
-
-    // FIXME - this routine should be added to the end of cont2cart
-    enforce_boundary_conditions(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
 
@@ -349,6 +348,8 @@ void main_main ()
     if (plot_int > 0)
     {
         Export_Flow_Field("pltInit", userCtx, velCart, ba, dm, geom, time, 0);
+        Export_Flow_Field("pltInitPrev", userCtx, velCartPrev, ba, dm, geom, time, 0);
+        Export_Flow_Field("pltInitDiff", userCtx, velCartDiff, ba, dm, geom, time, 0);
     }
 
     // Setup Runge-Kutta scheme coefficients
@@ -560,7 +561,7 @@ void main_main ()
 
                 // ------------------ FORMING BOUNDARY CONDITIONS ------------------
                 // RUNGE-KUTTA | Update velCart from velHat
-                cont2cart(velCart, velHat, geom);
+                cont2cart(velCart, velHat, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
             } // RUNGE-KUTTA | END
 
@@ -579,7 +580,7 @@ void main_main ()
         // MOMENTUM |4| PLOTTING
         // This is just for debugging only !
         //---------------------------------------
-        cont2cart(velCart, velStar, geom);
+        cont2cart(velCart, velStar, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
         if (plot_int > 0 && n%plot_int == 0)
         {
             Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
@@ -618,51 +619,7 @@ void main_main ()
         amrex::Print() << "SOLVING| finished updating all fields \n";
 
         // Update velCart from the velCont solutions
-        cont2cart(velCart, velCont, geom);
-
-/* FIXME - need logic to check whether the bc is actually a wall
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-        for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
-        {
-            Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-            Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-            Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
-
-            auto const& vel_cont_x = velCont[0].array(mfi);
-            auto const& vel_cont_y = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-            auto const& vel_cont_z = velCont[2].array(mfi);
-#endif
-            auto const& vel_cart = velCart.array(mfi);
-
-            amrex::ParallelFor(xbx,
-                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                if (i == 0 || i == xbx.bigEnd(0)) {
-                    vel_cont_x(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
-                }
-            });
-
-            amrex::ParallelFor(ybx,
-                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                if (j == 0 || j == ybx.bigEnd(1)) {
-                    vel_cont_y(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
-                }
-            });
-
-#if (AMREX_SPACEDIM > 2)
-            amrex::ParallelFor(ybx,
-                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                if (k == 0 || k == zbx.bigEnd(2)) {
-                    vel_cont_z(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 2) + vel_cart(i, j, k-1, 2) );
-                }
-            });
-#endif
-        }
-*/
+        cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         analytic_solution_calc(analyticSol, geom, time);
 

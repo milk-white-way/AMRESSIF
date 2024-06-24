@@ -1,17 +1,45 @@
+/**
+ * @file fn_init.cpp
+ * @author milk-white-way (tam.thien.nguyen@ndsu.edu)
+ * @brief 
+ * @version 0.3
+ * @date 2024-06-24
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include <AMReX_MultiFabUtil.H>
 
 #include "fn_init.H"
 #include "kn_init.H"
+#include "utilities.H"
 
 using namespace amrex;
 // ================================= MODULE | INITIALIZATION =================================
+
 /**
- * ... This is the inititialization module ...
+ * @brief This function initializes the velocity components at face centers and the pressure components at cell centers.
+ * 
+ * @param userCtx 
+ * @param velCont 
+ * @param velContPrev 
+ * @param velContDiff 
+ * @param geom 
  */
 void staggered_grid_initial_config (MultiFab& userCtx,
                                     Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                                    Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
                                     Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
-                                    Geometry const& geom)
+                                    MultiFab& velCart,
+                                    MultiFab& velCartPrev,
+                                    MultiFab& velCartDiff,
+                                    Geometry const& geom,
+                                    int const& Nghost,
+                                    Vector<int> const& phy_bc_lo,
+                                    Vector<int> const& phy_bc_hi,
+                                    Real const& dt,
+                                    int const& n_cell)
+
 {
     GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
     GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
@@ -33,6 +61,12 @@ void staggered_grid_initial_config (MultiFab& userCtx,
         auto const& vel_cont_z = velCont[2].array(mfi);
 #endif
 
+        auto const& vel_cont_prev_x = velContPrev[0].array(mfi);
+        auto const& vel_cont_prev_y = velContPrev[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& vel_cont_prev_z = velContPrev[2].array(mfi);
+#endif
+
         auto const& vel_cont_diff_x = velContDiff[0].array(mfi);
         auto const& vel_cont_diff_y = velContDiff[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
@@ -47,7 +81,9 @@ void staggered_grid_initial_config (MultiFab& userCtx,
             vel_cont_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
             //vel_cont_x(i, j, k) = amrex::Real(1.0);
 
-            vel_cont_diff_x(i, j, k) = amrex::Real(0.0);
+            vel_cont_prev_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (Real(0.0) - dt));
+
+            vel_cont_diff_x(i, j, k) = vel_cont_x(i, j, k) - vel_cont_prev_x(i, j, k);
         });
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k){
@@ -57,7 +93,9 @@ void staggered_grid_initial_config (MultiFab& userCtx,
             vel_cont_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
             //vel_cont_y(i, j, k) = amrex::Real(1.0);
 
-            vel_cont_diff_y(i, j, k) = amrex::Real(0.0);
+            vel_cont_prev_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (Real(0.0) - dt));
+
+            vel_cont_diff_y(i, j, k) = vel_cont_y(i, j, k) - vel_cont_prev_y(i, j, k);
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
@@ -68,6 +106,14 @@ void staggered_grid_initial_config (MultiFab& userCtx,
         });
 #endif
     }
+
+    /**
+     * @brief After all contravariant velocity components are initialized, their cartesian velocity counterparts are interpolated.
+     * 
+     */
+    cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    cont2cart(velCartPrev, velContPrev, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    cont2cart(velCartDiff, velContDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
 // Initialize pressure components at celll centers
 #ifdef AMREX_USE_OMP
@@ -83,6 +129,7 @@ void staggered_grid_initial_config (MultiFab& userCtx,
             init_userCtx(i, j, k, ctx, dx, prob_lo);
         });
     }
+
     userCtx.FillBoundary(geom.periodicity());
 }
 
