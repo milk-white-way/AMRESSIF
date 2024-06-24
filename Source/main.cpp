@@ -338,7 +338,8 @@ void main_main ()
     // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
     // velCont is the main variable to be used in the momentum solver
     cont2cart(velCart, velCont, geom);
-    velCart.FillBoundary(geom.periodicity());
+
+    // FIXME - this routine should be added to the end of cont2cart
     enforce_boundary_conditions(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
@@ -417,6 +418,7 @@ void main_main ()
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
 
                 // RUNGE-KUTTA | Calculate Cell-centered Pressure Gradient terms
+                userCtx.FillBoundary(geom.periodicity());
                 pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
 
                 // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
@@ -523,10 +525,12 @@ void main_main ()
                         xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_x(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
                         
                         // Boundary check:
-                        // FIXME
+                        // FIXME check whether we are at a wall
+                        /*
                         if (i == 0 || i == xbx.bigEnd(0)) {
                             xrhs(i, j, k) = xrhs(i, j, k);
                         }
+                        */
 
                         //Print() << "\t vel_hat_diff_x(" << i << ", " << j << "): " << vel_hat_diff_x(i, j, k);
                         //Print() << "\t vel_cont_diff_x(" << i << ", " << j << "): " << vel_cont_diff_x(i, j, k);
@@ -539,10 +543,12 @@ void main_main ()
                         yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_y(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
                         
                         // Boundary check:
-                        // FIXME
+                        // FIXME check whether we are at a wall
+                        /*
                         if (j == 0 || j == ybx.bigEnd(1)) {
                             yrhs(i, j, k) = yrhs(i, j, k);
                         }
+                        */
                         
                         vel_hat_y(i, j, k) = vel_star_y(i, j, k) + ( rk[sub] * dt * Real(0.4) * yrhs(i, j, k) );
                     });
@@ -559,11 +565,9 @@ void main_main ()
                 // ------------------ FORMING BOUNDARY CONDITIONS ------------------
                 // RUNGE-KUTTA | Update velCart from velHat
                 cont2cart(velCart, velHat, geom);
-                // RUNGE-KUTTA | Enforce periodic boundary conditions on non-staggered grid
-                velCart.FillBoundary(geom.periodicity());
 
                 // RUNGE-KUTTA | Interpolate the boundary conditions to staggered grid
-                // FIXME THIS IS NOT RIGHT
+                // FIXME I don't know what is going on here but you need to check whether you are at a wall
                 /*
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -663,7 +667,8 @@ void main_main ()
 
         // Update velCart from the velCont solutions
         cont2cart(velCart, velCont, geom);
-        velCart.FillBoundary(geom.periodicity());
+
+/* FIXME - need logic to check whether the bc is actually a wall
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -705,6 +710,7 @@ void main_main ()
             });
 #endif
         }
+*/
 
         analytic_solution_calc(analyticSol, geom, time);
 

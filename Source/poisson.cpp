@@ -311,6 +311,8 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
         });
     } // End of the loop for boxes
 
+    userCtx.FillBoundary(geom.periodicity());
+
     // Update velContDiff from the velCont solutions
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

@@ -87,7 +87,9 @@ void cont2cart (MultiFab& velCart,
 //#endif
             //}
         });
-    } 
+    }
+
+    velCart.FillBoundary(geom.periodicity());
 }
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================

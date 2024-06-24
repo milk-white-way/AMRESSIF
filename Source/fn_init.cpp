@@ -109,6 +109,7 @@ void init (MultiFab& userCtx,
             init_userCtx(i, j, k, ctx, dx, prob_lo);
         });
     }
+    userCtx.FillBoundary(geom.periodicity());
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
