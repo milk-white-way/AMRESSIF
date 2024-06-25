@@ -112,8 +112,11 @@ void staggered_grid_initial_config (MultiFab& userCtx,
      * 
      */
     cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    amrex::Print() << "=================================================================== \n";
     cont2cart(velCartPrev, velContPrev, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    amrex::Print() << "=================================================================== \n";
     cont2cart(velCartDiff, velContDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    amrex::Print() << "=================================================================== \n";
 
 // Initialize pressure components at celll centers
 #ifdef AMREX_USE_OMP

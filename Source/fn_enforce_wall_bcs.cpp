@@ -286,6 +286,9 @@ void enforce_wall_bcs_for_face_centered_velocities_on_physical_boundaries (Multi
 
     for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
     {
+        int const& box_id = mfi.LocalIndex();
+        amrex::Print() << "INFO| Box ID: " << box_id << "\n";
+
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
