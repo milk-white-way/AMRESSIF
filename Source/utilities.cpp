@@ -2,45 +2,18 @@
 
 #include "utilities.H"
 #include "kn_conversion.H"
+#include "fn_enforce_wall_bcs.H"
 
 using namespace amrex;
 
 // ===================== UTILITY | CONVERSION  =====================
-void cart2cont (MultiFab& velCart,
-                Array<MultiFab, AMREX_SPACEDIM>& velCont)
-{
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
-    {
-
-        Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-        Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-        auto const& xcont = velCont[0].array(mfi);
-        auto const& ycont = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-        auto const& zcont = velCont[2].array(mfi);
-#endif
-        auto const& vcart = velCart.array(mfi);
-
-        amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_x(i, j, k, xcont, vcart); });
-
-        amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_y(i, j, k, ycont, vcart); });
-
-#if (AMREX_SPACEDIM > 2)
-        amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_z(i, j, k, zcont, vcart); });
-#endif
-    }
-}
-
 void cont2cart (MultiFab& velCart,
                 Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                const Geometry& geom)
+                const Geometry& geom, 
+                int const& Nghost,
+                Vector<int> const& phy_bc_lo,
+                Vector<int> const& phy_bc_hi,
+                int const& n_cell)
 {
     //average_face_to_cellcenter(velCart, amrex::GetArrOfConstPtrs(velCont), geom);
 #ifdef AMREX_USE_OMP
@@ -59,37 +32,17 @@ void cont2cart (MultiFab& velCart,
 
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-            //if (i == 0) {
-            //    if (j == 0 || j == vbx.bigEnd(1)) {
-            //Print() << "DEBUG | at i = " << i << "; j = " << j << "\n";
-            //          Print() << "contravariant velocity x(" << i   << ", " << j   << "): " << vel_cont_x(i  , j, k) << "\n";
-            //         //Print() << "contravariant velocity x(" << i+1 << ", " << j   << "): " << vel_cont_x(i+1, j, k) << "\n";
-            //        Print() << "contravariant velocity y(" << i   << ", " << j   << "): " << vel_cont_y(i, j  , k) << "\n";
-            //        //Print() << "contravariant velocity y(" << i   << ", " << j+1  << "): " << vel_cont_y(i, j+1, k) << "\n";
-            //    }
-            //}
             vel_cart(i, j, k, 0) = amrex::Real(0.5)*( vel_cont_x(i, j, k) + vel_cont_x(i+1, j, k) );
             vel_cart(i, j, k, 1) = amrex::Real(0.5)*( vel_cont_y(i, j, k) + vel_cont_y(i, j+1, k) );
 #if (AMREX_SPACEDIM > 2)
             vel_cart(i, j, k, 2) = amrex::Real(0.5)*( vel_cont_z(i, j, k) + vel_cont_z(i, j, k+1) );
 #endif
-            //if (i < vbx.bigEnd(0)) {
-            //    vel_cart(i, j, k, 0) = amrex::Real(0.125)*( 3*vel_cont_x(i, j, k) + 6*vel_cont_x(i+1, j, k) - vel_cont_x(i+2, j, k) );
-            //    vel_cart(i, j, k, 1) = amrex::Real(0.125)*( 3*vel_cont_y(i, j, k) + 6*vel_cont_y(i, j+1, k) - vel_cont_y(i, j+2, k) );
-//#if (AMREX_SPACEDIM > 2)
-//                vel_cart(i, j, k, 2) = amrex::Real(0.125)*( 3*vel_cont_z(i, j, k) + 6*vel_cont_z(i, j, k+1) - vel_cont_z(i, j, k+2) );
-//#endif
-            //} else {
-            //    vel_cart(i, j, k, 0) = amrex::Real(0.125)*( 3*vel_cont_x(i+1, j, k) + 6*vel_cont_x(i, j, k) - vel_cont_x(i-1, j, k) );
-            //    vel_cart(i, j, k, 1) = amrex::Real(0.125)*( 3*vel_cont_y(i, j+1, k) + 6*vel_cont_y(i, j, k) - vel_cont_y(i, j-1, k) );
-//#if (AMREX_SPACEDIM > 2)
-//                vel_cart(i, j, k, 2) = amrex::Real(0.125)*( 3*vel_cont_z(i, j, k+1) + 6*vel_cont_z(i, j, k) - vel_cont_z(i, j, k-1) );
-//#endif
-            //}
         });
     }
 
     velCart.FillBoundary(geom.periodicity());
+    enforce_wall_bcs_for_cell_centered_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    enforce_wall_bcs_for_face_centered_velocities_on_physical_boundaries(velCart, velCont, geom);
 }
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================

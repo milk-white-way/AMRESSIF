@@ -6,12 +6,12 @@
 using namespace amrex;
 
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
-void enforce_boundary_conditions (MultiFab& velCart,
-                                  Geometry const& geom,
-                                  int const& Nghost,
-                                  Vector<int> const& phy_bc_lo,
-                                  Vector<int> const& phy_bc_hi,
-                                  int const& n_cell)
+void enforce_wall_bcs_for_cell_centered_ghost_cells (MultiFab& velCart,
+                                                     Geometry const& geom,
+                                                     int const& Nghost,
+                                                     Vector<int> const& phy_bc_lo,
+                                                     Vector<int> const& phy_bc_hi,
+                                                     int const& n_cell)
 {
     Box dom(geom.Domain());
 
@@ -270,6 +270,71 @@ void enforce_boundary_conditions (MultiFab& velCart,
                 });
             }
         }
+#endif
+    }
+}
+
+void enforce_wall_bcs_for_face_centered_velocities_on_physical_boundaries (MultiFab& velCart,
+                                                                           Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                                                                           Geometry const& geom)
+{
+    Box dom(geom.Domain());
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+
+    for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
+    {
+        int const& box_id = mfi.LocalIndex();
+        amrex::Print() << "INFO| Box ID: " << box_id << "\n";
+
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+        auto const& vel_cont_x = velCont[0].array(mfi);
+        auto const& vel_cont_y = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& vel_cont_z = velCont[2].array(mfi);
+#endif
+
+        auto const& vel_cart = velCart.array(mfi);
+
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0)+1;
+
+        amrex::ParallelFor(xbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            if ( i == lo || i == hi ) {
+                amrex::Print() << "FILLING | X-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                vel_cont_x(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
+            }
+        });
+
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1)+1;
+
+        amrex::ParallelFor(ybx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            if ( j == lo || j == hi ) {
+                amrex::Print() << "FILLING | Y-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                vel_cont_y(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
+            }
+        });
+
+#if (AMREX_SPACEDIM > 2)
+        lo = dom.smallEnd(2);
+        hi = dom.bigEnd(2)+1;
+
+        amrex::ParallelFor(zbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            if ( k == lo || k == hi ) {
+                amrex::Print() << "FILLING | Z-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                vel_cont_z(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 2) + vel_cart(i, j, k-1, 2) );
+            }
+        });
 #endif
     }
 }

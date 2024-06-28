@@ -11,8 +11,17 @@ void init (amrex::MultiFab& userCtx,
            amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
            amrex::Geometry const& geom);
 
-void staggered_grid_initial_config(amrex::MultiFab& userCtx,
-                                   amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-                                   amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
-                                   amrex::Geometry const& geom);
+void staggered_grid_initial_config (amrex::MultiFab& userCtx,
+                                    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+                                    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContPrev,
+                                    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
+                                    amrex::MultiFab& velCart,
+                                    amrex::MultiFab& velCartPrev,
+                                    amrex::MultiFab& velCartDiff,
+                                    amrex::Geometry const& geom,
+                                    int const& Nghost,
+                                    amrex::Vector<int> const& phy_bc_lo,
+                                    amrex::Vector<int> const& phy_bc_hi,
+                                    amrex::Real const& dt,
+                                    int const& n_cell);
 #endif

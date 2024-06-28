@@ -1,11 +1,11 @@
 nsteps = 0
-plot_int = -1
+plot_int = 1000
 
-n_cell = 4
+#n_cell = 4
+#max_grid_size = 4
+
+n_cell = 16
 max_grid_size = 4
-
-#n_cell = 16
-#max_grid_size = 16
 
 #n_cell = 32
 #max_grid_size = 32
@@ -41,8 +41,8 @@ vis = 1
 # 0 - periodic
 # -1 - no-slip
 # 1 - slip
-phy_bc_lo = -1 -1
-phy_bc_hi = -1 -1
+phy_bc_lo = 0 0
+phy_bc_hi = 0 0
 
 amrex.v = 1
 amrex.async_out = 0  # If we use more than 64 processes, async_out will require MPI_THREAD_MULTIPLE
