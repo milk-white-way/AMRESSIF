@@ -26,19 +26,20 @@ using namespace amrex;
  * @param velContDiff 
  * @param geom 
  */
-void staggered_grid_initial_config (MultiFab& userCtx,
-                                    Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                                    Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
-                                    Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
-                                    MultiFab& velCart,
-                                    MultiFab& velCartPrev,
-                                    MultiFab& velCartDiff,
-                                    Geometry const& geom,
-                                    int const& Nghost,
-                                    Vector<int> const& phy_bc_lo,
-                                    Vector<int> const& phy_bc_hi,
-                                    Real const& dt,
-                                    int const& n_cell)
+void staggered_grid_init (MultiFab& userCtx,
+                          Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                          Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
+                          Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
+                          MultiFab& velCart,
+                          MultiFab& velCartPrev,
+                          MultiFab& velCartDiff,
+                          Geometry const& geom,
+                          int const& Nghost,
+                          Vector<int> const& phy_bc_lo,
+                          Vector<int> const& phy_bc_hi,
+                          Real const& time,
+                          Real const& dt,
+                          int const& n_cell)
 
 {
     GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
@@ -81,7 +82,7 @@ void staggered_grid_initial_config (MultiFab& userCtx,
             vel_cont_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
             //vel_cont_x(i, j, k) = amrex::Real(1.0);
 
-            vel_cont_prev_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (Real(0.0) - dt));
+            vel_cont_prev_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
 
             vel_cont_diff_x(i, j, k) = vel_cont_x(i, j, k) - vel_cont_prev_x(i, j, k);
         });
@@ -93,7 +94,7 @@ void staggered_grid_initial_config (MultiFab& userCtx,
             vel_cont_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
             //vel_cont_y(i, j, k) = amrex::Real(1.0);
 
-            vel_cont_prev_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (Real(0.0) - dt));
+            vel_cont_prev_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
 
             vel_cont_diff_y(i, j, k) = vel_cont_y(i, j, k) - vel_cont_prev_y(i, j, k);
         });
