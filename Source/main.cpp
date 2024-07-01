@@ -623,6 +623,8 @@ void main_main ()
 
         analytic_solution_calc(analyticSol, geom, time);
 
+        // Write a plotfile of the current data (plot_int was defined in the inputs file)
+        if (plot_int > 0 && n%plot_int == 0)
         {
             MultiFab::Copy(l2norm, velCart, 0, 0, 2, 0);
             MultiFab::Copy(l2norm, userCtx, 0, 2, 1, 0);
@@ -650,19 +652,6 @@ void main_main ()
             amrex::Print() << "BENCHMARKING| L2 ERROR NORM for x-velocity: " << l2norm.norm2(0)/std::sqrt(npts) << "\n";
             amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1)/std::sqrt(npts) << "\n";
             amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure:   " << l2norm.norm2(2)/std::sqrt(npts) << "\n";
-
-            if (plot_int > 0 && n%plot_int == 0)
-            {
-                const std::string &analytic_export = amrex::Concatenate("pltAnalytic", n, 5);
-                WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, time, n);
-                const std::string &diff_export = amrex::Concatenate("pltDiff", n, 5);
-                WriteSingleLevelPlotfile(diff_export, l2norm, {"U", "V", "pressure"}, geom, time, n);
-            }
-        } // End of benchmark
-
-        // Write a plotfile of the current data (plot_int was defined in the inputs file)
-        if (plot_int > 0 && n%plot_int == 0)
-        {
             Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
 
             // Construct the filename for this iteration

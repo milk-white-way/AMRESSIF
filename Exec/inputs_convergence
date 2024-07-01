@@ -3,21 +3,21 @@
 ##########################
 # TEMPORAL CONVERGENCE TESTING
 
-#fixed_dt = 8.e-6
-#nsteps = 25
-#plot_int = 25
-#n_cell = 256
-#max_grid_size = 256
+fixed_dt = 2.5e-6
+nsteps = 1
+plot_int = 1
+n_cell = 256
+max_grid_size = 128
 
-#fixed_dt = 4.e-6
-#nsteps = 50
-#plot_int = 50
+#fixed_dt = 5.e-6
+#nsteps = 2
+#plot_int = 2
 #n_cell = 256
 #max_grid_size = 128
 
-#fixed_dt = 2.e-6
-#nsteps = 100
-#plot_int = 100
+#fixed_dt = 1.e-5
+#nsteps = 4
+#plot_int = 4
 #n_cell = 256
 #max_grid_size = 128
 ##########################
@@ -25,45 +25,23 @@
 ##########################
 # SPATIAL CONVERGENCE TESTING
 
-fixed_dt = 5.e-5
-nsteps = 20000
-plot_int = 2000
-n_cell = 64
-max_grid_size = 64
-
-#fixed_dt = 1.e-6
-#nsteps = 100000
-#plot_int = 1000
-#n_cell = 128
-#max_grid_size = 128
-
-#fixed_dt = 2.e-6
-#nsteps = 100
-#plot_int = 100
-#n_cell = 256
-#max_grid_size = 128
-##########################
-
-##########################
-# SPACE-TIME CONVERGENCE TESTING
-
-#fixed_dt = 8.e-6
-#nsteps = 25
-#plot_int = 25
+#fixed_dt = 1.e-5
+#nsteps = 10
+#plot_int = 10
 #n_cell = 64
 #max_grid_size = 32
 
-#fixed_dt = 4.e-6
-#nsteps = 50
-#plot_int = 50
+#fixed_dt = 1.e-5
+#nsteps = 10
+#plot_int = 10
 #n_cell = 128
-#max_grid_size = 128
+#max_grid_size = 64
 
-#fixed_dt = 2.e-6
-#nsteps = 100
-#plot_int = 100
+#fixed_dt = 1.e-5
+#nsteps = 10
+#plot_int = 10
 #n_cell = 256
-#max_grid_size = 70
+#max_grid_size = 128
 ##########################
 
 IterNum = 100
