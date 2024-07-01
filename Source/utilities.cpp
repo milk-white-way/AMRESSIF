@@ -1,7 +1,6 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "utilities.H"
-#include "kn_conversion.H"
 #include "fn_enforce_wall_bcs.H"
 
 using namespace amrex;
@@ -42,7 +41,7 @@ void cont2cart (MultiFab& velCart,
 
     velCart.FillBoundary(geom.periodicity());
     enforce_wall_bcs_for_cell_centered_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    enforce_wall_bcs_for_face_centered_velocities_on_physical_boundaries(velCart, velCont, geom);
+    enforce_wall_bcs_for_face_centered_velocities_on_physical_boundaries(velCart, velCont, geom, phy_bc_lo, phy_bc_hi);
 }
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
@@ -214,30 +213,71 @@ void Export_Flow_Field (std::string const& nameofFile,
 #endif
 }
 
-void analytic_solution_calc (MultiFab& analyticSol,
-                             Geometry const& geom,
-                             Real const& time)
+void array_analytical_vel_calc (Array<MultiFab, AMREX_SPACEDIM>& array_analytical_vel,
+                                Geometry const& geom,
+                                Real const& time)
 {
     GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
     GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(analyticSol); mfi.isValid(); ++mfi) {
-        const Box &vbx = mfi.validbox();
-        auto const &analytic = analyticSol.array(mfi);
-        amrex::ParallelFor(vbx,
-                           [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-          // Real coordinates of the cell center
-          Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
-          Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+    for (MFIter mfi(array_analytical_vel[0]); mfi.isValid(); ++mfi) {
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
 
-          // u velocity
-          analytic(i, j, k, 0) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
-          // v velocity
-          analytic(i, j, k, 1) = -std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
-          // pressure
-          analytic(i, j, k, 2) = Real(0.25) * (std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y)) * std::exp(-Real(16.0) * M_PI * M_PI * time);
+        auto const& vel_cont_exact_x = array_analytical_vel[0].array(mfi);
+        auto const& vel_cont_exact_y = array_analytical_vel[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& vel_cont_exact_z = array_analytical_vel[2].array(mfi);
+#endif
+
+        amrex::ParallelFor(xbx,
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            amrex::Real x = prob_lo[0] + (i + Real(0.0)) * dx[0];
+            amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+            
+            vel_cont_exact_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+        });
+        amrex::ParallelFor(ybx,
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+            amrex::Real y = prob_lo[1] + (j + Real(0.0)) * dx[1];
+
+            vel_cont_exact_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+        });
+#if (AMREX_SPACEDIM > 2)
+        amrex::ParallelFor(zbx,
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            vel_cont_exact_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+        });
+#endif
+    }
+}
+
+void cc_analytical_press_calc (MultiFab& cc_analytical_press,
+                               Geometry const& geom,
+                               Real const& time)
+{
+    GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
+    GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+
+    // Initialize the analytical pressure field
+    for ( MFIter mfi(cc_analytical_press); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& press_exact = cc_analytical_press.array(mfi);
+
+        amrex::ParallelFor(vbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+            amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+
+            press_exact(i, j, k, 0) = Real(0.25) * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(8.0) * M_PI * M_PI * time) * std::exp(-Real(8.0) * M_PI * M_PI * time);
         });
     }
 }

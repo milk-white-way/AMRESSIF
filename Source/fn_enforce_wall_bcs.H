@@ -32,5 +32,7 @@ void enforce_wall_bcs_for_cell_centered_ghost_cells (amrex::MultiFab& velCart,
  */
 void enforce_wall_bcs_for_face_centered_velocities_on_physical_boundaries (amrex::MultiFab& velCart,
                                                                            amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
-                                                                           amrex::Geometry const& geom);
+                                                                           amrex::Geometry const& geom,
+                                                                           amrex::Vector<int> const& phy_bc_lo,
+                                                                           amrex::Vector<int> const& phy_bc_hi);
 #endif
