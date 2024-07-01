@@ -26,4 +26,3 @@ CEXE_headers += kn_poisson.H
 CEXE_sources += utilities.cpp
 CEXE_headers += utilities.H
 
-CEXE_headers += kn_conversion.H
