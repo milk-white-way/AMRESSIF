@@ -43,7 +43,7 @@ void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (MultiFab& userC
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( i < lo ) {
-                        ctx(i, j, k, 0) = - ctx(-i-1, j, k, 0);
+                        ctx(i, j, k, 0) = ctx(-i-1, j, k, 0);
                     }
                 });
             }
@@ -54,7 +54,7 @@ void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (MultiFab& userC
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( i > hi ) {
-                        ctx(i, j, k, 0) = - ctx(( (n_cell-i) + (n_cell-1) ), j, k, 0);
+                        ctx(i, j, k, 0) = ctx(( (n_cell-i) + (n_cell-1) ), j, k, 0);
                     }
                 });
             }
@@ -68,7 +68,7 @@ void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (MultiFab& userC
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( j < lo ) {
-                        ctx(i, j, k, 0) = - ctx(i, -j-1, k, 0);
+                        ctx(i, j, k, 0) = ctx(i, -j-1, k, 0);
                     }
                 });
             }
@@ -79,7 +79,7 @@ void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (MultiFab& userC
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( j > hi ) {
-                        ctx(i, j, k, 0) = - ctx(i, ( (n_cell-j) + (n_cell-1) ), k, 0);
+                        ctx(i, j, k, 0) = ctx(i, ( (n_cell-j) + (n_cell-1) ), k, 0);
                     }
                 });
             }
@@ -94,7 +94,7 @@ void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (MultiFab& userC
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {
-                        ctx(i, j, k, 0) = - ctx(i, j, -k-1, 0);
+                        ctx(i, j, k, 0) = ctx(i, j, -k-1, 0);
                     }
                 });
             }
@@ -105,7 +105,7 @@ void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (MultiFab& userC
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k > hi ) {
-                        ctx(i, j, k, 0) = - ctx(i, j, ( (n_cell-k) + (n_cell-1) ), 0);
+                        ctx(i, j, k, 0) = ctx(i, j, ( (n_cell-k) + (n_cell-1) ), 0);
                     }
                 });
             }

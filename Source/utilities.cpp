@@ -282,10 +282,11 @@ void cc_analytical_press_calc (MultiFab& cc_analytical_press,
 }
 
 
-void SumAbsStag(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
-	     amrex::Vector<amrex::Real>& sum)
+void SumAbsStag(const std::array<MultiFab, 
+                AMREX_SPACEDIM>& m1,
+	            amrex::Vector<amrex::Real>& sum)
 {
-  BL_PROFILE_VAR("SumAbsStag()",SumAbsStag);
+  BL_PROFILE_VAR("SumAbsStag()", SumAbsStag);
 
   // Initialize to zero
   std::fill(sum.begin(), sum.end(), 0.);
@@ -297,7 +298,7 @@ void SumAbsStag(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
   ReduceData<Real> reduce_datax(reduce_op);
   using ReduceTuple = typename decltype(reduce_datax)::Type;
 
-  for (MFIter mfi(m1[0],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+  for (MFIter mfi(m1[0], TilingIfNotGPU()); mfi.isValid(); ++mfi)
   {
       const Box& bx = mfi.tilebox();
       const Box& bx_grid = mfi.validbox();
@@ -375,15 +376,15 @@ void SumAbsStag(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
 }
 
 void StagL2Norm(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
-		const int& comp,
+		        const int& comp,
                 amrex::Vector<amrex::Real>& inner_prod)
 {
 
-    BL_PROFILE_VAR("StagL2Norm()",StagL2Norm);
+    BL_PROFILE_VAR("StagL2Norm()", StagL2Norm);
 
     Array<MultiFab, AMREX_SPACEDIM> mscr;
     for (int dir=0; dir < AMREX_SPACEDIM; dir++) {
-        mscr[dir].define(m1[dir].boxArray(),m1[dir].DistributionMap(),1,0);
+        mscr[dir].define(m1[dir].boxArray(), m1[dir].DistributionMap(), 1, 0);
     }
 
     StagInnerProd(m1, comp, mscr, inner_prod);
@@ -397,13 +398,13 @@ void StagInnerProd(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
                    std::array<MultiFab, AMREX_SPACEDIM>& mscr,
                    amrex::Vector<amrex::Real>& prod_val)
 {
-  BL_PROFILE_VAR("StagInnerProd()",StagInnerProd);
+  BL_PROFILE_VAR("StagInnerProd()", StagInnerProd);
 
   for (int d=0; d<AMREX_SPACEDIM; d++) {
-    MultiFab::Copy(mscr[d],m1[d],comp1,0,1,0);
-    MultiFab::Multiply(mscr[d],m1[d],comp1,0,1,0);
+    MultiFab::Copy(mscr[d], m1[d], comp1, 0, 1, 0);
+    MultiFab::Multiply(mscr[d], m1[d], comp1, 0, 1, 0);
   }
 
   std::fill(prod_val.begin(), prod_val.end(), 0.);
-  SumAbsStag(mscr,prod_val);
+  SumAbsStag(mscr, prod_val);
 }

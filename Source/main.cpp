@@ -697,8 +697,8 @@ void main_main ()
             Vector<Real> l1_sum(AMREX_SPACEDIM);
             Vector<Real> l2_sum(AMREX_SPACEDIM);
 
-            SumAbsStag(array_analytical_diff,l1_sum);
-            StagL2Norm(array_analytical_diff,0,l2_sum);
+            SumAbsStag(array_analytical_diff, l1_sum);
+            StagL2Norm(array_analytical_diff, 0, l2_sum);
 
             amrex::Print() << "_________________________________________________________________________________________ \n";
             amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant x-velocity: " << array_analytical_diff[0].norm0(0) << "\t|\n";
