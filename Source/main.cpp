@@ -345,7 +345,6 @@ void main_main ()
     staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
     // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
     // velCont is the main variable to be used in the momentum solver
-
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
 
     // Write a plotfile of the initial data if plot_int > 0
@@ -387,7 +386,7 @@ void main_main ()
         // Momentum solver
         // MOMENTUM |1| Setup counter
         int countIter = 0;
-        Real normError = 1.e99;
+        Real normError = 1.e9;
 
         // After debugging, all the code below will be modulized to the MOMENTUM module i.e.,:
         // momentum_km_runge_kutta();
@@ -396,7 +395,6 @@ void main_main ()
         //-----------------------------------------------
         while ( normError > momentum_tolerance )
         {
-            countIter++;
             if (countIter > IterNum) {
                 amrex::Print() << "Exceeded number of momenum iterations; exiting loop\n";
                 break;
@@ -410,7 +408,6 @@ void main_main ()
                 MultiFab::Copy(velHat[comp], velStar[comp], 0, 0, 1, 0);
             }
 
-            //RungeKuttaOrder = 1;
             // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
@@ -579,6 +576,8 @@ void main_main ()
             {
                 MultiFab::Copy(velStar[comp], velHat[comp], 0, 0, 1, 0);
             }
+
+            countIter++;
 
         }// End of the Momentum loop iteration!
         //---------------------------------------

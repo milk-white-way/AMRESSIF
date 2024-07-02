@@ -39,9 +39,8 @@ void cont2cart (MultiFab& velCart,
         });
     }
 
-    velCart.FillBoundary(geom.periodicity());
-    enforce_wall_bcs_for_cell_centered_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    enforce_wall_bcs_for_face_centered_velocities_on_physical_boundaries(velCart, velCont, geom, phy_bc_lo, phy_bc_hi);
+    enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries(velCart, velCont, geom, phy_bc_lo, phy_bc_hi);
 }
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================

@@ -6,13 +6,122 @@
 using namespace amrex;
 
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
-void enforce_wall_bcs_for_cell_centered_ghost_cells (MultiFab& velCart,
-                                                     Geometry const& geom,
-                                                     int const& Nghost,
-                                                     Vector<int> const& phy_bc_lo,
-                                                     Vector<int> const& phy_bc_hi,
-                                                     int const& n_cell)
+void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (MultiFab& userCtx,
+                                                                 Geometry const& geom,
+                                                                 int const& Nghost,
+                                                                 Vector<int> const& phy_bc_lo,
+                                                                 Vector<int> const& phy_bc_hi,
+                                                                 int const& n_cell)
 {
+    userCtx.FillBoundary(geom.periodicity());
+    Box dom(geom.Domain());
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(userCtx); mfi.isValid(); ++mfi )
+    {
+
+        const Box& vbx = mfi.growntilebox(Nghost);
+        auto const& ctx = userCtx.array(mfi);
+
+        auto const& west_wall_bcs = phy_bc_lo[0]; // west wall
+        auto const& east_wall_bcs = phy_bc_hi[0]; // east wall
+
+        auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
+        auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
+#if (AMREX_SPACEDIM > 2)
+        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
+#endif
+
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0);
+
+        if (vbx.smallEnd(0) < lo) {
+            if ( west_wall_bcs != 0 ) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( i < lo ) {
+                        ctx(i, j, k, 0) = - ctx(-i-1, j, k, 0);
+                    }
+                });
+            }
+        }
+
+        if (vbx.bigEnd(0) > hi) {
+            if ( east_wall_bcs != 0 ) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( i > hi ) {
+                        ctx(i, j, k, 0) = - ctx(( (n_cell-i) + (n_cell-1) ), j, k, 0);
+                    }
+                });
+            }
+        }
+
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1);
+
+        if (vbx.smallEnd(1) < lo) {
+            if ( south_wall_bcs != 0 ) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( j < lo ) {
+                        ctx(i, j, k, 0) = - ctx(i, -j-1, k, 0);
+                    }
+                });
+            }
+        }
+
+        if (vbx.bigEnd(1) > hi) {
+            if ( north_wall_bcs != 0 ) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( j > hi ) {
+                        ctx(i, j, k, 0) = - ctx(i, ( (n_cell-j) + (n_cell-1) ), k, 0);
+                    }
+                });
+            }
+        }
+
+#if (AMREX_SPACEDIM > 2)
+        lo = dom.smallEnd(2);
+        hi = dom.bigEnd(2);
+
+        if (vbx.smallEnd(2) < lo) {
+            if ( front_wall_bcs != 0 ) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( k < lo ) {
+                        ctx(i, j, k, 0) = - ctx(i, j, -k-1, 0);
+                    }
+                });
+            }
+        }
+
+        if (vbx.bigEnd(2) > hi) {
+            if ( back_wall_bcs != 0 ) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( k > hi ) {
+                        ctx(i, j, k, 0) = - ctx(i, j, ( (n_cell-k) + (n_cell-1) ), 0);
+                    }
+                });
+            }
+        }
+#endif
+    }
+}
+
+void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCart,
+                                                                 Geometry const& geom,
+                                                                 int const& Nghost,
+                                                                 Vector<int> const& phy_bc_lo,
+                                                                 Vector<int> const& phy_bc_hi,
+                                                                 int const& n_cell)
+{
+    velCart.FillBoundary(geom.periodicity());
     Box dom(geom.Domain());
 
 #ifdef AMREX_USE_OMP
@@ -274,11 +383,11 @@ void enforce_wall_bcs_for_cell_centered_ghost_cells (MultiFab& velCart,
     }
 }
 
-void enforce_wall_bcs_for_face_centered_velocities_on_physical_boundaries (MultiFab& velCart,
-                                                                           Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                                                                           Geometry const& geom, 
-                                                                           Vector<int> const& phy_bc_lo,
-                                                                           Vector<int> const& phy_bc_hi)
+void enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries (MultiFab& velCart,
+                                                                         Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                                                                         Geometry const& geom, 
+                                                                         Vector<int> const& phy_bc_lo,
+                                                                         Vector<int> const& phy_bc_hi)
 {
     Box dom(geom.Domain());
 

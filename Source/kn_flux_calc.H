@@ -305,10 +305,10 @@ void compute_pressure_gradient_periodic (int i, int j, int k,
 {
     using amrex::Real;
 
-    presgrad_flux(i, j, k, 0) = (pressurefield(i+1, j, k, 0) - pressurefield(i-1, j, k, 0))/(Real(2.0)*dx[0]);
-    presgrad_flux(i, j, k, 1) = (pressurefield(i, j+1, k, 0) - pressurefield(i, j-1, k, 0))/(Real(2.0)*dx[1]);
+    presgrad_flux(i, j, k, 0) = (pressurefield(i+1, j, k, 0) - pressurefield(i-1, j, k, 0))/(Real(2.0)*dx[0]); // partial p / partial x
+    presgrad_flux(i, j, k, 1) = (pressurefield(i, j+1, k, 0) - pressurefield(i, j-1, k, 0))/(Real(2.0)*dx[1]); // partial p / partial y
 #if (AMREX_SPACEDIM > 2)
-    presgrad_flux(i, j, k, 2) = (pressurefield(i, j, k+1, 0) - pressurefield(i, j, k-1, 0))/(Real(2.0)*dx[2]);
+    presgrad_flux(i, j, k, 2) = (pressurefield(i, j, k+1, 0) - pressurefield(i, j, k-1, 0))/(Real(2.0)*dx[2]); // partial p / partial z
 #endif
 }
 

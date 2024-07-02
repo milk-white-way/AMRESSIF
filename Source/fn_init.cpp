@@ -11,6 +11,7 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "fn_init.H"
+#include "fn_enforce_wall_bcs.H"
 #include "kn_init.H"
 #include "utilities.H"
 
@@ -134,7 +135,7 @@ void staggered_grid_init (MultiFab& userCtx,
         });
     }
 
-    userCtx.FillBoundary(geom.periodicity());
+    enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }
 
 void init (MultiFab& userCtx,
