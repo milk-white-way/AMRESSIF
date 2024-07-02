@@ -5,6 +5,12 @@
 #include <AMReX_MultiFab.H>
 
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
+void enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells (amrex::MultiFab& velCart,
+                                                             amrex::Geometry const& geom,
+                                                             int const& Nghost,
+                                                             amrex::Vector<int> const& phy_bc_lo,
+                                                             amrex::Vector<int> const& phy_bc_hi,
+                                                             int const& n_cell);
 /**
  * @brief The function is the second step after AMReX "FillBoundary" function fill all the interior communication cells. It enforces the wall boundary conditions on the ghost cells. 
  * 

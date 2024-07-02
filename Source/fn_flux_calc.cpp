@@ -1,5 +1,6 @@
 #include <AMReX_MultiFabUtil.H>
 
+#include "fn_enforce_wall_bcs.H"
 #include "fn_flux_calc.H"
 #include "kn_flux_calc.H"
 #include "kn_poisson.H"
@@ -224,8 +225,6 @@ void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
             compute_pressure_gradient_periodic(i, j, k, presgrad_flux, dx, pressurefield);
         });
     }
-
-    fluxPrsGrad.FillBoundary(geom.periodicity());
 }
 
 // +++++++++++++++++++++++++ Total Flux  +++++++++++++++++++++++++
@@ -233,7 +232,11 @@ void total_flux_calc ( MultiFab& fluxTotal,
                        MultiFab& fluxConvect,
                        MultiFab& fluxViscous,
                        MultiFab& fluxPrsGrad,
-                       const Geometry& geom)
+                       const Geometry& geom,
+                       int const& Nghost,
+                       const Vector<int>& phy_bc_lo,
+                       const Vector<int>& phy_bc_hi,
+                       int const& n_cell)
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -254,7 +257,6 @@ void total_flux_calc ( MultiFab& fluxTotal,
         });
     }
 
-    fluxTotal.FillBoundary(geom.periodicity());
-    // FIXME zero fluxes on walls
+    enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells(fluxTotal, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
 }

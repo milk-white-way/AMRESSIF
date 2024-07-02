@@ -422,7 +422,7 @@ void main_main ()
                 pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
 
                 // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, geom);
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
                 // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
                 momentum_righthand_side_calc(momentum_rhs, fluxTotal);

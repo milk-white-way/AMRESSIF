@@ -30,7 +30,11 @@ void total_flux_calc (amrex::MultiFab& fluxTotal,
                       amrex::MultiFab& fluxConvect,
                       amrex::MultiFab& fluxViscous,
                       amrex::MultiFab& fluxPrsGrad,
-                      amrex::Geometry const& geom);
+                      amrex::Geometry const& geom,
+                      int const& Nghost,
+                      amrex::Vector<int> const& phy_bc_lo,
+                      amrex::Vector<int> const& phy_bc_hi,
+                      int const& n_cell);
 
 
 #endif
