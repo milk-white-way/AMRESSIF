@@ -281,3 +281,130 @@ void cc_analytical_press_calc (MultiFab& cc_analytical_press,
         });
     }
 }
+
+
+void SumAbsStag(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
+	     amrex::Vector<amrex::Real>& sum)
+{
+  BL_PROFILE_VAR("SumAbsStag()",SumAbsStag);
+
+  // Initialize to zero
+  std::fill(sum.begin(), sum.end(), 0.);
+
+  ReduceOps<ReduceOpSum> reduce_op;
+
+  //////// x-faces
+
+  ReduceData<Real> reduce_datax(reduce_op);
+  using ReduceTuple = typename decltype(reduce_datax)::Type;
+
+  for (MFIter mfi(m1[0],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+  {
+      const Box& bx = mfi.tilebox();
+      const Box& bx_grid = mfi.validbox();
+
+      auto const& fab = m1[0].array(mfi);
+
+      int xlo = bx_grid.smallEnd(0);
+      int xhi = bx_grid.bigEnd(0);
+
+      reduce_op.eval(bx, reduce_datax,
+      [=] AMREX_GPU_DEVICE (int i, int j, int k) -> ReduceTuple
+      {
+          Real weight = (i>xlo && i<xhi) ? 1.0 : 0.5;
+          return {std::abs(fab(i,j,k)*weight)};
+      });
+  }
+
+  sum[0] = amrex::get<0>(reduce_datax.value());
+  ParallelDescriptor::ReduceRealSum(sum[0]);
+
+  //////// y-faces
+
+  ReduceData<Real> reduce_datay(reduce_op);
+
+  for (MFIter mfi(m1[1],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+  {
+      const Box& bx = mfi.tilebox();
+      const Box& bx_grid = mfi.validbox();
+
+      auto const& fab = m1[1].array(mfi);
+
+      int ylo = bx_grid.smallEnd(1);
+      int yhi = bx_grid.bigEnd(1);
+
+      reduce_op.eval(bx, reduce_datay,
+      [=] AMREX_GPU_DEVICE (int i, int j, int k) -> ReduceTuple
+      {
+          Real weight = (j>ylo && j<yhi) ? 1.0 : 0.5;
+          return {std::abs(fab(i,j,k)*weight)};
+      });
+  }
+
+  sum[1] = amrex::get<0>(reduce_datay.value());
+  ParallelDescriptor::ReduceRealSum(sum[1]);
+
+#if (AMREX_SPACEDIM == 3)
+
+  //////// z-faces
+
+  ReduceData<Real> reduce_dataz(reduce_op);
+
+  for (MFIter mfi(m1[2],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+  {
+      const Box& bx = mfi.tilebox();
+      const Box& bx_grid = mfi.validbox();
+
+      auto const& fab = m1[2].array(mfi);
+
+      int zlo = bx_grid.smallEnd(2);
+      int zhi = bx_grid.bigEnd(2);
+
+      reduce_op.eval(bx, reduce_dataz,
+      [=] AMREX_GPU_DEVICE (int i, int j, int k) -> ReduceTuple
+      {
+          Real weight = (k>zlo && k<zhi) ? 1.0 : 0.5;
+          return {std::abs(fab(i,j,k)*weight)};
+      });
+  }
+
+  sum[2] = amrex::get<0>(reduce_dataz.value());
+  ParallelDescriptor::ReduceRealSum(sum[2]);
+
+#endif
+
+}
+
+void StagL2Norm(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
+		const int& comp,
+                amrex::Vector<amrex::Real>& inner_prod)
+{
+
+    BL_PROFILE_VAR("StagL2Norm()",StagL2Norm);
+
+    Array<MultiFab, AMREX_SPACEDIM> mscr;
+    for (int dir=0; dir < AMREX_SPACEDIM; dir++) {
+        mscr[dir].define(m1[dir].boxArray(),m1[dir].DistributionMap(),1,0);
+    }
+
+    StagInnerProd(m1, comp, mscr, inner_prod);
+    for (int dir=0; dir<AMREX_SPACEDIM; dir++) {
+        inner_prod[dir] = std::sqrt(inner_prod[dir]);
+    }
+}
+
+void StagInnerProd(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
+                   const int& comp1,
+                   std::array<MultiFab, AMREX_SPACEDIM>& mscr,
+                   amrex::Vector<amrex::Real>& prod_val)
+{
+  BL_PROFILE_VAR("StagInnerProd()",StagInnerProd);
+
+  for (int d=0; d<AMREX_SPACEDIM; d++) {
+    MultiFab::Copy(mscr[d],m1[d],comp1,0,1,0);
+    MultiFab::Multiply(mscr[d],m1[d],comp1,0,1,0);
+  }
+
+  std::fill(prod_val.begin(), prod_val.end(), 0.);
+  SumAbsStag(mscr,prod_val);
+}

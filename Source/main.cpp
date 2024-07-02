@@ -695,17 +695,23 @@ void main_main ()
             npts = (my_domain.length(0) * my_domain.length(1) * my_domain.length(2));
 #endif
 
+            Vector<Real> l1_sum(AMREX_SPACEDIM);
+            Vector<Real> l2_sum(AMREX_SPACEDIM);
+
+            SumAbsStag(array_analytical_diff,l1_sum);
+            StagL2Norm(array_analytical_diff,0,l2_sum);
+
             amrex::Print() << "_________________________________________________________________________________________ \n";
             amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant x-velocity: " << array_analytical_diff[0].norm0(0) << "\t|\n";
             amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant y-velocity: " << array_analytical_diff[1].norm0(0) << "\t|\n";
             amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for pressure: " << cc_analytical_diff.norm0(0) << "\t \t \t \t|\n";
             amrex::Print() << "| --------------------------------------------------------------------------------------| \n";
-            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant x-velocity: " << array_analytical_diff[0].norm1(0)/npts << "\t|\n";
-            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant y-velocity: " << array_analytical_diff[1].norm1(0)/npts << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant x-velocity: " << l1_sum[0]/npts << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant y-velocity: " << l1_sum[1]/npts << "\t|\n";
             amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for pressure: " << cc_analytical_diff.norm1(0)/npts << "\t \t \t \t|\n";
             amrex::Print() << "| --------------------------------------------------------------------------------------| \n";
-            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for contravariant x-velocity: " << array_analytical_diff[0].norm2(0)/std::sqrt(npts) << "\t|\n";
-            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for contravariant y-velocity: " << array_analytical_diff[1].norm2(0)/std::sqrt(npts) << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for contravariant x-velocity: " << l2_sum[0]/std::sqrt(npts) << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for contravariant y-velocity: " << l2_sum[1]/std::sqrt(npts) << "\t|\n";
             amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for pressure: " << cc_analytical_diff.norm2(0)/std::sqrt(npts) << "\t \t \t \t|\n";
             amrex::Print() << "|_______________________________________________________________________________________| \n";
 
