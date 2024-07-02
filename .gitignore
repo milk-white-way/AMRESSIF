@@ -23,6 +23,7 @@ Exec/*.txt
 Exec/tmp_build_dir
 Exec/ncell*
 Exec/plt*
+Exec/log*
 Exec/outputs
 
 #|--------------------- List of components to ignore -------------------------|

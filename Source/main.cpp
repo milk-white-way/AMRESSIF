@@ -388,8 +388,7 @@ void main_main ()
         int countIter = 0;
         Real normError = 1.e9;
 
-        // After debugging, all the code below will be modulized to the MOMENTUM module i.e.,:
-        // momentum_km_runge_kutta();
+        pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
         //-----------------------------------------------
         // This is the sub-iteration of the implicit RK4
         //-----------------------------------------------
@@ -406,168 +405,25 @@ void main_main ()
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
                 MultiFab::Copy(velHat[comp], velStar[comp], 0, 0, 1, 0);
+                velHatDiff[comp].setVal(0.0);
             }
 
             // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
-                // ---------------------- FLUX CALCULATION ----------------------
-                // RUNGE-KUTTA | Calculate Cell-centered Convective terms
+                // ------------------------- FLUX CALCULATION -------------------------
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, phy_bc_lo, phy_bc_hi, geom, n_cell);
-
-                // RUNGE-KUTTA | Calculate Cell-centered Viscous terms
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
-
-                // RUNGE-KUTTA | Calculate Cell-centered Pressure Gradient terms
-                pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
-
-                // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
-                // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
-                momentum_righthand_side_calc(momentum_rhs, fluxTotal);
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
                 // Is there a faster way to subtract two face-centered MultiFab?
 
-                // ------------------------ MOMENTUM SOLVER ------------------------
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-                for (MFIter mfi(velHatDiff[0]); mfi.isValid(); ++mfi)
-                {
-                    const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-                    const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-                    const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
+                // --------------------------- MOMENTUM SOLVER ---------------------------
+                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velHat, velHatDiff, velCont, velContDiff, dt);
 
-                    auto const &vel_hat_diff_x = velHatDiff[0].array(mfi);
-                    auto const &vel_hat_diff_y = velHatDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_hat_diff_z = velHatDiff[2].array(mfi);
-#endif
-
-                    auto const &vel_hat_x = velHat[0].array(mfi);
-                    auto const &vel_hat_y = velHat[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_hat_z = velHat[2].array(mfi);
-#endif
-
-                    auto const &vel_cont_x = velCont[0].array(mfi);
-                    auto const &vel_cont_y = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_cont_z = velCont[2].array(mfi);
-#endif
-                    amrex::ParallelFor(xbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        vel_hat_diff_x(i, j, k) = vel_hat_x(i, j, k) - vel_cont_x(i, j, k);
-                    });
-                    amrex::ParallelFor(ybx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        vel_hat_diff_y(i, j, k) = vel_hat_y(i, j, k) - vel_cont_y(i, j, k);
-                    });
-#if (AMREX_SPACEDIM > 2)
-                    amrex::ParallelFor(zbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        vel_hat_diff_z(i, j, k) = vel_hat_z(i, j, k) - vel_cont_z(i, j, k);
-                    });
-#endif
-                }
-
-                // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velHat
-                //km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-                for (MFIter mfi(velHat[0]); mfi.isValid(); ++mfi)
-                {
-                    const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-                    const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-                    const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
-
-                    auto const& xrhs = momentum_rhs[0].array(mfi);
-                    auto const& yrhs = momentum_rhs[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const& zrhs = momentum_rhs[2].array(mfi);
-#endif
-
-                    auto const &vel_star_x = velStar[0].array(mfi);
-                    auto const &vel_star_y = velStar[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_star_z = velStar[2].array(mfi);
-#endif
-
-                    auto const &vel_hat_x = velHat[0].array(mfi);
-                    auto const &vel_hat_y = velHat[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_hat_z = velHat[2].array(mfi);
-#endif
-
-                    auto const &vel_cont_x = velCont[0].array(mfi);
-                    auto const &vel_cont_y = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_cont_z = velCont[2].array(mfi);
-#endif
-
-                    auto const &vel_hat_diff_x = velHatDiff[0].array(mfi);
-                    auto const &vel_hat_diff_y = velHatDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_hat_diff_z = velHatDiff[2].array(mfi);
-#endif
-
-                    auto const &vel_cont_diff_x = velContDiff[0].array(mfi);
-                    auto const &vel_cont_diff_y = velContDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_cont_diff_z = velContDiff[2].array(mfi);
-#endif
-
-                    amrex::ParallelFor(xbx, 
-                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_x(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
-                        
-                        // Boundary check:
-                        // FIXME check whether we are at a wall
-                        /*
-                        if (i == 0 || i == xbx.bigEnd(0)) {
-                            xrhs(i, j, k) = xrhs(i, j, k);
-                        }
-                        */
-
-                        //Print() << "\t vel_hat_diff_x(" << i << ", " << j << "): " << vel_hat_diff_x(i, j, k);
-                        //Print() << "\t vel_cont_diff_x(" << i << ", " << j << "): " << vel_cont_diff_x(i, j, k);
-                        //Print() << "\t xrhs(" << i << ", " << j << "): " << xrhs(i, j, k) << "\n";
-
-                        vel_hat_x(i, j, k) = vel_star_x(i, j, k) + ( rk[sub] * dt * Real(0.4) * xrhs(i, j, k) );
-                    });
-                    amrex::ParallelFor(ybx,
-                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_y(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
-                        
-                        // Boundary check:
-                        // FIXME check whether we are at a wall
-                        /*
-                        if (j == 0 || j == ybx.bigEnd(1)) {
-                            yrhs(i, j, k) = yrhs(i, j, k);
-                        }
-                        */
-                        
-                        vel_hat_y(i, j, k) = vel_star_y(i, j, k) + ( rk[sub] * dt * Real(0.4) * yrhs(i, j, k) );
-                    });
-#if (AMREX_SPACEDIM > 2)
-                    amrex::ParallelFor(zbx,
-                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        zrhs(i, j, k) = zrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_z(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_z(i, j, k);
-                        
-                        vel_hat_z(i, j, k) = vel_star_z(i, j, k) + ( rk[sub] * dt * Real(0.4) * zrhs(i, j, k) );
-                    });
-#endif
-                }
-
-                // ------------------ FORMING BOUNDARY CONDITIONS ------------------
-                // RUNGE-KUTTA | Update velCart from velHat
-                cont2cart(velCart, velHat, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
+                // ------------------ CONVERT Ucont^{*,l} => Ucart^{*,l} ------------------
+                //cont2cart(velCart, velHat, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
             } // RUNGE-KUTTA | END
 
-            // RUNGE-KUTTA | Calculate the error norm
             normError = Error_Computation(velHat, velStar, velStarDiff, geom);
             //amrex::Print() << "error norm2 = " << normError << "\n";
 
@@ -635,8 +491,6 @@ void main_main ()
              * @brief Calculate the analytical solution and compare with the numerical solution
              * 
              */
-
-            // Calculate the analytical velocity field at face-center
             array_analytical_vel_calc(array_analytical_vel, geom, time);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -703,15 +557,15 @@ void main_main ()
             amrex::Print() << "_________________________________________________________________________________________ \n";
             amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant x-velocity: " << array_analytical_diff[0].norm0(0) << "\t|\n";
             amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant y-velocity: " << array_analytical_diff[1].norm0(0) << "\t|\n";
-            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for pressure: " << cc_analytical_diff.norm0(0) << "\t \t \t \t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for pressure: " << cc_analytical_diff.norm0(0) << "\t \t \t|\n";
             amrex::Print() << "| --------------------------------------------------------------------------------------| \n";
             amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant x-velocity: " << l1_sum[0]/npts << "\t|\n";
             amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant y-velocity: " << l1_sum[1]/npts << "\t|\n";
-            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for pressure: " << cc_analytical_diff.norm1(0)/npts << "\t \t \t \t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for pressure: " << cc_analytical_diff.norm1(0)/npts << "\t \t \t|\n";
             amrex::Print() << "| --------------------------------------------------------------------------------------| \n";
             amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for contravariant x-velocity: " << l2_sum[0]/std::sqrt(npts) << "\t|\n";
             amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for contravariant y-velocity: " << l2_sum[1]/std::sqrt(npts) << "\t|\n";
-            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for pressure: " << cc_analytical_diff.norm2(0)/std::sqrt(npts) << "\t \t \t \t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for pressure: " << cc_analytical_diff.norm2(0)/std::sqrt(npts) << "\t \t \t|\n";
             amrex::Print() << "|_______________________________________________________________________________________| \n";
 
             /*

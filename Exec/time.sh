@@ -1,4 +1,4 @@
-#!usr/bin/env bash
+#!/usr/bin/env bash
 
 mpiexec -n 4 ./main2d.gnu.MPI.ex inputs_convergence fixed_dt=1.e-5  nsteps=1 plot_int=1 n_cell=128 max_grid_size=64 | grep BENCHMARKING
 printf "\n"
