@@ -50,3 +50,15 @@ void array_analytical_vel_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& a
 void cc_analytical_press_calc (amrex::MultiFab& analytical_press,
                                amrex::Geometry const& geom,
                                amrex::Real const& time);
+
+void SumAbsStag(const std::array<amrex::MultiFab, AMREX_SPACEDIM>& m1,
+                amrex::Vector<amrex::Real>& sum);
+
+void StagL2Norm(const std::array<amrex::MultiFab, AMREX_SPACEDIM>& m1,
+		const int& comp,
+                amrex::Vector<amrex::Real>& inner_prod);
+
+void StagInnerProd(const std::array<amrex::MultiFab, AMREX_SPACEDIM>& m1,
+                   const int& comp1,
+                   std::array<amrex::MultiFab, AMREX_SPACEDIM>& mscr,
+                   amrex::Vector<amrex::Real>& prod_val);
