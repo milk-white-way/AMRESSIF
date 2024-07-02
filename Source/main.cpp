@@ -685,7 +685,7 @@ void main_main ()
             
             // Calculate the analytical pressure field at cell-center
             cc_analytical_press_calc(cc_analytical_diff, geom, time);
-            MultiFab::Subtract(cc_analytical_diff, userCtx, 0, 2, 1, 0);
+            MultiFab::Subtract(cc_analytical_diff, userCtx, 0, 0, 1, 0);
 
             long npts;
             Box my_domain = geom.Domain();
