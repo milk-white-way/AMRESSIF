@@ -126,12 +126,12 @@ void enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells (MultiFab& fluxTotal
     }
 }
 
-void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (MultiFab& userCtx,
-                                                                 Geometry const& geom,
-                                                                 int const& Nghost,
-                                                                 Vector<int> const& phy_bc_lo,
-                                                                 Vector<int> const& phy_bc_hi,
-                                                                 int const& n_cell)
+void enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells (MultiFab& userCtx,
+                                                                Geometry const& geom,
+                                                                int const& Nghost,
+                                                                Vector<int> const& phy_bc_lo,
+                                                                Vector<int> const& phy_bc_hi,
+                                                                int const& n_cell)
 {
     userCtx.FillBoundary(geom.periodicity());
     Box dom(geom.Domain());

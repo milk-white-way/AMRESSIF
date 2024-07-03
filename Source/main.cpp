@@ -311,9 +311,9 @@ void main_main ()
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-    amrex::Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
-                                 + 1./(dx[1]*dx[1]),
-                                 + 1./(dx[2]*dx[2]) );
+    Real coeff = AMREX_D_TERM( 1./(dx[0]*dx[0]),
+                             + 1./(dx[1]*dx[1]),
+                             + 1./(dx[2]*dx[2]) );
     amrex::Real dt = cfl/(2.0*coeff);
 
     // time = starting time in the simulation
@@ -326,11 +326,10 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
     }
-    amrex::Real d_tau = Real(0.15)*dt;
+    amrex::Real d_tau = Real(0.45)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
-    
 
     // Print desired variables for debugging
     amrex::Print() << "INFO| number of dimensions: " << AMREX_SPACEDIM << "\n";
@@ -349,8 +348,9 @@ void main_main ()
     staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
 
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
-    gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
-    //gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+    fluxPrsGrad.setVal(0.0);
+    //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
+    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
@@ -418,7 +418,7 @@ void main_main ()
                 // ------------------------- FLUX CALCULATION -------------------------
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, array_grad_p, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
                 // Is there a faster way to subtract two face-centered MultiFab?
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
@@ -436,9 +436,12 @@ void main_main ()
             {
                 MultiFab::Copy(velStar[comp], velHat[comp], 0, 0, 1, 0);
             }
-
             countIter++;
-
+            if ( normError > 1.e-1 )
+            {
+                amrex::Print() << "WARNING| Momentum | normError = " << normError << "\n";
+                break;
+            }
         }// End of the Momentum loop iteration!
         //---------------------------------------
         // MOMENTUM |4| PLOTTING
@@ -468,8 +471,9 @@ void main_main ()
         amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
-        enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
+        /*
         gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
         enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells(cc_grad_phi, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
@@ -508,6 +512,9 @@ void main_main ()
             });
 #endif
         }
+        */
+
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
         // Update the solution
         // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
@@ -515,7 +522,8 @@ void main_main ()
         // also update velContDiff = velCont-velContPrev
         update_solution(array_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
-        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
+        //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
         amrex::Print() << "SOLVING| finished updating all fields \n";
 

@@ -289,6 +289,7 @@ void total_flux_calc ( MultiFab& fluxTotal,
                        MultiFab& fluxViscous,
                        MultiFab& fluxPrsGrad,
                        Array<MultiFab, AMREX_SPACEDIM>& rhs,
+                       Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
                        const Geometry& geom,
                        int const& Nghost,
                        const Vector<int>& phy_bc_lo,
@@ -330,21 +331,26 @@ void total_flux_calc ( MultiFab& fluxTotal,
         auto const& zrhs = rhs[2].array(mfi);
 #endif
 
+        auto const& grad_p_x = array_grad_p[0].array(mfi);
+        auto const& grad_p_y = array_grad_p[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& grad_p_z = array_grad_p[2].array(mfi);
+#endif
         auto const& total_flux = fluxTotal.array(mfi);
 
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
+            xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) ) + grad_p_x(i, j, k);
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
+            yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) ) + grad_p_y(i, j, k);
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
+            zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) ) + grad_p_z(i, j, k);
         });
 #endif
     }

@@ -29,12 +29,12 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (amrex::MultiFab
                                                                  int const& n_cell);
 
 
-void enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells (amrex::MultiFab& userCtx,
-                                                                 amrex::Geometry const& geom,
-                                                                 int const& Nghost,
-                                                                 amrex::Vector<int> const& phy_bc_lo,
-                                                                 amrex::Vector<int> const& phy_bc_hi,
-                                                                 int const& n_cell);
+void enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells (amrex::MultiFab& userCtx,
+                                                                amrex::Geometry const& geom,
+                                                                int const& Nghost,
+                                                                amrex::Vector<int> const& phy_bc_lo,
+                                                                amrex::Vector<int> const& phy_bc_hi,
+                                                                int const& n_cell);
 
 /**
  * @brief The function is the final step in the process of enforcing wall boundary conditions. It interpolates the components of contravariant velocities on the physical boundaries from the two adjacent cell centered components (one is inside the physical domain and one is in the ghost domain).

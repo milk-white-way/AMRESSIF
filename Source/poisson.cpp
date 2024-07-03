@@ -246,7 +246,7 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
         });
     } // End of the loop for boxes
     // Enforce the boundary conditions for the velocity field
-    enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
     // Update velContDiff from the velCont solutions
 #ifdef AMREX_USE_OMP

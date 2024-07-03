@@ -135,7 +135,7 @@ void staggered_grid_init (MultiFab& userCtx,
         });
     }
 
-    enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }
 
 void init (MultiFab& userCtx,
