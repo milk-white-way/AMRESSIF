@@ -1,5 +1,5 @@
 nsteps = 20
-plot_int = 20
+plot_int = 5
 
 fixed_dt = 5.e-6
 n_cell = 128

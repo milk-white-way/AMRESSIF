@@ -278,7 +278,6 @@ void main_main ()
     Array<MultiFab, AMREX_SPACEDIM> array_grad_phi;
 
     Array<MultiFab, AMREX_SPACEDIM> array_analytical_vel;
-    Array<MultiFab, AMREX_SPACEDIM> array_analytical_diff;
 
     // Due to the mismatch between the volume-center and face-center variables
     // The physical quantities living at the face center need to be blowed out one once in the respective direction
@@ -307,7 +306,6 @@ void main_main ()
         array_grad_phi[dir].define(edge_ba, dm, 1, 0);
 
         array_analytical_vel[dir].define(edge_ba, dm, 1, 0);
-        array_analytical_diff[dir].define(edge_ba, dm, 1, 0);
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
@@ -541,7 +539,7 @@ void main_main ()
             array_analytical_vel_calc(array_analytical_vel, geom, time);
             for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
             {
-                MultiFab::Subtract(array_analytical_diff[dir], array_analytical_vel[dir], 0, 0, 1, 0);
+                MultiFab::Subtract(array_analytical_vel[dir], velCont[dir], 0, 0, 1, 0);
             }
 
             long npts;
@@ -555,12 +553,12 @@ void main_main ()
             Vector<Real> l1_sum(AMREX_SPACEDIM);
             Vector<Real> l2_sum(AMREX_SPACEDIM);
 
-            SumAbsStag(array_analytical_diff, l1_sum);
-            StagL2Norm(array_analytical_diff, 0, l2_sum);
+            SumAbsStag(array_analytical_vel, l1_sum);
+            StagL2Norm(array_analytical_vel, 0, l2_sum);
 
             amrex::Print() << "_________________________________________________________________________________________ \n";
-            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant x-velocity: " << array_analytical_diff[0].norm0(0) << "\t|\n";
-            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant y-velocity: " << array_analytical_diff[1].norm0(0) << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant x-velocity: " << array_analytical_vel[0].norm0(0) << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant y-velocity: " << array_analytical_vel[1].norm0(0) << "\t|\n";
             amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for pressure: " << cc_analytical_diff.norm0(2) << "\t \t \t|\n";
             amrex::Print() << "| --------------------------------------------------------------------------------------| \n";
             amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant x-velocity: " << l1_sum[0]/npts << "\t|\n";
