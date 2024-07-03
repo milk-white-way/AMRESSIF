@@ -258,25 +258,27 @@ void array_analytical_vel_calc (Array<MultiFab, AMREX_SPACEDIM>& array_analytica
     }
 }
 
-void cc_analytical_press_calc (MultiFab& cc_analytical_press,
-                               Geometry const& geom,
-                               Real const& time)
+void cc_analytical_calc (MultiFab& analytical_sol,
+                         Geometry const& geom,
+                         Real const& time)
 {
     GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
     GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
 
     // Initialize the analytical pressure field
-    for ( MFIter mfi(cc_analytical_press); mfi.isValid(); ++mfi )
+    for ( MFIter mfi(analytical_sol); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
-        auto const& press_exact = cc_analytical_press.array(mfi);
+        auto const& exact_sol = analytical_sol.array(mfi);
 
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
             amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
             amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
 
-            press_exact(i, j, k, 0) = Real(0.25) * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(8.0) * M_PI * M_PI * time) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+            exact_sol(i, j, k, 0) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+            exact_sol(i, j, k, 1) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+            exact_sol(i, j, k, 2) = Real(0.25) * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(8.0) * M_PI * M_PI * time) * std::exp(-Real(8.0) * M_PI * M_PI * time);
         });
     }
 }
