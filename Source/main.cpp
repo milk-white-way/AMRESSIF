@@ -532,11 +532,15 @@ void main_main ()
             
             // Calculate the analytical pressure field at cell-center
             cc_analytical_calc(cc_analytical_diff, geom, time);
+            array_analytical_vel_calc(array_analytical_vel, geom, time);
+
+            // overwrite velocity with averaged-from-faces exact solution
+            cont2cart(cc_analytical_diff, array_analytical_vel, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+            
             const std::string &export_exact_sol = amrex::Concatenate("pltExact", n, 5);
             WriteSingleLevelPlotfile(export_exact_sol, cc_analytical_diff, {"U", "V", "pressure"}, geom, time, n);
 
             MultiFab::Subtract(cc_analytical_diff, userCtx, 0, 2, 1, 0);
-            array_analytical_vel_calc(array_analytical_vel, geom, time);
             for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
             {
                 MultiFab::Subtract(array_analytical_vel[dir], velCont[dir], 0, 0, 1, 0);
