@@ -193,9 +193,9 @@ void main_main ()
     MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, Nghost);
 
-    MultiFab cc_grad_phi(ba, dm, AMREX_SPACEDIM, 0);    
+    MultiFab cc_grad_phi(ba, dm, AMREX_SPACEDIM, Nghost);    
 
-    MultiFab poisson_rhs(ba, dm, 1, 0);
+    MultiFab poisson_rhs(ba, dm, 1, 1);
     MultiFab poisson_sol(ba, dm, 1, 1);
 
     MultiFab cc_analytical_diff(ba, dm, 3, 0);
@@ -326,7 +326,7 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
     }
-    amrex::Real d_tau = Real(0.45)*dt;
+    amrex::Real d_tau = Real(0.5)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -346,11 +346,18 @@ void main_main ()
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
     staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
-
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
+
     fluxPrsGrad.setVal(0.0);
-    //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
-    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+    cc_grad_phi.setVal(0.0);
+    for (int comp=0; comp < AMREX_SPACEDIM; ++comp)
+    {
+        array_grad_p[comp].setVal(0.0);
+        array_grad_phi[comp].setVal(0.0);
+    }
+
+    gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    //gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
@@ -391,7 +398,7 @@ void main_main ()
         // Momentum solver
         // MOMENTUM |1| Setup counter
         int countIter = 0;
-        Real normError = 1.e9;
+        Real normError = 1.e19;
 
         //-----------------------------------------------
         // This is the sub-iteration of the implicit RK4
@@ -402,7 +409,7 @@ void main_main ()
                 amrex::Print() << "Exceeded number of momenum iterations; exiting loop\n";
                 break;
             }
-            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter
+            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
                            << " => normError = " << normError << "\n";
 
             // Assign intermediate velocity at the beginning of the RK4 sub-iteration
@@ -422,10 +429,7 @@ void main_main ()
                 // Is there a faster way to subtract two face-centered MultiFab?
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
-                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velHat, velHatDiff, velCont, velContDiff, dt);
-
-                // ------------------ CONVERT Ucont^{*,l} => Ucart^{*,l} ------------------
-                cont2cart(velCart, velHat, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velHat, velHatDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
             } // RUNGE-KUTTA | END
 
             normError = Error_Computation(velHat, velStar, velStarDiff, geom);
@@ -452,14 +456,14 @@ void main_main ()
             Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
             Export_Flow_Field("pltMomentum", userCtx, velCart, ba, dm, geom, time, n);
         }
-        amrex::Print() << "SOLVING| finished solving Momentum equation. \n";
+        amrex::Print() << "\nSOLVING| finished solving Momentum equation. \n";
+        amrex::Print() << "\n";
 
         // Poisson solver
         //    Laplacian(\phi) = (Real(1.5)/dt)*Div(u_i^*)
-
         // POISSON |1| Calculating the RSH
         poisson_rhs.setVal(0.0);
-        poisson_righthand_side_calc(poisson_rhs, velStar, geom, dt);
+        poisson_righthand_side_calc(poisson_rhs, velCart, velStar, geom, dt);
         if (plot_int > 0 && n%plot_int == 0)
         {
             const std::string &rhs_export = amrex::Concatenate("pltPoissonRHS", n, 5);
@@ -468,14 +472,11 @@ void main_main ()
 
         // POISSON |2| Init Phi at the begining of the Poisson solver
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
-        amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
+        amrex::Print() << "\nSOLVING| finished solving Poisson equation. \n";
+        amrex::Print() << "\n";
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
-        enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
-        /*
-        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
-        enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells(cc_grad_phi, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -512,9 +513,8 @@ void main_main ()
             });
 #endif
         }
-        */
 
-        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+        //gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
         // Update the solution
         // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
@@ -522,8 +522,8 @@ void main_main ()
         // also update velContDiff = velCont-velContPrev
         update_solution(array_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
-        //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
-        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        //gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
         amrex::Print() << "SOLVING| finished updating all fields \n";
 

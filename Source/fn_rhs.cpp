@@ -81,6 +81,7 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 
 // ==================================== MODULE | POISSON ====================================
 void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
+                                   MultiFab& velCart,
                                    Array<MultiFab, AMREX_SPACEDIM>& velCont,
                                    Geometry const& geom,
                                    Real const& dt )
@@ -95,6 +96,7 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
     {
         const Box& vbx = mfi.validbox();
         auto const& rhs  = poisson_rhs.array(mfi);
+        auto const& vel_cart = velCart.array(mfi);
 
         auto const& vel_cont_x = velCont[0].array(mfi);
         auto const& vel_cont_y = velCont[1].array(mfi);
@@ -108,11 +110,12 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
             //compute_flux_divergence_3D(i, j, k, vrhs, xcont, ycont, zcont, dx);
 #else
             //compute_flux_divergence_2D(i, j, k, vrhs, xcont, ycont, dx);
-            rhs(i, j, k) = ( vel_cont_x(i+1, j, k) - vel_cont_x(i, j, k) )/dx[0] + ( vel_cont_y(i, j+1, k) - vel_cont_y(i, j, k) )/dx[1];
+            //rhs(i, j, k) = ( vel_cont_x(i+1, j, k) - vel_cont_x(i, j, k) )/dx[0] + ( vel_cont_y(i, j+1, k) - vel_cont_y(i, j, k) )/dx[1];
+            rhs(i, j, k) = ( vel_cart(i+1, j, k, 0) - vel_cart(i-1, j, k, 0) )/( Real(2.0)*dx[0] ) + ( vel_cart(i, j+1, k, 1) - vel_cart(i, j-1, k, 1) )/( Real(2.0)*dx[1] );
 
-            rhs(i, j, k) = (amrex::Real(1.5)/dt) * rhs(i, j, k);
+            rhs(i, j, k) = (Real(1.5)/dt) * rhs(i, j, k);
 #endif
         });
     } // End of all box loops
-    Print() << "SOLVING| Poisson | Sum of RHS: " << poisson_rhs.sum(0) << '\n';
+    Print() << "SOLVING| Poisson  | sum of components of RHS = " << poisson_rhs.sum(0) << '\n';
 }

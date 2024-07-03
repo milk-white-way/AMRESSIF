@@ -1,19 +1,26 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "momentum.H"
+#include "utilities.H"
 
 using namespace amrex;
 
 // ==================================== MODULE | ADVANCE =====================================
 void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
-                                         int const& sub,
-                                         Array<MultiFab, AMREX_SPACEDIM>& momentum_rhs,
-                                         Array<MultiFab, AMREX_SPACEDIM>& velStar,
-                                         Array<MultiFab, AMREX_SPACEDIM>& velHat,
-                                         Array<MultiFab, AMREX_SPACEDIM>& velHatDiff,
-                                         Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                                         Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
-                                         Real const& dt)
+                                        int const& sub,
+                                        Array<MultiFab, AMREX_SPACEDIM>& momentum_rhs,
+                                        Array<MultiFab, AMREX_SPACEDIM>& velStar,
+                                        Array<MultiFab, AMREX_SPACEDIM>& velHat,
+                                        Array<MultiFab, AMREX_SPACEDIM>& velHatDiff,
+                                        Array<MultiFab, AMREX_SPACEDIM>& velCont,
+                                        Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
+                                        MultiFab& velCart,
+                                        Geometry const& geom,
+                                        int const& Nghost,
+                                        Vector<int> const& phy_bc_lo,
+                                        Vector<int> const& phy_bc_hi,
+                                        int const& n_cell,
+                                        Real const& dt)
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -90,4 +97,6 @@ void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
         });
 #endif
     }
+    // ------------------ CONVERT Ucont^{*,l} => Ucart^{*,l} ------------------
+    cont2cart(velCart, velHat, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }

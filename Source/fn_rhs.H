@@ -9,6 +9,7 @@ void momentum_righthand_side_calc (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>
                                    amrex::MultiFab& fluxTotal);
 
 void poisson_righthand_side_calc (amrex::MultiFab& poisson_rhs,
+                                  amrex::MultiFab& velCart,
                                   amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                                   amrex::Geometry const& geom,
                                   amrex::Real const& dt);

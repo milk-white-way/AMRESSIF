@@ -23,4 +23,10 @@ void runge_kutta4_pseudo_time_stepping (const amrex::GpuArray<amrex::Real,MAX_RK
                                         amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velHatDiff,
                                         amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                                         amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
+                                        amrex::MultiFab& velCart,
+                                        amrex::Geometry const& geom,
+                                        int const& Nghost,
+                                        amrex::Vector<int> const& phy_bc_lo,
+                                        amrex::Vector<int> const& phy_bc_hi,
+                                        int const& n_cell,
                                         amrex::Real const& dt);

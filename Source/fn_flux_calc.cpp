@@ -206,8 +206,13 @@ void viscous_flux_calc ( MultiFab& fluxViscous,
 void gradient_calc_approach1 ( MultiFab& fluxPrsGrad,
                                MultiFab& cc_grad_phi,
                                MultiFab& userCtx,
-                               Geometry const& geom )
+                               Geometry const& geom,
+                               int const& Nghost,
+                               Vector<int> const& phy_bc_lo,
+                               Vector<int> const& phy_bc_hi,
+                               int const& n_cell )
 {
+    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
 #ifdef AMREX_USE_OMP
@@ -228,6 +233,8 @@ void gradient_calc_approach1 ( MultiFab& fluxPrsGrad,
             compute_phi_gradient_periodic(i, j, k, grad_phi, dx, ctx);
         });
     }
+    
+    enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells(cc_grad_phi, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }
 
 void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,

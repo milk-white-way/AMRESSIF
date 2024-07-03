@@ -25,7 +25,11 @@ void viscous_flux_calc (amrex::MultiFab& fluxViscous,
 void gradient_calc_approach1 (amrex::MultiFab& fluxPrsGrad,
                               amrex::MultiFab& cc_grad_phi,
                               amrex::MultiFab& userCtx,
-                              amrex::Geometry const& geom);
+                              amrex::Geometry const& geom,
+                              int const& Nghost,
+                              amrex::Vector<int> const& phy_bc_lo,
+                              amrex::Vector<int> const& phy_bc_hi,
+                              int const& n_cell);
 
 void gradient_calc_approach2 (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_p,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_phi,

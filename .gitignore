@@ -19,6 +19,7 @@ Exec/Backtrace.*
 Exec/*.png
 Exec/*.log
 Exec/*.ex
+Exec/*.sh
 Exec/*.txt
 Exec/tmp_build_dir
 Exec/ncell*
