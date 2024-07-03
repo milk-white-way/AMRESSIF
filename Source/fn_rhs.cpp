@@ -109,23 +109,10 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
 #else
             //compute_flux_divergence_2D(i, j, k, vrhs, xcont, ycont, dx);
             rhs(i, j, k) = ( vel_cont_x(i+1, j, k) - vel_cont_x(i, j, k) )/dx[0] + ( vel_cont_y(i, j+1, k) - vel_cont_y(i, j, k) )/dx[1];
-#endif
-            });
-    } // End of all box loops
 
-    // Scaling the right-hand side to include time-step here
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(poisson_rhs); mfi.isValid(); ++mfi )
-    {
-        const Box& vbx = mfi.validbox();
-        auto const& rhs  = poisson_rhs.array(mfi);
-
-        amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k)
-        {
             rhs(i, j, k) = (amrex::Real(1.5)/dt) * rhs(i, j, k);
+#endif
         });
-    }
+    } // End of all box loops
+    Print() << "SOLVING| Poisson | Sum of RHS: " << poisson_rhs.sum(0) << '\n';
 }

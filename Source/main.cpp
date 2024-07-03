@@ -450,12 +450,12 @@ void main_main ()
         if (plot_int > 0 && n%plot_int == 0)
         {
             Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
-            Export_Flow_Field("pltMomentum", userCtx, velCart, ba, dm, geom, time, 0);
+            Export_Flow_Field("pltMomentum", userCtx, velCart, ba, dm, geom, time, n);
         }
         amrex::Print() << "SOLVING| finished solving Momentum equation. \n";
 
         // Poisson solver
-        //    Laplacian(\phi) = (Real(1.5)/dt)*Div(\hat{u}_i)
+        //    Laplacian(\phi) = (Real(1.5)/dt)*Div(u_i^*)
 
         // POISSON |1| Calculating the RSH
         poisson_rhs.setVal(0.0);
