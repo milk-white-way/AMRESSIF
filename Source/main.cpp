@@ -191,8 +191,9 @@ void main_main ()
     MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxViscous(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, 0);
-
     MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, Nghost);
+
+    MultiFab cc_grad_phi(ba, dm, AMREX_SPACEDIM, 0);    
 
     MultiFab poisson_rhs(ba, dm, 1, 0);
     MultiFab poisson_sol(ba, dm, 1, 1);
@@ -272,8 +273,9 @@ void main_main ()
     Array<MultiFab, AMREX_SPACEDIM> velStar;
     Array<MultiFab, AMREX_SPACEDIM> velStarDiff;
 
-    // gradient of phi
-    Array<MultiFab, AMREX_SPACEDIM> grad_phi;
+    // gradient variables
+    Array<MultiFab, AMREX_SPACEDIM> array_grad_p;
+    Array<MultiFab, AMREX_SPACEDIM> array_grad_phi;
 
     Array<MultiFab, AMREX_SPACEDIM> array_analytical_vel;
     Array<MultiFab, AMREX_SPACEDIM> array_analytical_diff;
@@ -301,17 +303,18 @@ void main_main ()
         velStar[dir].define(edge_ba, dm, 1, 0);
         velStarDiff[dir].define(edge_ba, dm, 1, 0);
 
-        grad_phi[dir].define(edge_ba, dm, 1, 0);
+        array_grad_p[dir].define(edge_ba, dm, 1, 0);
+        array_grad_phi[dir].define(edge_ba, dm, 1, 0);
 
         array_analytical_vel[dir].define(edge_ba, dm, 1, 0);
         array_analytical_diff[dir].define(edge_ba, dm, 1, 0);
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-    Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
+    amrex::Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
                                  + 1./(dx[1]*dx[1]),
                                  + 1./(dx[2]*dx[2]) );
-    Real dt = cfl/(2.0*coeff);
+    amrex::Real dt = cfl/(2.0*coeff);
 
     // time = starting time in the simulation
     amrex::Real time = 0.0;
@@ -323,6 +326,7 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
     }
+    amrex::Real d_tau = Real(0.15)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -343,9 +347,10 @@ void main_main ()
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
     staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
-    // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
-    // velCont is the main variable to be used in the momentum solver
+
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
+    gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
+    //gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
@@ -360,10 +365,10 @@ void main_main ()
     int RungeKuttaOrder = 4;
     GpuArray<Real, MAX_RK_ORDER> rk;
     {
-        rk[0] = Real(0.25);
-        rk[1] = Real(1.0)/Real(3.0);
-        rk[2] = Real(0.5);
-        rk[3] = Real(1.0);
+        rk[0] = d_tau * Real(0.25);
+        rk[1] = d_tau *(Real(1.0)/Real(3.0));
+        rk[2] = d_tau * Real(0.5);
+        rk[3] = d_tau * Real(1.0);
     }
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -388,7 +393,6 @@ void main_main ()
         int countIter = 0;
         Real normError = 1.e9;
 
-        pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
         //-----------------------------------------------
         // This is the sub-iteration of the implicit RK4
         //-----------------------------------------------
@@ -421,7 +425,7 @@ void main_main ()
                 runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velHat, velHatDiff, velCont, velContDiff, dt);
 
                 // ------------------ CONVERT Ucont^{*,l} => Ucart^{*,l} ------------------
-                //cont2cart(velCart, velHat, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+                cont2cart(velCart, velHat, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
             } // RUNGE-KUTTA | END
 
             normError = Error_Computation(velHat, velStar, velStarDiff, geom);
@@ -440,8 +444,6 @@ void main_main ()
         // MOMENTUM |4| PLOTTING
         // This is just for debugging only !
         //---------------------------------------
-        cont2cart(velCart, velStar, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
         if (plot_int > 0 && n%plot_int == 0)
         {
             Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
@@ -466,21 +468,56 @@ void main_main ()
         amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
-        userCtx.FillBoundary(geom.periodicity());
-        // FIXME add wall case
+        enforce_wall_bcs_for_cell_centered_pressure_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
+        enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells(cc_grad_phi, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for ( MFIter mfi(array_grad_phi[0]); mfi.isValid(); ++mfi )
+        {
+            const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+            const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+
+            const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+            auto const& grad_phi_x = array_grad_phi[0].array(mfi);
+            auto const& grad_phi_y = array_grad_phi[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+            auto const& grad_phi_z = array_grad_phi[2].array(mfi);
+#endif
+
+            auto const& grad_phi = cc_grad_phi.array(mfi);
+
+            amrex::ParallelFor(xbx,
+                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                grad_phi_x(i, j, k) = amrex::Real(0.5)*( grad_phi(i-1, j, k, 0) + grad_phi(i, j, k, 0) );
+            });
+
+            amrex::ParallelFor(ybx,
+                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                grad_phi_y(i, j, k) = amrex::Real(0.5)*( grad_phi(i, j-1, k, 1) + grad_phi(i, j, k, 1) );
+            });
+#if (AMREX_SPACEDIM > 2)
+            amrex::ParallelFor(zbx,
+                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+                grad_phi_z(i, j, k) = amrex::Real(0.5)*( grad_phi(i, j, k-1, 2) + grad_phi(i, j, k, 2) );
+            });
+#endif
+        }
 
         // Update the solution
-        // u_i^{n+1} = \hat{u}_i- 2dt/3 * grad(\phi^{n+1})
-        // (velCont = velHat - 2dt/3 grad_phi)
+        // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
         // p^{n+1} = p^n  + \phi^{n+1}
-        // (userCtx(comp=0) += userCtx(comp=1))
         // also update velContDiff = velCont-velContPrev
-        update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, dt);
-        userCtx.FillBoundary(geom.periodicity());
-        amrex::Print() << "SOLVING| finished updating all fields \n";
+        update_solution(array_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
-        // Update velCart from the velCont solutions
-        cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom);
+
+        amrex::Print() << "SOLVING| finished updating all fields \n";
 
         // Write a plotfile of the current data (plot_int was defined in the inputs file)
         if (plot_int > 0 && n%plot_int == 0)

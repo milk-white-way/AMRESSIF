@@ -313,6 +313,21 @@ void compute_pressure_gradient_periodic (int i, int j, int k,
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void compute_phi_gradient_periodic (int i, int j, int k,
+                                    amrex::Array4<amrex::Real> const& grad_phi,
+                                    amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dx,
+                                    amrex::Array4<amrex::Real> const& phifield)
+{
+    using amrex::Real;
+
+    grad_phi(i, j, k, 0) = (phifield(i+1, j, k, 1) - phifield(i-1, j, k, 1))/(Real(2.0)*dx[0]); // partial phi / partial x
+    grad_phi(i, j, k, 1) = (phifield(i, j+1, k, 1) - phifield(i, j-1, k, 1))/(Real(2.0)*dx[1]); // partial phi / partial y
+#if (AMREX_SPACEDIM > 2)
+    grad_phi(i, j, k, 2) = (phifield(i, j, k+1, 1) - phifield(i, j, k-1, 1))/(Real(2.0)*dx[2]); // partial phi / partial z
+#endif
+}
+
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void compute_total_flux (int i, int j, int k,
                          amrex::Array4<amrex::Real> const& total_flux,
                          amrex::Array4<amrex::Real> const& conv_flux,

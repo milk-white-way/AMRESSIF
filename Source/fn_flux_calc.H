@@ -22,9 +22,15 @@ void viscous_flux_calc (amrex::MultiFab& fluxViscous,
                         amrex::Geometry const& geom,
                         amrex::Real const& ren);
 
-void pressure_gradient_calc (amrex::MultiFab& fluxPrsGrad,
-                             amrex::MultiFab& userCtx,
-                             amrex::Geometry const& geom);
+void gradient_calc_approach1 (amrex::MultiFab& fluxPrsGrad,
+                              amrex::MultiFab& cc_grad_phi,
+                              amrex::MultiFab& userCtx,
+                              amrex::Geometry const& geom);
+
+void gradient_calc_approach2 (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_phi,
+                              amrex::MultiFab& userCtx,
+                              amrex::Geometry const& geom);
 
 void total_flux_calc (amrex::MultiFab& fluxTotal,
                       amrex::MultiFab& fluxConvect,

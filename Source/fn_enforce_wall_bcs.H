@@ -5,7 +5,7 @@
 #include <AMReX_MultiFab.H>
 
 // ============================== UTILITY | BOUNDARY CONDITIONS ==============================
-void enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells (amrex::MultiFab& velCart,
+void enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells (amrex::MultiFab& flux,
                                                              amrex::Geometry const& geom,
                                                              int const& Nghost,
                                                              amrex::Vector<int> const& phy_bc_lo,
