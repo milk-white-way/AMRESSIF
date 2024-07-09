@@ -42,11 +42,6 @@ void total_flux_calc (amrex::MultiFab& fluxTotal,
                       amrex::MultiFab& fluxPrsGrad,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& momentum_rhs,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_p,
-                      amrex::Geometry const& geom,
-                      int const& Nghost,
-                      amrex::Vector<int> const& phy_bc_lo,
-                      amrex::Vector<int> const& phy_bc_hi,
-                      int const& n_cell);
-
+                      amrex::Geometry const& geom);
 
 #endif

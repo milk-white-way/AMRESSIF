@@ -243,6 +243,8 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
                                Geometry const& geom )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
+    Box dom(geom.Domain());
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -268,23 +270,39 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
 
         auto const& ctx = userCtx.array(mfi);
 
+        // Avoiding boundary face-centered gradients
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0)+1;
+        
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            grad_p_x(i, j, k) = ( ctx(i, j, k, 0) - ctx(i-1, j, k, 0) )/dx[0];
-            grad_phi_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+            if ( i != lo && i != hi ){
+                grad_p_x(i, j, k) = ( ctx(i, j, k, 0) - ctx(i-1, j, k, 0) )/dx[0];
+                grad_phi_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+            }
         });
+
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1)+1;
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            grad_p_y(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j-1, k, 0) )/dx[1];
-            grad_phi_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+            if ( j != lo && j != hi ){
+                grad_p_y(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j-1, k, 0) )/dx[1];
+                grad_phi_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+            }
         });
 
 #if (AMREX_SPACEDIM > 2)
+        lo = dom.smallEnd(2);
+        hi = dom.bigEnd(2)+1;
+
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            grad_p_z(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j, k-1, 0) )/dx[2];
-            grad_phi_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+            if ( k != lo && k != hi ){
+                grad_p_z(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j, k-1, 0) )/dx[2];
+                grad_phi_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+            }
         });
 #endif
     }
@@ -297,11 +315,7 @@ void total_flux_calc ( MultiFab& fluxTotal,
                        MultiFab& fluxPrsGrad,
                        Array<MultiFab, AMREX_SPACEDIM>& rhs,
                        Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
-                       const Geometry& geom,
-                       int const& Nghost,
-                       const Vector<int>& phy_bc_lo,
-                       const Vector<int>& phy_bc_hi,
-                       int const& n_cell)
+                       const Geometry& geom )
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -309,21 +323,23 @@ void total_flux_calc ( MultiFab& fluxTotal,
     for ( MFIter mfi(fluxTotal); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
-        // Components
         auto const& conv_flux = fluxConvect.array(mfi);
         auto const& visc_flux = fluxViscous.array(mfi);
         auto const& prsgrad_flux = fluxPrsGrad.array(mfi);
-
         auto const& total_flux = fluxTotal.array(mfi);
 
+        // Only components inside physical domain
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
             compute_total_flux(i, j, k, total_flux, conv_flux, visc_flux, prsgrad_flux);
         });
     }
 
-    enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells(fluxTotal, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    Box dom(geom.Domain());
 
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
     for ( MFIter mfi(rhs[0]); mfi.isValid(); ++mfi )
     {
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
@@ -345,19 +361,32 @@ void total_flux_calc ( MultiFab& fluxTotal,
 #endif
         auto const& total_flux = fluxTotal.array(mfi);
 
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0)+1;
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) ) - grad_p_x(i, j, k);
+            if ( i != lo && i != hi ){
+                xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) ) - grad_p_x(i, j, k);
+            }
         });
 
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1)+1;
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) ) - grad_p_y(i, j, k);
+            if ( j != lo && j != hi ){
+                yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) ) - grad_p_y(i, j, k);
+            }
         });
+
 #if (AMREX_SPACEDIM > 2)
+        lo = dom.smallEnd(2);
+        hi = dom.bigEnd(2)+1;
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) ) - grad_p_z(i, j, k);
+            if ( k != lo && k != hi ){
+                zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) ) - grad_p_z(i, j, k);
+            }
         });
 #endif
     }

@@ -191,7 +191,7 @@ void main_main ()
     MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxViscous(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, 0);
-    MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, 0);
 
     MultiFab cc_grad_phi(ba, dm, AMREX_SPACEDIM, Nghost);    
 
@@ -352,10 +352,11 @@ void main_main ()
     {
         array_grad_p[comp].setVal(0.0);
         array_grad_phi[comp].setVal(0.0);
+        momentum_rhs[comp].setVal(0.0);
     }
 
-    gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    //gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+    //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
@@ -423,8 +424,7 @@ void main_main ()
                 // ------------------------- FLUX CALCULATION -------------------------
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, array_grad_p, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-                // Is there a faster way to subtract two face-centered MultiFab?
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, array_grad_p, geom);
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
                 runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velHat, velHatDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
@@ -474,6 +474,7 @@ void main_main ()
         amrex::Print() << "\n";
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
+        /*
         gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
 #ifdef AMREX_USE_OMP
@@ -511,8 +512,9 @@ void main_main ()
             });
 #endif
         }
+        */
 
-        //gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
         // Update the solution
         // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
@@ -520,8 +522,8 @@ void main_main ()
         // also update velContDiff = velCont-velContPrev
         update_solution(array_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
-        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-        //gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+        //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
         amrex::Print() << "SOLVING| finished updating all fields \n";
 
@@ -534,8 +536,8 @@ void main_main ()
             cc_analytical_calc(cc_analytical_diff, geom, time);
             array_analytical_vel_calc(array_analytical_vel, geom, time);
 
-            // overwrite velocity with averaged-from-faces exact solution
-            cont2cart(cc_analytical_diff, array_analytical_vel, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+            // overwrite cell-center velocity by shifting the face-center velocity to cell-center
+            shift_face_to_center(cc_analytical_diff, velCont);
             
             const std::string &export_exact_sol = amrex::Concatenate("pltExact", n, 5);
             WriteSingleLevelPlotfile(export_exact_sol, cc_analytical_diff, {"U", "V", "pressure"}, geom, time, n);

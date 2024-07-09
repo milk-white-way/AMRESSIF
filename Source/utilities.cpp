@@ -43,6 +43,28 @@ void cont2cart (MultiFab& velCart,
     enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries(velCart, velCont, geom, phy_bc_lo, phy_bc_hi);
 }
 
+void shift_face_to_center (MultiFab& cc_analytical_diff,
+                           Array<MultiFab, AMREX_SPACEDIM>& velCont)
+{ 
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(cc_analytical_diff); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& cc_sol = cc_analytical_diff.array(mfi);
+
+        auto const& vel_cont_x = velCont[0].array(mfi);
+        auto const& vel_cont_y = velCont[1].array(mfi);
+    
+        amrex::ParallelFor(vbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            cc_sol(i, j, k, 0) = vel_cont_x(i, j, k);
+            cc_sol(i, j, k, 1) = vel_cont_y(i, j, k);
+        });
+    }
+}
+
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
 void write_interp_line_solution (Real const& interp_sol,
                                  std::string const& filename)

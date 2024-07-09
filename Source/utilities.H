@@ -14,6 +14,9 @@ void cont2cart (amrex::MultiFab& velCart,
                 amrex::Vector<int> const& phy_bc_hi,
                 int const& n_cell);
 
+void shift_face_to_center(amrex::MultiFab& cc_analytical_diff,
+                          amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont );
+
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
 void write_interp_line_solution (amrex::Real const& interp_sol,
                                  std::string const& filename);
