@@ -61,7 +61,7 @@ void main_main ()
 
     // Physical boundary condition mapping
     // 0 is periodic
-    // -1 is non-slip
+    // -1 is no-slip
     // 1 is slip
     Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
     Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
@@ -324,7 +324,7 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
     }
-    amrex::Real d_tau = Real(0.99)*dt;
+    amrex::Real d_tau = Real(0.9889)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -477,73 +477,34 @@ void main_main ()
         amrex::Print() << "\n";
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
-        /*
-        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-        for ( MFIter mfi(array_grad_phi[0]); mfi.isValid(); ++mfi )
-        {
-            const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-            const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-
-            const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
-            auto const& grad_phi_x = array_grad_phi[0].array(mfi);
-            auto const& grad_phi_y = array_grad_phi[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-            auto const& grad_phi_z = array_grad_phi[2].array(mfi);
-#endif
-
-            auto const& grad_phi = cc_grad_phi.array(mfi);
-
-            amrex::ParallelFor(xbx,
-                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                grad_phi_x(i, j, k) = amrex::Real(0.5)*( grad_phi(i-1, j, k, 0) + grad_phi(i, j, k, 0) );
-            });
-
-            amrex::ParallelFor(ybx,
-                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                grad_phi_y(i, j, k) = amrex::Real(0.5)*( grad_phi(i, j-1, k, 1) + grad_phi(i, j, k, 1) );
-            });
-#if (AMREX_SPACEDIM > 2)
-            amrex::ParallelFor(zbx,
-                               [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                grad_phi_z(i, j, k) = amrex::Real(0.5)*( grad_phi(i, j, k-1, 2) + grad_phi(i, j, k, 2) );
-            });
-#endif
-        }
-        */
-
-        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         // Update the solution
         // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
         // p^{n+1} = p^n  + \phi^{n+1}
         // also update velContDiff = velCont-velContPrev
-        update_solution(array_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
-        //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        update_solution(array_grad_phi, array_grad_phi, fluxPrsGrad, cc_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         amrex::Print() << "SOLVING| finished updating all fields \n";
 
         // Write a plotfile of the current data (plot_int was defined in the inputs file)
         if (plot_int > 0 && n%plot_int == 0)
         {
-            Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
+            // Copy the numerical pressure field
+            MultiFab::Copy(cc_analytical_diff, userCtx, 0, 2, 1, 0);
+            // Shift numerical face-centered velocity to cell-centered
+            shift_face_to_center(cc_analytical_diff, velCont);
+            const std::string &export_numel_sol = amrex::Concatenate("pltNumel", n, 5);
+            WriteSingleLevelPlotfile(export_numel_sol, cc_analytical_diff, {"ucont", "vcont", "pressure"}, geom, time, n);
             
-            // Calculate the analytical pressure field at cell-center
+            // Calculate the analytical cell-center velocity and pressure
             cc_analytical_calc(cc_analytical_diff, geom, time);
+            // Calculate the analytical face-center velocity
             array_analytical_vel_calc(array_analytical_vel, geom, time);
 
-            // overwrite cell-center velocity by shifting the face-center velocity to cell-center
-            shift_face_to_center(cc_analytical_diff, velCont);
-            
+            // Shifting analytical face-centered velocity to cell-centered
+            shift_face_to_center(cc_analytical_diff, array_analytical_vel);
             const std::string &export_exact_sol = amrex::Concatenate("pltExact", n, 5);
-            WriteSingleLevelPlotfile(export_exact_sol, cc_analytical_diff, {"U", "V", "pressure"}, geom, time, n);
+            WriteSingleLevelPlotfile(export_exact_sol, cc_analytical_diff, {"ucont", "vcont", "pressure"}, geom, time, n);
 
             MultiFab::Subtract(cc_analytical_diff, userCtx, 0, 2, 1, 0);
             for (int dir=0; dir < AMREX_SPACEDIM; ++dir)

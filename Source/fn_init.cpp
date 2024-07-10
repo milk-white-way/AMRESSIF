@@ -104,6 +104,8 @@ void staggered_grid_init (MultiFab& userCtx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k){
             vel_cont_z(i, j, k) = amrex::Real(1.0);
 
+            vel_cont_prev_z(i, j, k) = amrex::Real(1.0);
+
             vel_cont_diff_z(i, j, k) = amrex::Real(0.0);
         });
 #endif
