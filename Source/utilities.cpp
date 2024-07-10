@@ -1,46 +1,18 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "utilities.H"
-#include "kn_conversion.H"
+#include "fn_enforce_wall_bcs.H"
 
 using namespace amrex;
 
 // ===================== UTILITY | CONVERSION  =====================
-void cart2cont (MultiFab& velCart,
-                Array<MultiFab, AMREX_SPACEDIM>& velCont)
-{
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
-    {
-
-        Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-        Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-        auto const& xcont = velCont[0].array(mfi);
-        auto const& ycont = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-        auto const& zcont = velCont[2].array(mfi);
-#endif
-        auto const& vcart = velCart.array(mfi);
-
-        amrex::ParallelFor(xbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_x(i, j, k, xcont, vcart); });
-
-        amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_y(i, j, k, ycont, vcart); });
-
-#if (AMREX_SPACEDIM > 2)
-        amrex::ParallelFor(ybx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k){ cart2cont_z(i, j, k, zcont, vcart); });
-#endif
-    }
-}
-
 void cont2cart (MultiFab& velCart,
                 Array<MultiFab, AMREX_SPACEDIM>& velCont,
-                const Geometry& geom)
+                const Geometry& geom, 
+                int const& Nghost,
+                Vector<int> const& phy_bc_lo,
+                Vector<int> const& phy_bc_hi,
+                int const& n_cell)
 {
     //average_face_to_cellcenter(velCart, amrex::GetArrOfConstPtrs(velCont), geom);
 #ifdef AMREX_USE_OMP
@@ -59,37 +31,38 @@ void cont2cart (MultiFab& velCart,
 
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-            //if (i == 0) {
-            //    if (j == 0 || j == vbx.bigEnd(1)) {
-            //Print() << "DEBUG | at i = " << i << "; j = " << j << "\n";
-            //          Print() << "contravariant velocity x(" << i   << ", " << j   << "): " << vel_cont_x(i  , j, k) << "\n";
-            //         //Print() << "contravariant velocity x(" << i+1 << ", " << j   << "): " << vel_cont_x(i+1, j, k) << "\n";
-            //        Print() << "contravariant velocity y(" << i   << ", " << j   << "): " << vel_cont_y(i, j  , k) << "\n";
-            //        //Print() << "contravariant velocity y(" << i   << ", " << j+1  << "): " << vel_cont_y(i, j+1, k) << "\n";
-            //    }
-            //}
             vel_cart(i, j, k, 0) = amrex::Real(0.5)*( vel_cont_x(i, j, k) + vel_cont_x(i+1, j, k) );
             vel_cart(i, j, k, 1) = amrex::Real(0.5)*( vel_cont_y(i, j, k) + vel_cont_y(i, j+1, k) );
 #if (AMREX_SPACEDIM > 2)
             vel_cart(i, j, k, 2) = amrex::Real(0.5)*( vel_cont_z(i, j, k) + vel_cont_z(i, j, k+1) );
 #endif
-            //if (i < vbx.bigEnd(0)) {
-            //    vel_cart(i, j, k, 0) = amrex::Real(0.125)*( 3*vel_cont_x(i, j, k) + 6*vel_cont_x(i+1, j, k) - vel_cont_x(i+2, j, k) );
-            //    vel_cart(i, j, k, 1) = amrex::Real(0.125)*( 3*vel_cont_y(i, j, k) + 6*vel_cont_y(i, j+1, k) - vel_cont_y(i, j+2, k) );
-//#if (AMREX_SPACEDIM > 2)
-//                vel_cart(i, j, k, 2) = amrex::Real(0.125)*( 3*vel_cont_z(i, j, k) + 6*vel_cont_z(i, j, k+1) - vel_cont_z(i, j, k+2) );
-//#endif
-            //} else {
-            //    vel_cart(i, j, k, 0) = amrex::Real(0.125)*( 3*vel_cont_x(i+1, j, k) + 6*vel_cont_x(i, j, k) - vel_cont_x(i-1, j, k) );
-            //    vel_cart(i, j, k, 1) = amrex::Real(0.125)*( 3*vel_cont_y(i, j+1, k) + 6*vel_cont_y(i, j, k) - vel_cont_y(i, j-1, k) );
-//#if (AMREX_SPACEDIM > 2)
-//                vel_cart(i, j, k, 2) = amrex::Real(0.125)*( 3*vel_cont_z(i, j, k+1) + 6*vel_cont_z(i, j, k) - vel_cont_z(i, j, k-1) );
-//#endif
-            //}
         });
     }
 
-    velCart.FillBoundary(geom.periodicity());
+    enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries(velCart, velCont, geom, phy_bc_lo, phy_bc_hi);
+}
+
+void shift_face_to_center (MultiFab& cc_analytical_diff,
+                           Array<MultiFab, AMREX_SPACEDIM>& velCont)
+{ 
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(cc_analytical_diff); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& cc_sol = cc_analytical_diff.array(mfi);
+
+        auto const& vel_cont_x = velCont[0].array(mfi);
+        auto const& vel_cont_y = velCont[1].array(mfi);
+    
+        amrex::ParallelFor(vbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            cc_sol(i, j, k, 0) = vel_cont_x(i, j, k);
+            cc_sol(i, j, k, 1) = vel_cont_y(i, j, k);
+        });
+    }
 }
 
 // ===================== UTILITY | EXTRACT LINE SOLUTION  =====================
@@ -261,30 +234,201 @@ void Export_Flow_Field (std::string const& nameofFile,
 #endif
 }
 
-void analytic_solution_calc (MultiFab& analyticSol,
-                             Geometry const& geom,
-                             Real const& time)
+void array_analytical_vel_calc (Array<MultiFab, AMREX_SPACEDIM>& array_analytical_vel,
+                                Geometry const& geom,
+                                Real const& time)
 {
     GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
     GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(analyticSol); mfi.isValid(); ++mfi) {
-        const Box &vbx = mfi.validbox();
-        auto const &analytic = analyticSol.array(mfi);
-        amrex::ParallelFor(vbx,
-                           [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-          // Real coordinates of the cell center
-          Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
-          Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+    for (MFIter mfi(array_analytical_vel[0]); mfi.isValid(); ++mfi) {
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
 
-          // u velocity
-          analytic(i, j, k, 0) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
-          // v velocity
-          analytic(i, j, k, 1) = -std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
-          // pressure
-          analytic(i, j, k, 2) = Real(0.25) * (std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y)) * std::exp(-Real(16.0) * M_PI * M_PI * time);
+        auto const& vel_cont_exact_x = array_analytical_vel[0].array(mfi);
+        auto const& vel_cont_exact_y = array_analytical_vel[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& vel_cont_exact_z = array_analytical_vel[2].array(mfi);
+#endif
+
+        amrex::ParallelFor(xbx,
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            amrex::Real x = prob_lo[0] + (i + Real(0.0)) * dx[0];
+            amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+            
+            vel_cont_exact_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+        });
+        amrex::ParallelFor(ybx,
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+            amrex::Real y = prob_lo[1] + (j + Real(0.0)) * dx[1];
+
+            vel_cont_exact_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+        });
+#if (AMREX_SPACEDIM > 2)
+        amrex::ParallelFor(zbx,
+                           [=] AMREX_GPU_DEVICE(int i, int j, int k){
+            vel_cont_exact_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+        });
+#endif
+    }
+}
+
+void cc_analytical_calc (MultiFab& analytical_sol,
+                         Geometry const& geom,
+                         Real const& time)
+{
+    GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
+    GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+
+    // Initialize the analytical pressure field
+    for ( MFIter mfi(analytical_sol); mfi.isValid(); ++mfi )
+    {
+        const Box& vbx = mfi.validbox();
+        auto const& exact_sol = analytical_sol.array(mfi);
+
+        amrex::ParallelFor(vbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+            amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+
+            exact_sol(i, j, k, 0) = std::sin(Real(2.0) * M_PI * x) * std::cos(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+            exact_sol(i, j, k, 1) = - std::cos(Real(2.0) * M_PI * x) * std::sin(Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * time);
+            exact_sol(i, j, k, 2) = Real(0.25) * ( std::cos(Real(4.0) * M_PI * x) + std::cos(Real(4.0) * M_PI * y) ) * std::exp(-Real(8.0) * M_PI * M_PI * time) * std::exp(-Real(8.0) * M_PI * M_PI * time);
         });
     }
+}
+
+
+void SumAbsStag(const std::array<MultiFab, 
+                AMREX_SPACEDIM>& m1,
+	            amrex::Vector<amrex::Real>& sum)
+{
+  BL_PROFILE_VAR("SumAbsStag()", SumAbsStag);
+
+  // Initialize to zero
+  std::fill(sum.begin(), sum.end(), 0.);
+
+  ReduceOps<ReduceOpSum> reduce_op;
+
+  //////// x-faces
+
+  ReduceData<Real> reduce_datax(reduce_op);
+  using ReduceTuple = typename decltype(reduce_datax)::Type;
+
+  for (MFIter mfi(m1[0], TilingIfNotGPU()); mfi.isValid(); ++mfi)
+  {
+      const Box& bx = mfi.tilebox();
+      const Box& bx_grid = mfi.validbox();
+
+      auto const& fab = m1[0].array(mfi);
+
+      int xlo = bx_grid.smallEnd(0);
+      int xhi = bx_grid.bigEnd(0);
+
+      reduce_op.eval(bx, reduce_datax,
+      [=] AMREX_GPU_DEVICE (int i, int j, int k) -> ReduceTuple
+      {
+          Real weight = (i>xlo && i<xhi) ? 1.0 : 0.5;
+          return {std::abs(fab(i,j,k)*weight)};
+      });
+  }
+
+  sum[0] = amrex::get<0>(reduce_datax.value());
+  ParallelDescriptor::ReduceRealSum(sum[0]);
+
+  //////// y-faces
+
+  ReduceData<Real> reduce_datay(reduce_op);
+
+  for (MFIter mfi(m1[1],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+  {
+      const Box& bx = mfi.tilebox();
+      const Box& bx_grid = mfi.validbox();
+
+      auto const& fab = m1[1].array(mfi);
+
+      int ylo = bx_grid.smallEnd(1);
+      int yhi = bx_grid.bigEnd(1);
+
+      reduce_op.eval(bx, reduce_datay,
+      [=] AMREX_GPU_DEVICE (int i, int j, int k) -> ReduceTuple
+      {
+          Real weight = (j>ylo && j<yhi) ? 1.0 : 0.5;
+          return {std::abs(fab(i,j,k)*weight)};
+      });
+  }
+
+  sum[1] = amrex::get<0>(reduce_datay.value());
+  ParallelDescriptor::ReduceRealSum(sum[1]);
+
+#if (AMREX_SPACEDIM == 3)
+
+  //////// z-faces
+
+  ReduceData<Real> reduce_dataz(reduce_op);
+
+  for (MFIter mfi(m1[2],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+  {
+      const Box& bx = mfi.tilebox();
+      const Box& bx_grid = mfi.validbox();
+
+      auto const& fab = m1[2].array(mfi);
+
+      int zlo = bx_grid.smallEnd(2);
+      int zhi = bx_grid.bigEnd(2);
+
+      reduce_op.eval(bx, reduce_dataz,
+      [=] AMREX_GPU_DEVICE (int i, int j, int k) -> ReduceTuple
+      {
+          Real weight = (k>zlo && k<zhi) ? 1.0 : 0.5;
+          return {std::abs(fab(i,j,k)*weight)};
+      });
+  }
+
+  sum[2] = amrex::get<0>(reduce_dataz.value());
+  ParallelDescriptor::ReduceRealSum(sum[2]);
+
+#endif
+
+}
+
+void StagL2Norm(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
+		        const int& comp,
+                amrex::Vector<amrex::Real>& inner_prod)
+{
+
+    BL_PROFILE_VAR("StagL2Norm()", StagL2Norm);
+
+    Array<MultiFab, AMREX_SPACEDIM> mscr;
+    for (int dir=0; dir < AMREX_SPACEDIM; dir++) {
+        mscr[dir].define(m1[dir].boxArray(), m1[dir].DistributionMap(), 1, 0);
+    }
+
+    StagInnerProd(m1, comp, mscr, inner_prod);
+    for (int dir=0; dir<AMREX_SPACEDIM; dir++) {
+        inner_prod[dir] = std::sqrt(inner_prod[dir]);
+    }
+}
+
+void StagInnerProd(const std::array<MultiFab, AMREX_SPACEDIM>& m1,
+                   const int& comp1,
+                   std::array<MultiFab, AMREX_SPACEDIM>& mscr,
+                   amrex::Vector<amrex::Real>& prod_val)
+{
+  BL_PROFILE_VAR("StagInnerProd()", StagInnerProd);
+
+  for (int d=0; d<AMREX_SPACEDIM; d++) {
+    MultiFab::Copy(mscr[d], m1[d], comp1, 0, 1, 0);
+    MultiFab::Multiply(mscr[d], m1[d], comp1, 0, 1, 0);
+  }
+
+  std::fill(prod_val.begin(), prod_val.end(), 0.);
+  SumAbsStag(mscr, prod_val);
 }

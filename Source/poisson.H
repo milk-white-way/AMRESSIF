@@ -6,6 +6,9 @@
 #include <AMReX_MLABecLaplacian.H>
 #include <AMReX_MultiFabUtil.H>
 
+#include <fn_enforce_wall_bcs.H>
+#include <utilities.H>
+
 //-------------------------------------------------------
 void poisson_advance (amrex::MultiFab& poisson_sol,
                       amrex::MultiFab& poisson_rhs,
@@ -16,11 +19,16 @@ void poisson_advance (amrex::MultiFab& poisson_sol,
 
 void init_phi (amrex::MultiFab& phi);
 
-void update_solution (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &grad_phi,
-                      amrex::MultiFab &userCtx,
-                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velCont,
-                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velContPrev,
-                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velContDiff,
-                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> &velHat,
-                      amrex::Geometry const &geom,
-                      amrex::Real const &dt);
+void update_solution (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_phi,
+                      amrex::MultiFab& userCtx,
+                      amrex::MultiFab& velCart,
+                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
+                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContPrev,
+                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
+                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velStar,
+                      amrex::Geometry const& geom,
+                      amrex::Real const& dt,
+                      int const& Nghost,
+                      amrex::Vector<int> const& phy_bc_lo,
+                      amrex::Vector<int> const& phy_bc_hi,
+                      int const& n_cell);

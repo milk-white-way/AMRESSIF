@@ -1,3 +1,13 @@
+/**
+ * @file main.cpp
+ * @author Thien-Tam Nguyen (tam.thien.nguyen@ndsu.edu)
+ * @brief This is the main code
+ * @version 0.3
+ * @date 2024-06-24
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 // =================== LISTING KERNEL HEADERS ==============================
 #include <AMReX_Gpu.H>
 #include <AMReX_Utility.H>
@@ -13,7 +23,6 @@
 
 // Modulization library
 #include "fn_init.H"
-#include "fn_enforce_wall_bcs.H"
 #include "fn_flux_calc.H"
 #include "fn_rhs.H"
 #include "momentum.H"
@@ -104,7 +113,7 @@ void main_main ()
         pp.query("target_resolution", target_resolution);
 
         momentum_tolerance = 1.e-10;
-        pp.query("momentum_tolerance",momentum_tolerance);
+        pp.query("momentum_tolerance", momentum_tolerance);
     }
 
     Vector<int> is_periodic(AMREX_SPACEDIM, 0);
@@ -175,21 +184,21 @@ void main_main ()
 
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, 0);
+    MultiFab velCartPrev(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);
 
     // Three type of fluxes contributing the the total flux live in the cell center
     MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxViscous(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, 0);
+    MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, 1);
 
-    MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, Nghost);
+    MultiFab cc_grad_phi(ba, dm, AMREX_SPACEDIM, Nghost);    
 
-    MultiFab poisson_rhs(ba, dm, 1, 0);
+    MultiFab poisson_rhs(ba, dm, 1, 1);
     MultiFab poisson_sol(ba, dm, 1, 1);
 
-    MultiFab analyticSol(ba, dm, 3, 0);
-
-    MultiFab l2norm(ba, dm, 3, 0);
+    MultiFab cc_analytical_diff(ba, dm, 3, 0);
     // Comp 0 is velocity field along x-axis
     // Comp 1 is velocity field along y-axis
     // Comp 2 is pressure field
@@ -245,14 +254,6 @@ void main_main ()
      *
      */
 
-    //------------------------------------------------------
-    // 1 of 4 options: 'pressure', 'phi', 'flux', 'velocity'
-    //------------------------------------------------------
-    const std::string& type1 = "pressure";
-    const std::string& type2 = "phi";
-    const std::string& type3 = "flux";
-    const std::string& type4 = "velocity";
-
     // Contravariant velocities live in the face center
     Array<MultiFab, AMREX_SPACEDIM> velCont;
     Array<MultiFab, AMREX_SPACEDIM> velContPrev;
@@ -271,8 +272,12 @@ void main_main ()
     Array<MultiFab, AMREX_SPACEDIM> velHatDiff;
     Array<MultiFab, AMREX_SPACEDIM> velStar;
     Array<MultiFab, AMREX_SPACEDIM> velStarDiff;
-    // gradient of phi
-    Array<MultiFab, AMREX_SPACEDIM> grad_phi;
+
+    // gradient variables
+    Array<MultiFab, AMREX_SPACEDIM> array_grad_p;
+    Array<MultiFab, AMREX_SPACEDIM> array_grad_phi;
+
+    Array<MultiFab, AMREX_SPACEDIM> array_analytical_vel;
 
     // Due to the mismatch between the volume-center and face-center variables
     // The physical quantities living at the face center need to be blowed out one once in the respective direction
@@ -297,14 +302,17 @@ void main_main ()
         velStar[dir].define(edge_ba, dm, 1, 0);
         velStarDiff[dir].define(edge_ba, dm, 1, 0);
 
-        grad_phi[dir].define(edge_ba, dm, 1, 0);
+        array_grad_p[dir].define(edge_ba, dm, 1, 0);
+        array_grad_phi[dir].define(edge_ba, dm, 1, 0);
+
+        array_analytical_vel[dir].define(edge_ba, dm, 1, 0);
     }
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-    Real coeff = AMREX_D_TERM(   1./(dx[0]*dx[0]),
-                                 + 1./(dx[1]*dx[1]),
-                                 + 1./(dx[2]*dx[2]) );
-    Real dt = cfl/(2.0*coeff);
+    Real coeff = AMREX_D_TERM( 1./(dx[0]*dx[0]),
+                             + 1./(dx[1]*dx[1]),
+                             + 1./(dx[2]*dx[2]) );
+    amrex::Real dt = cfl/(2.0*coeff);
 
     // time = starting time in the simulation
     amrex::Real time = 0.0;
@@ -316,10 +324,10 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
     }
+    amrex::Real d_tau = Real(0.99)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
-    
 
     // Print desired variables for debugging
     amrex::Print() << "INFO| number of dimensions: " << AMREX_SPACEDIM << "\n";
@@ -327,38 +335,49 @@ void main_main ()
     amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
     amrex::Print() << "PARAMS| number of components for each array: " << Ncomp << "\n";
 
-    //--------------------------------------------------------------------------------------//
-    // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------//
-    //--------------------------------------------------------------------------------------//
+    /**--------------------------------------------------------------------------------------
+     * =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------
+     *--------------------------------------------------------------------------------------
+     */
 
     amrex::Print() << "========================= INITIALIZATION STEP ========================= \n";
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
-    staggered_grid_initial_config(userCtx, velCont, velContDiff, geom);
-    // Convert cartesian velocity to contravariant velocity after boundary conditions are enfoced
-    // velCont is the main variable to be used in the momentum solver
-    cont2cart(velCart, velCont, geom);
-
-    // FIXME - this routine should be added to the end of cont2cart
-    enforce_boundary_conditions(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
+    staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
+    // Quickly init flux fields as zero
+    fluxConvect.setVal(0.0);
+    fluxViscous.setVal(0.0);
+    fluxPrsGrad.setVal(0.0);
+    cc_grad_phi.setVal(0.0);
+    poisson_rhs.setVal(0.0);
+    for (int comp=0; comp < AMREX_SPACEDIM; ++comp)
+    {
+        array_grad_p[comp].setVal(0.0);
+        array_grad_phi[comp].setVal(0.0);
+        momentum_rhs[comp].setVal(0.0);
+    }
+
+    //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
     if (plot_int > 0)
     {
         Export_Flow_Field("pltInit", userCtx, velCart, ba, dm, geom, time, 0);
+        Export_Flow_Field("pltInitPrev", userCtx, velCartPrev, ba, dm, geom, time, 0);
+        Export_Flow_Field("pltInitDiff", userCtx, velCartDiff, ba, dm, geom, time, 0);
     }
 
     // Setup Runge-Kutta scheme coefficients
     int RungeKuttaOrder = 4;
     GpuArray<Real, MAX_RK_ORDER> rk;
     {
-        rk[0] = Real(0.25);
-        rk[1] = Real(1.0)/Real(3.0);
-        rk[2] = Real(0.5);
-        rk[3] = Real(1.0);
+        rk[0] = d_tau * Real(0.25);
+        rk[1] = d_tau *(Real(1.0)/Real(3.0));
+        rk[2] = d_tau * Real(0.5);
+        rk[3] = d_tau * Real(1.0);
     }
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -381,190 +400,39 @@ void main_main ()
         // Momentum solver
         // MOMENTUM |1| Setup counter
         int countIter = 0;
-        Real normError = 1.e99;
+        Real normError = 1.e19;
 
-        // After debugging, all the code below will be modulized to the MOMENTUM module i.e.,:
-        // momentum_km_runge_kutta();
         //-----------------------------------------------
         // This is the sub-iteration of the implicit RK4
         //-----------------------------------------------
         while ( normError > momentum_tolerance )
         {
-            countIter++;
             if (countIter > IterNum) {
                 amrex::Print() << "Exceeded number of momenum iterations; exiting loop\n";
                 break;
             }
-            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at iteration: " << countIter
+            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
                            << " => normError = " << normError << "\n";
 
             // Assign intermediate velocity at the beginning of the RK4 sub-iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
                 MultiFab::Copy(velHat[comp], velStar[comp], 0, 0, 1, 0);
+                velHatDiff[comp].setVal(0.0);
             }
 
-            //RungeKuttaOrder = 1;
             // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
-                // ---------------------- FLUX CALCULATION ----------------------
-                // RUNGE-KUTTA | Calculate Cell-centered Convective terms
+                // ------------------------- FLUX CALCULATION -------------------------
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, phy_bc_lo, phy_bc_hi, geom, n_cell);
-
-                // RUNGE-KUTTA | Calculate Cell-centered Viscous terms
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, array_grad_p, geom);
 
-                // RUNGE-KUTTA | Calculate Cell-centered Pressure Gradient terms
-                pressure_gradient_calc(fluxPrsGrad, userCtx, geom);
-
-                // RUNGE-KUTTA | Calculate Cell-centered Total Flux = -fluxConvect + fluxViscous - fluxPrsGrad
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, geom);
-
-                // RUNGE-KUTTA | Calculate the Face-centered Right-Hand-Side terms by averaging the Cell-centered fluxes
-                momentum_righthand_side_calc(momentum_rhs, fluxTotal);
-                // Is there a faster way to subtract two face-centered MultiFab?
-
-                // ------------------------ MOMENTUM SOLVER ------------------------
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-                for (MFIter mfi(velHatDiff[0]); mfi.isValid(); ++mfi)
-                {
-                    const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-                    const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-                    const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
-
-                    auto const &vel_hat_diff_x = velHatDiff[0].array(mfi);
-                    auto const &vel_hat_diff_y = velHatDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_hat_diff_z = velHatDiff[2].array(mfi);
-#endif
-
-                    auto const &vel_hat_x = velHat[0].array(mfi);
-                    auto const &vel_hat_y = velHat[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_hat_z = velHat[2].array(mfi);
-#endif
-
-                    auto const &vel_cont_x = velCont[0].array(mfi);
-                    auto const &vel_cont_y = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_cont_z = velCont[2].array(mfi);
-#endif
-                    amrex::ParallelFor(xbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        vel_hat_diff_x(i, j, k) = vel_hat_x(i, j, k) - vel_cont_x(i, j, k);
-                    });
-                    amrex::ParallelFor(ybx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        vel_hat_diff_y(i, j, k) = vel_hat_y(i, j, k) - vel_cont_y(i, j, k);
-                    });
-#if (AMREX_SPACEDIM > 2)
-                    amrex::ParallelFor(zbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        vel_hat_diff_z(i, j, k) = vel_hat_z(i, j, k) - vel_cont_z(i, j, k);
-                    });
-#endif
-                }
-
-                // RUNGE-KUTTA | Advance; increment momentum_rhs and use it to update velHat
-                //km_runge_kutta_advance(rk, sub, momentum_rhs, velHat, velHatDiff, velContDiff, velStar, dt, bc_lo, bc_hi, n_cell);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-                for (MFIter mfi(velHat[0]); mfi.isValid(); ++mfi)
-                {
-                    const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-                    const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-                    const Box &zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
-
-                    auto const& xrhs = momentum_rhs[0].array(mfi);
-                    auto const& yrhs = momentum_rhs[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const& zrhs = momentum_rhs[2].array(mfi);
-#endif
-
-                    auto const &vel_star_x = velStar[0].array(mfi);
-                    auto const &vel_star_y = velStar[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_star_z = velStar[2].array(mfi);
-#endif
-
-                    auto const &vel_hat_x = velHat[0].array(mfi);
-                    auto const &vel_hat_y = velHat[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_hat_z = velHat[2].array(mfi);
-#endif
-
-                    auto const &vel_cont_x = velCont[0].array(mfi);
-                    auto const &vel_cont_y = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_cont_z = velCont[2].array(mfi);
-#endif
-
-                    auto const &vel_hat_diff_x = velHatDiff[0].array(mfi);
-                    auto const &vel_hat_diff_y = velHatDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_hat_diff_z = velHatDiff[2].array(mfi);
-#endif
-
-                    auto const &vel_cont_diff_x = velContDiff[0].array(mfi);
-                    auto const &vel_cont_diff_y = velContDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-                    auto const &vel_cont_diff_z = velContDiff[2].array(mfi);
-#endif
-
-                    amrex::ParallelFor(xbx, 
-                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_x(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
-                        
-                        // Boundary check:
-                        // FIXME check whether we are at a wall
-                        /*
-                        if (i == 0 || i == xbx.bigEnd(0)) {
-                            xrhs(i, j, k) = xrhs(i, j, k);
-                        }
-                        */
-
-                        //Print() << "\t vel_hat_diff_x(" << i << ", " << j << "): " << vel_hat_diff_x(i, j, k);
-                        //Print() << "\t vel_cont_diff_x(" << i << ", " << j << "): " << vel_cont_diff_x(i, j, k);
-                        //Print() << "\t xrhs(" << i << ", " << j << "): " << xrhs(i, j, k) << "\n";
-
-                        vel_hat_x(i, j, k) = vel_star_x(i, j, k) + ( rk[sub] * dt * Real(0.4) * xrhs(i, j, k) );
-                    });
-                    amrex::ParallelFor(ybx,
-                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_y(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
-                        
-                        // Boundary check:
-                        // FIXME check whether we are at a wall
-                        /*
-                        if (j == 0 || j == ybx.bigEnd(1)) {
-                            yrhs(i, j, k) = yrhs(i, j, k);
-                        }
-                        */
-                        
-                        vel_hat_y(i, j, k) = vel_star_y(i, j, k) + ( rk[sub] * dt * Real(0.4) * yrhs(i, j, k) );
-                    });
-#if (AMREX_SPACEDIM > 2)
-                    amrex::ParallelFor(zbx,
-                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        zrhs(i, j, k) = zrhs(i, j, k) - ( Real(1.5)/dt )*vel_hat_diff_z(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_z(i, j, k);
-                        
-                        vel_hat_z(i, j, k) = vel_star_z(i, j, k) + ( rk[sub] * dt * Real(0.4) * zrhs(i, j, k) );
-                    });
-#endif
-                }
-
-                // ------------------ FORMING BOUNDARY CONDITIONS ------------------
-                // RUNGE-KUTTA | Update velCart from velHat
-                cont2cart(velCart, velHat, geom);
-
+                // --------------------------- MOMENTUM SOLVER ---------------------------
+                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velHat, velHatDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
             } // RUNGE-KUTTA | END
 
-            // RUNGE-KUTTA | Calculate the error norm
             normError = Error_Computation(velHat, velStar, velStarDiff, geom);
             //amrex::Print() << "error norm2 = " << normError << "\n";
 
@@ -573,26 +441,30 @@ void main_main ()
             {
                 MultiFab::Copy(velStar[comp], velHat[comp], 0, 0, 1, 0);
             }
-
+            countIter++;
+            if ( normError > 1.e-1 )
+            {
+                amrex::Print() << "WARNING| Momentum | normError = " << normError << "\n";
+                break;
+            }
         }// End of the Momentum loop iteration!
         //---------------------------------------
         // MOMENTUM |4| PLOTTING
         // This is just for debugging only !
         //---------------------------------------
-        cont2cart(velCart, velStar, geom);
         if (plot_int > 0 && n%plot_int == 0)
         {
             Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
-            Export_Flow_Field("pltMomentum", userCtx, velCart, ba, dm, geom, time, 0);
+            Export_Flow_Field("pltMomentum", userCtx, velCart, ba, dm, geom, time, n);
         }
-        amrex::Print() << "SOLVING| finished solving Momentum equation. \n";
+        amrex::Print() << "\nSOLVING| finished solving Momentum equation. \n";
+        amrex::Print() << "\n";
 
         // Poisson solver
-        //    Laplacian(\phi) = (Real(1.5)/dt)*Div(\hat{u}_i)
-
+        //    Laplacian(\phi) = (Real(1.5)/dt)*Div(u_i^*)
         // POISSON |1| Calculating the RSH
         poisson_rhs.setVal(0.0);
-        poisson_righthand_side_calc(poisson_rhs, velStar, geom, dt);
+        poisson_righthand_side_calc(poisson_rhs, velCart, velStar, geom, dt);
         if (plot_int > 0 && n%plot_int == 0)
         {
             const std::string &rhs_export = amrex::Concatenate("pltPoissonRHS", n, 5);
@@ -601,75 +473,83 @@ void main_main ()
 
         // POISSON |2| Init Phi at the begining of the Poisson solver
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
-        amrex::Print() << "SOLVING| finished solving Poisson equation. \n";
+        amrex::Print() << "\nSOLVING| finished solving Poisson equation. \n";
+        amrex::Print() << "\n";
 
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
-        userCtx.FillBoundary(geom.periodicity());
-        // FIXME add wall case
+        /*
+        gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
-        // Update the solution
-        // u_i^{n+1} = \hat{u}_i- 2dt/3 * grad(\phi^{n+1})
-        // (velCont = velHat - 2dt/3 grad_phi)
-        // p^{n+1} = p^n  + \phi^{n+1}
-        // (userCtx(comp=0) += userCtx(comp=1))
-        // also update velContDiff = velCont-velContPrev
-        update_solution(grad_phi, userCtx, velCont, velContPrev, velContDiff, velHat, geom, dt);
-        userCtx.FillBoundary(geom.periodicity());
-        amrex::Print() << "SOLVING| finished updating all fields \n";
-
-        // Update velCart from the velCont solutions
-        cont2cart(velCart, velCont, geom);
-
-/* FIXME - need logic to check whether the bc is actually a wall
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-        for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
+        for ( MFIter mfi(array_grad_phi[0]); mfi.isValid(); ++mfi )
         {
-            Box xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-            Box ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+            const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+            const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
-            Box zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+
+            const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+            auto const& grad_phi_x = array_grad_phi[0].array(mfi);
+            auto const& grad_phi_y = array_grad_phi[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+            auto const& grad_phi_z = array_grad_phi[2].array(mfi);
 #endif
 
-            auto const& vel_cont_x = velCont[0].array(mfi);
-            auto const& vel_cont_y = velCont[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-            auto const& vel_cont_z = velCont[2].array(mfi);
-#endif
-            auto const& vel_cart = velCart.array(mfi);
+            auto const& grad_phi = cc_grad_phi.array(mfi);
 
             amrex::ParallelFor(xbx,
                                [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                if (i == 0 || i == xbx.bigEnd(0)) {
-                    vel_cont_x(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
-                }
+                grad_phi_x(i, j, k) = amrex::Real(0.5)*( grad_phi(i-1, j, k, 0) + grad_phi(i, j, k, 0) );
             });
 
             amrex::ParallelFor(ybx,
                                [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                if (j == 0 || j == ybx.bigEnd(1)) {
-                    vel_cont_y(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
-                }
+                grad_phi_y(i, j, k) = amrex::Real(0.5)*( grad_phi(i, j-1, k, 1) + grad_phi(i, j, k, 1) );
             });
-
 #if (AMREX_SPACEDIM > 2)
-            amrex::ParallelFor(ybx,
+            amrex::ParallelFor(zbx,
                                [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-                if (k == 0 || k == zbx.bigEnd(2)) {
-                    vel_cont_z(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 2) + vel_cart(i, j, k-1, 2) );
-                }
+                grad_phi_z(i, j, k) = amrex::Real(0.5)*( grad_phi(i, j, k-1, 2) + grad_phi(i, j, k, 2) );
             });
 #endif
         }
-*/
+        */
 
-        analytic_solution_calc(analyticSol, geom, time);
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
 
+        // Update the solution
+        // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
+        // p^{n+1} = p^n  + \phi^{n+1}
+        // also update velContDiff = velCont-velContPrev
+        update_solution(array_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+        //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+
+        amrex::Print() << "SOLVING| finished updating all fields \n";
+
+        // Write a plotfile of the current data (plot_int was defined in the inputs file)
+        if (plot_int > 0 && n%plot_int == 0)
         {
-            MultiFab::Copy(l2norm, velCart, 0, 0, 2, 0);
-            MultiFab::Copy(l2norm, userCtx, 0, 2, 1, 0);
-            MultiFab::Subtract(l2norm, analyticSol, 0, 0, 3, 0);
+            Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
+            
+            // Calculate the analytical pressure field at cell-center
+            cc_analytical_calc(cc_analytical_diff, geom, time);
+            array_analytical_vel_calc(array_analytical_vel, geom, time);
+
+            // overwrite cell-center velocity by shifting the face-center velocity to cell-center
+            shift_face_to_center(cc_analytical_diff, velCont);
+            
+            const std::string &export_exact_sol = amrex::Concatenate("pltExact", n, 5);
+            WriteSingleLevelPlotfile(export_exact_sol, cc_analytical_diff, {"U", "V", "pressure"}, geom, time, n);
+
+            MultiFab::Subtract(cc_analytical_diff, userCtx, 0, 2, 1, 0);
+            for (int dir=0; dir < AMREX_SPACEDIM; ++dir)
+            {
+                MultiFab::Subtract(array_analytical_vel[dir], velCont[dir], 0, 0, 1, 0);
+            }
 
             long npts;
             Box my_domain = geom.Domain();
@@ -679,36 +559,27 @@ void main_main ()
             npts = (my_domain.length(0) * my_domain.length(1) * my_domain.length(2));
 #endif
 
-            //amrex::Print() << my_domain.length(0) << "\n";
-            //amrex::Print() << my_domain.length(1) << "\n";
+            Vector<Real> l1_sum(AMREX_SPACEDIM);
+            Vector<Real> l2_sum(AMREX_SPACEDIM);
 
-            amrex::Print() << "BENCHMARKING| L0 ERROR NORM for x-velocity: " << l2norm.norm0(0) << "\n";
-            amrex::Print() << "BENCHMARKING| L0 ERROR NORM for y-velocity: " << l2norm.norm0(1) << "\n";
-            amrex::Print() << "BENCHMARKING| L0 ERROR NORM for pressure:   " << l2norm.norm0(2) << "\n";
+            SumAbsStag(array_analytical_vel, l1_sum);
+            StagL2Norm(array_analytical_vel, 0, l2_sum);
 
-            amrex::Print() << "BENCHMARKING| L1 ERROR NORM for x-velocity: " << l2norm.norm1(0)/npts << "\n";
-            amrex::Print() << "BENCHMARKING| L1 ERROR NORM for y-velocity: " << l2norm.norm1(1)/npts << "\n";
-            amrex::Print() << "BENCHMARKING| L1 ERROR NORM for pressure:   " << l2norm.norm1(2)/npts << "\n";
+            amrex::Print() << "_________________________________________________________________________________________ \n";
+            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant x-velocity: " << array_analytical_vel[0].norm0(0) << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for contravariant y-velocity: " << array_analytical_vel[1].norm0(0) << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L0 ERROR NORM for pressure: " << cc_analytical_diff.norm0(2) << "\t \t \t|\n";
+            amrex::Print() << "| --------------------------------------------------------------------------------------| \n";
+            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant x-velocity: " << l1_sum[0]/npts << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for contravariant y-velocity: " << l1_sum[1]/npts << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L1 ERROR NORM for pressure: " << cc_analytical_diff.norm1(2)/npts << "\t \t \t|\n";
+            amrex::Print() << "| --------------------------------------------------------------------------------------| \n";
+            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for contravariant x-velocity: " << l2_sum[0]/std::sqrt(npts) << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for contravariant y-velocity: " << l2_sum[1]/std::sqrt(npts) << "\t|\n";
+            amrex::Print() << "|\t BENCHMARKING| L2 ERROR NORM for pressure: " << cc_analytical_diff.norm2(2)/std::sqrt(npts) << "\t \t \t|\n";
+            amrex::Print() << "|_______________________________________________________________________________________| \n";
 
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for x-velocity: " << l2norm.norm2(0)/std::sqrt(npts) << "\n";
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for y-velocity: " << l2norm.norm2(1)/std::sqrt(npts) << "\n";
-            amrex::Print() << "BENCHMARKING| L2 ERROR NORM for pressure:   " << l2norm.norm2(2)/std::sqrt(npts) << "\n";
-
-            if (plot_int > 0 && n%plot_int == 0)
-            {
-                const std::string &analytic_export = amrex::Concatenate("pltAnalytic", n, 5);
-                WriteSingleLevelPlotfile(analytic_export, analyticSol, {"U", "V", "pressure"}, geom, time, n);
-                const std::string &diff_export = amrex::Concatenate("pltDiff", n, 5);
-                WriteSingleLevelPlotfile(diff_export, l2norm, {"U", "V", "pressure"}, geom, time, n);
-            }
-        } // End of benchmark
-
-        // Write a plotfile of the current data (plot_int was defined in the inputs file)
-        if (plot_int > 0 && n%plot_int == 0)
-        {
-            Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
-
-            // Construct the filename for this iteration
+            /*
             std::string hline_filename = std::to_string(n_cell) + "n_cell-output_hline_" + std::to_string(n) + ".txt";
             std::string vline_filename = std::to_string(n_cell) + "n_cell-output_vline_" + std::to_string(n) + ".txt";
 
@@ -841,6 +712,7 @@ void main_main ()
                 });
 #endif
             }
+        */
         }
 
         amrex::Print() << "========================== FINISH TIME: " << time << " ========================== \n";

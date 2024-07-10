@@ -1,5 +1,6 @@
 #include <AMReX_MultiFabUtil.H>
 
+#include "fn_enforce_wall_bcs.H"
 #include "fn_flux_calc.H"
 #include "kn_flux_calc.H"
 #include "kn_poisson.H"
@@ -201,11 +202,17 @@ void viscous_flux_calc ( MultiFab& fluxViscous,
     }
 }
 
-// +++++++++++++++++++++++++ Presure Gradient Flux  +++++++++++++++++++++++++
-void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
-                              MultiFab& userCtx,
-                              Geometry const& geom )
+// +++++++++++++++++++++++++ Gradient Flux  +++++++++++++++++++++++++
+void gradient_calc_approach1 ( MultiFab& fluxPrsGrad,
+                               MultiFab& cc_grad_phi,
+                               MultiFab& userCtx,
+                               Geometry const& geom,
+                               int const& Nghost,
+                               Vector<int> const& phy_bc_lo,
+                               Vector<int> const& phy_bc_hi,
+                               int const& n_cell )
 {
+    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
 #ifdef AMREX_USE_OMP
@@ -214,18 +221,113 @@ void pressure_gradient_calc ( MultiFab& fluxPrsGrad,
     for ( MFIter mfi(fluxPrsGrad); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
-        auto const& pressurefield = userCtx.array(mfi);
+        auto const& ctx = userCtx.array(mfi);
         auto const& presgrad_flux = fluxPrsGrad.array(mfi);
+        auto const& grad_phi = cc_grad_phi.array(mfi);
 
         amrex::ParallelFor(vbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
             // PERIODIC ONLY
-            compute_pressure_gradient_periodic(i, j, k, presgrad_flux, dx, pressurefield);
+            compute_pressure_gradient_periodic(i, j, k, presgrad_flux, dx, ctx);
+            compute_phi_gradient_periodic(i, j, k, grad_phi, dx, ctx);
         });
     }
+    
+    enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells(cc_grad_phi, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+}
 
-    fluxPrsGrad.FillBoundary(geom.periodicity());
+void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                               Array<MultiFab, AMREX_SPACEDIM>& array_grad_phi,
+                               MultiFab& userCtx,
+                               Geometry const& geom,
+                               int const& Nghost,
+                               Vector<int> const& phy_bc_lo,
+                               Vector<int> const& phy_bc_hi,
+                               int const& n_cell )
+{
+    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+    GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
+    Box dom(geom.Domain());
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(array_grad_phi[1]); mfi.isValid(); ++mfi )
+    {
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+
+        auto const& west_wall_bcs = phy_bc_lo[0]; // west wall
+        auto const& east_wall_bcs = phy_bc_hi[0]; // east wall
+
+        auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
+        auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
+#if (AMREX_SPACEDIM > 2)
+        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
+#endif
+
+        auto const& grad_p_x = array_grad_p[0].array(mfi);
+        auto const& grad_p_y = array_grad_p[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& grad_p_z = array_grad_p[2].array(mfi);
+#endif
+
+        auto const& grad_phi_x = array_grad_phi[0].array(mfi);
+        auto const& grad_phi_y = array_grad_phi[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& grad_phi_z = array_grad_phi[2].array(mfi);
+#endif
+
+        auto const& ctx = userCtx.array(mfi);
+
+        // Avoiding boundary face-centered gradients
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0)+1;
+        
+        amrex::ParallelFor(xbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            grad_p_x(i, j, k) = ( ctx(i, j, k, 0) - ctx(i-1, j, k, 0) )/dx[0];
+            grad_phi_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+            if ( (i == lo && west_wall_bcs != 0) || (i == hi && east_wall_bcs != 0) ){
+                grad_p_x(i, j, k) = Real(0.0);
+                grad_phi_x(i, j, k) = Real(0.0);
+            }
+        });
+
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1)+1;
+
+        amrex::ParallelFor(ybx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            grad_p_y(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j-1, k, 0) )/dx[1];
+            grad_phi_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+            if ( (j == lo && south_wall_bcs != 0) || (j == hi && north_wall_bcs !=0) ){
+                grad_p_y(i, j, k) = Real(0.0);
+                grad_phi_y(i, j, k) = Real(0.0);
+            }
+        });
+
+#if (AMREX_SPACEDIM > 2)
+        lo = dom.smallEnd(2);
+        hi = dom.bigEnd(2)+1;
+
+        amrex::ParallelFor(zbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            grad_p_z(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j, k-1, 0) )/dx[2];
+            grad_phi_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+            if ( (k == lo && fron_wall_bcs != 0) || (k == hi && back_wall_bcs != 0) ){
+                grad_p_z(i, j, k) = Real(0.0);
+                grad_phi_z(i, j, k) = Real(0.0);
+            }
+        });
+#endif
+    }
 }
 
 // +++++++++++++++++++++++++ Total Flux  +++++++++++++++++++++++++
@@ -233,7 +335,9 @@ void total_flux_calc ( MultiFab& fluxTotal,
                        MultiFab& fluxConvect,
                        MultiFab& fluxViscous,
                        MultiFab& fluxPrsGrad,
-                       const Geometry& geom)
+                       Array<MultiFab, AMREX_SPACEDIM>& rhs,
+                       Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                       const Geometry& geom )
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -241,20 +345,71 @@ void total_flux_calc ( MultiFab& fluxTotal,
     for ( MFIter mfi(fluxTotal); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
-        // Components
         auto const& conv_flux = fluxConvect.array(mfi);
         auto const& visc_flux = fluxViscous.array(mfi);
         auto const& prsgrad_flux = fluxPrsGrad.array(mfi);
-
         auto const& total_flux = fluxTotal.array(mfi);
 
+        // Only components inside physical domain
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
             compute_total_flux(i, j, k, total_flux, conv_flux, visc_flux, prsgrad_flux);
         });
     }
 
-    fluxTotal.FillBoundary(geom.periodicity());
-    // FIXME zero fluxes on walls
+    Box dom(geom.Domain());
 
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(rhs[0]); mfi.isValid(); ++mfi )
+    {
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+        auto const& xrhs = rhs[0].array(mfi);
+        auto const& yrhs = rhs[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& zrhs = rhs[2].array(mfi);
+#endif
+
+        auto const& grad_p_x = array_grad_p[0].array(mfi);
+        auto const& grad_p_y = array_grad_p[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& grad_p_z = array_grad_p[2].array(mfi);
+#endif
+        auto const& total_flux = fluxTotal.array(mfi);
+
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0)+1;
+        amrex::ParallelFor(xbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            if ( i != lo && i != hi ){
+                xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) ) - grad_p_x(i, j, k);
+            }
+        });
+
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1)+1;
+        amrex::ParallelFor(ybx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            if ( j != lo && j != hi ){
+                yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) ) - grad_p_y(i, j, k);
+            }
+        });
+
+#if (AMREX_SPACEDIM > 2)
+        lo = dom.smallEnd(2);
+        hi = dom.bigEnd(2)+1;
+        amrex::ParallelFor(zbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            if ( k != lo && k != hi ){
+                zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) ) - grad_p_z(i, j, k);
+            }
+        });
+#endif
+    }
 }
