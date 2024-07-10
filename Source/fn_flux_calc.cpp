@@ -337,6 +337,8 @@ void total_flux_calc ( MultiFab& fluxTotal,
                        MultiFab& fluxPrsGrad,
                        Array<MultiFab, AMREX_SPACEDIM>& rhs,
                        Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                       Vector<int> const& phy_bc_lo,
+                       Vector<int> const& phy_bc_hi,
                        const Geometry& geom )
 {
 #ifdef AMREX_USE_OMP
@@ -357,8 +359,9 @@ void total_flux_calc ( MultiFab& fluxTotal,
         });
     }
 
-    Box dom(geom.Domain());
+    fluxTotal.FillBoundary(geom.periodicity());
 
+    Box dom(geom.Domain());
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -367,9 +370,19 @@ void total_flux_calc ( MultiFab& fluxTotal,
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
-
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
+
+        auto const& west_wall_bcs = phy_bc_lo[0]; // west wall
+        auto const& east_wall_bcs = phy_bc_hi[0]; // east wall
+
+        auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
+        auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
+#if (AMREX_SPACEDIM > 2)
+        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
+#endif
+
         auto const& xrhs = rhs[0].array(mfi);
         auto const& yrhs = rhs[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
@@ -387,8 +400,9 @@ void total_flux_calc ( MultiFab& fluxTotal,
         int hi = dom.bigEnd(0)+1;
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            if ( i != lo && i != hi ){
-                xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) ) - grad_p_x(i, j, k);
+            xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) ) - grad_p_x(i, j, k);
+            if ( (i == lo && west_wall_bcs != 0) || (i == hi && east_wall_bcs != 0) ){
+                xrhs(i, j, k) = amrex::Real(0.0);
             }
         });
 
@@ -396,8 +410,9 @@ void total_flux_calc ( MultiFab& fluxTotal,
         hi = dom.bigEnd(1)+1;
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            if ( j != lo && j != hi ){
-                yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) ) - grad_p_y(i, j, k);
+            yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) ) - grad_p_y(i, j, k);
+            if ( (j == lo && south_wall_bcs != 0) || (j == hi && north_wall_bcs != 0) ){
+                yrhs(i, j, k) = amrex::Real(0.0);
             }
         });
 
@@ -406,8 +421,9 @@ void total_flux_calc ( MultiFab& fluxTotal,
         hi = dom.bigEnd(2)+1;
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            if ( k != lo && k != hi ){
-                zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) ) - grad_p_z(i, j, k);
+            zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) ) - grad_p_z(i, j, k);
+            if ( (k == lo && fron_wall_bcs != 0) || (k == hi && back_wall_bcs != 0) ){
+                zrhs(i, j, k) = amrex::Real(0.0);
             }
         });
 #endif
