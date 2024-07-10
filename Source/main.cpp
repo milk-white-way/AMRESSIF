@@ -191,7 +191,7 @@ void main_main ()
     MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxViscous(ba, dm, AMREX_SPACEDIM, 0);
     MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, 0);
-    MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, 0);
+    MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, 1);
 
     MultiFab cc_grad_phi(ba, dm, AMREX_SPACEDIM, Nghost);    
 
@@ -324,7 +324,7 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
     }
-    amrex::Real d_tau = Real(0.5)*dt;
+    amrex::Real d_tau = Real(0.99)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -345,9 +345,12 @@ void main_main ()
     // How partial periodic boundary conditions can be deployed?
     staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
     MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
-
+    // Quickly init flux fields as zero
+    fluxConvect.setVal(0.0);
+    fluxViscous.setVal(0.0);
     fluxPrsGrad.setVal(0.0);
     cc_grad_phi.setVal(0.0);
+    poisson_rhs.setVal(0.0);
     for (int comp=0; comp < AMREX_SPACEDIM; ++comp)
     {
         array_grad_p[comp].setVal(0.0);

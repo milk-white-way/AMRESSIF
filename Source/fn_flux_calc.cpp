@@ -240,8 +240,14 @@ void gradient_calc_approach1 ( MultiFab& fluxPrsGrad,
 void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
                                Array<MultiFab, AMREX_SPACEDIM>& array_grad_phi,
                                MultiFab& userCtx,
-                               Geometry const& geom )
+                               Geometry const& geom,
+                               int const& Nghost,
+                               Vector<int> const& phy_bc_lo,
+                               Vector<int> const& phy_bc_hi,
+                               int const& n_cell )
 {
+    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
     Box dom(geom.Domain());
 
@@ -254,6 +260,16 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+
+        auto const& west_wall_bcs = phy_bc_lo[0]; // west wall
+        auto const& east_wall_bcs = phy_bc_hi[0]; // east wall
+
+        auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
+        auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
+#if (AMREX_SPACEDIM > 2)
+        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
 #endif
 
         auto const& grad_p_x = array_grad_p[0].array(mfi);
@@ -276,9 +292,11 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
         
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            if ( i != lo && i != hi ){
-                grad_p_x(i, j, k) = ( ctx(i, j, k, 0) - ctx(i-1, j, k, 0) )/dx[0];
-                grad_phi_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+            grad_p_x(i, j, k) = ( ctx(i, j, k, 0) - ctx(i-1, j, k, 0) )/dx[0];
+            grad_phi_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+            if ( (i == lo && west_wall_bcs != 0) || (i == hi && east_wall_bcs != 0) ){
+                grad_p_x(i, j, k) = Real(0.0);
+                grad_phi_x(i, j, k) = Real(0.0);
             }
         });
 
@@ -287,9 +305,11 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            if ( j != lo && j != hi ){
-                grad_p_y(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j-1, k, 0) )/dx[1];
-                grad_phi_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+            grad_p_y(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j-1, k, 0) )/dx[1];
+            grad_phi_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+            if ( (j == lo && south_wall_bcs != 0) || (j == hi && north_wall_bcs !=0) ){
+                grad_p_y(i, j, k) = Real(0.0);
+                grad_phi_y(i, j, k) = Real(0.0);
             }
         });
 
@@ -299,9 +319,11 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
 
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            if ( k != lo && k != hi ){
-                grad_p_z(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j, k-1, 0) )/dx[2];
-                grad_phi_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+            grad_p_z(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j, k-1, 0) )/dx[2];
+            grad_phi_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+            if ( (k == lo && fron_wall_bcs != 0) || (k == hi && back_wall_bcs != 0) ){
+                grad_p_z(i, j, k) = Real(0.0);
+                grad_phi_z(i, j, k) = Real(0.0);
             }
         });
 #endif
