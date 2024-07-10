@@ -34,7 +34,11 @@ void gradient_calc_approach1 (amrex::MultiFab& fluxPrsGrad,
 void gradient_calc_approach2 (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_p,
                               amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_phi,
                               amrex::MultiFab& userCtx,
-                              amrex::Geometry const& geom);
+                              amrex::Geometry const& geom,
+                              int const& Nghost,
+                              amrex::Vector<int> const& phy_bc_lo,
+                              amrex::Vector<int> const& phy_bc_hi,
+                              int const& n_cell);
 
 void total_flux_calc (amrex::MultiFab& fluxTotal,
                       amrex::MultiFab& fluxConvect,
@@ -42,6 +46,8 @@ void total_flux_calc (amrex::MultiFab& fluxTotal,
                       amrex::MultiFab& fluxPrsGrad,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& momentum_rhs,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                      amrex::Vector<int> const& phy_bc_lo,
+                      amrex::Vector<int> const& phy_bc_hi,
                       amrex::Geometry const& geom);
 
 #endif
