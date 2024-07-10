@@ -359,7 +359,7 @@ void main_main ()
     }
 
     //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
@@ -427,7 +427,7 @@ void main_main ()
                 // ------------------------- FLUX CALCULATION -------------------------
                 convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, array_grad_p, geom);
+                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, array_grad_p, phy_bc_lo, phy_bc_hi, geom);
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
                 runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velHat, velHatDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
@@ -517,7 +517,7 @@ void main_main ()
         }
         */
 
-        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         // Update the solution
         // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
@@ -526,7 +526,7 @@ void main_main ()
         update_solution(array_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom);
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         amrex::Print() << "SOLVING| finished updating all fields \n";
 
