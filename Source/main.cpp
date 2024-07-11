@@ -401,10 +401,6 @@ void main_main ()
         //-----------------------------------------------
         while ( normError > momentum_tolerance )
         {
-            if (countIter > IterNum) {
-                amrex::Print() << "Exceeded number of momenum iterations; exiting loop\n";
-                break;
-            }
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
                            << " => normError = " << normError << "\n";
 
@@ -437,6 +433,11 @@ void main_main ()
                 MultiFab::Copy(velCont[comp], velStar[comp], 0, 0, 1, 0);
             }
             countIter++;
+            // Handler for blowing-up situation
+            if (countIter > IterNum) {
+                amrex::Print() << "Exceeded number of momenum iterations; exiting loop\n";
+                break;
+            }
             if ( normError > 1.e-1 )
             {
                 amrex::Print() << "WARNING| Momentum | normError = " << normError << "\n";
@@ -458,26 +459,23 @@ void main_main ()
         // Poisson solver
         //    Laplacian(\phi) = (Real(1.5)/dt)*Div(u_i^*)
         // POISSON |1| Calculating the RSH
-        poisson_rhs.setVal(0.0);
-        poisson_righthand_side_calc(poisson_rhs, velCart, velCont, geom, dt);
-        if (plot_int > 0 && n%plot_int == 0)
-        {
-            const std::string &rhs_export = amrex::Concatenate("pltPoissonRHS", n, 5);
-            WriteSingleLevelPlotfile(rhs_export, poisson_rhs, {"rhs"}, geom, time, n);
-        }
-
+        poisson_righthand_side_calc(poisson_rhs, velCont, geom, dt);
         // POISSON |2| Init Phi at the begining of the Poisson solver
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
         amrex::Print() << "\nSOLVING| finished solving Poisson equation. \n";
         amrex::Print() << "\n";
-
+        if (plot_int > 0 && n%plot_int == 0)
+        {
+            const std::string &rhs_export = amrex::Concatenate("pltPoisson", n, 5);
+            WriteSingleLevelPlotfile(rhs_export, poisson_sol, {"phi"}, geom, time, n);
+        }
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
 
         // Update the solution
         // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
         // p^{n+1} = p^n  + \phi^{n+1}
         // also update velContDiff = velCont-velContPrev
-        update_solution(array_grad_phi, array_grad_phi, fluxPrsGrad, cc_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, velStar, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        update_solution(array_grad_phi, array_grad_phi, fluxPrsGrad, cc_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         amrex::Print() << "SOLVING| finished updating all fields \n";
 

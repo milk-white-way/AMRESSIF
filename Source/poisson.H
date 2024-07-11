@@ -29,7 +29,6 @@ void update_solution (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContPrev,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
-                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velStar,
                       amrex::Geometry const& geom,
                       amrex::Real const& dt,
                       int const& Nghost,

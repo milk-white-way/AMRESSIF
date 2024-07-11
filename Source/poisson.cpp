@@ -178,7 +178,6 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& array_grad_phi,
                       Array<MultiFab, AMREX_SPACEDIM>& velCont,
                       Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
                       Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
-                      Array<MultiFab, AMREX_SPACEDIM>& velStar,
                       Geometry const& geom,
                       Real const& dt,
                       const int& Nghost,
@@ -239,17 +238,13 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& array_grad_phi,
 #if (AMREX_SPACEDIM > 2)
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
-        auto const& xstar = velStar[0].array(mfi);
-        auto const& ystar = velStar[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const& zstar = velStar[2].array(mfi);
-#endif
 
         auto const& xcont = velCont[0].array(mfi);
         auto const& ycont = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
         auto const& zcont = velCont[2].array(mfi);
 #endif
+
         auto const& grad_phi_x = array_grad_phi[0].array(mfi);
         auto const& grad_phi_y = array_grad_phi[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
@@ -257,20 +252,22 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& array_grad_phi,
 #endif
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            xcont(i, j, k) = xstar(i, j, k) - ( grad_phi_x(i, j, k) * dt / Real(1.5) );
+            xcont(i, j, k) = xcont(i, j, k) - ( grad_phi_x(i, j, k) * dt / Real(1.5) );
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            ycont(i, j, k) = ystar(i, j, k) - ( grad_phi_y(i, j, k) * dt / Real(1.5) );
+            ycont(i, j, k) = ycont(i, j, k) - ( grad_phi_y(i, j, k) * dt / Real(1.5) );
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            zcont(i, j, k) = zstar(i, j, k) - ( grad_phi_z(i, j, k) * dt / Real(1.5) );
+            zcont(i, j, k) = zcont(i, j, k) - ( grad_phi_z(i, j, k) * dt / Real(1.5) );
         });
 #endif
     } // End of the loop for boxes
+    // Update velCart from the velCont solutions
+    cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         //==============================================
         //----- Update the pressure field --------------
@@ -288,8 +285,9 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& array_grad_phi,
             ctx(i, j, k, 0) = ctx(i, j, k, 0) + ctx(i, j, k, 1);
         });
     } // End of the loop for boxes
-    // Enforce the boundary conditions for the velocity field
-    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    // Update the pressure gradient
+    //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
     // Update velContDiff from the velCont solutions
 #ifdef AMREX_USE_OMP
@@ -328,10 +326,4 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& array_grad_phi,
         });
 #endif
     }
-    // Update velCart from the velCont solutions
-    cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-
-    // Update the pressure gradient
-    //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }
