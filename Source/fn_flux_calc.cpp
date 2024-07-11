@@ -6,6 +6,7 @@
 #include "kn_poisson.H"
 
 using namespace amrex;
+int const& UMIST = 0;
 
 // ++++++++++++++++++++++++++++++ Convective Flux ++++++++++++++++++++++++++++++
 void convective_flux_calc ( MultiFab& fluxConvect,
@@ -111,7 +112,7 @@ void convective_flux_calc ( MultiFab& fluxConvect,
             Real flux_limited_ratio = psi;
 
             fluxx_xcont(i, j, k) = xcont(i, j, k) * ( - xcart_UU/8 + 3*xcart_U/4 + 3*xcart_D/8);
-            /*
+#if (UMIST == 1)
             if ( xcart_D != xcart_U ) {
                 flux_limited_ratio = ( xcart_U - xcart_UU ) / ( xcart_D - xcart_U );
                 if ( flux_limited_ratio < 0) {
@@ -127,10 +128,10 @@ void convective_flux_calc ( MultiFab& fluxConvect,
                 }
                 Print() << "flux_limited_ratio: " << flux_limited_ratio << "\n";
             }
-            */
+#endif
 
             fluxy_xcont(i, j, k) = xcont(i, j, k) * ( - ycart_UU/8 + 3*ycart_U/4 + 3*ycart_D/8);
-            /*
+#if (UMIST == 1)
             if ( ycart_D != ycart_U ) {
                 flux_limited_ratio = ( ycart_U - ycart_UU ) / ( ycart_D - ycart_U );
                 if ( flux_limited_ratio < 0) {
@@ -146,7 +147,7 @@ void convective_flux_calc ( MultiFab& fluxConvect,
                 }
                 Print() << "flux_limited_ratio: " << flux_limited_ratio << "\n";
             }
-            */
+#endif
         });
 
         amrex::ParallelFor(ybx,
@@ -194,7 +195,7 @@ void convective_flux_calc ( MultiFab& fluxConvect,
             Real flux_limited_ratio = psi;
 
             fluxx_ycont(i, j, k) = ycont(i, j, k) * ( - xcart_UU/8 + 3*xcart_U/4 + 3*xcart_D/8);
-            /*
+#if (UMIST == 1)
             if ( xcart_D != xcart_U ) {
                 flux_limited_ratio = ( xcart_U - xcart_UU ) / ( xcart_D - xcart_U );
                 if ( flux_limited_ratio < 0) {
@@ -210,10 +211,10 @@ void convective_flux_calc ( MultiFab& fluxConvect,
                 }
                 Print() << "flux_limited_ratio: " << flux_limited_ratio << "\n";
             }
-            */
+#endif
             
             fluxy_ycont(i, j, k) = ycont(i, j, k) * ( - ycart_UU/8 + 3*ycart_U/4 + 3*ycart_D/8);
-            /*
+#if (UMIST == 1)
             if ( ycart_D != ycart_U ) {
                 flux_limited_ratio = ( ycart_U - ycart_UU ) / ( ycart_D - ycart_U );
                 if ( flux_limited_ratio < 0) {
@@ -229,7 +230,7 @@ void convective_flux_calc ( MultiFab& fluxConvect,
                 }
                 Print() << "flux_limited_ratio: " << flux_limited_ratio << "\n";
             }
-            */
+#endif
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,

@@ -350,22 +350,25 @@ amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velCont,
 #if (AMREX_SPACEDIM > 2)
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
-        auto const& xnext = velStar[0].array(mfi);
-        auto const& ynext = velStar[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const& znext = velStar[2].array(mfi);
-#endif
+
         auto const& xprev = velCont[0].array(mfi);
         auto const& yprev = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
         auto const& zprev = velCont[2].array(mfi);
 #endif
+
+        auto const& xnext = velStar[0].array(mfi);
+        auto const& ynext = velStar[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& znext = velStar[2].array(mfi);
+#endif
+
         auto const& xdiff = velStarDiff[0].array(mfi);
         auto const& ydiff = velStarDiff[1].array(mfi);
-
 #if (AMREX_SPACEDIM > 2)
         auto const& zdiff = velStarDiff[2].array(mfi);
 #endif
+
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
             xdiff(i, j, k) = xprev(i, j, k) - xnext(i, j, k);
@@ -383,9 +386,11 @@ amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velCont,
         });
 #endif
     }// End of all loops for Multi-Fabs
+    //Real xerror = velStarDiff[0].norm0();
+    //Real yerror = velStarDiff[1].norm0();
+
     Vector<Real> l2_sum(AMREX_SPACEDIM);
     StagL2Norm(velStarDiff, 0, l2_sum);
-
     Real xerror = l2_sum[0]/std::sqrt(npts);
     Real yerror = l2_sum[1]/std::sqrt(npts);
     normError = std::max(xerror, yerror);
