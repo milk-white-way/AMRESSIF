@@ -169,7 +169,10 @@ void poisson_advance( MultiFab& poisson_sol,
 //-- Update the pressure and velocity field---
 //-- After the projection step ---------------
 //++++++++++++++++++++++++++++++++++++++++++++
-void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
+void update_solution( Array<MultiFab, AMREX_SPACEDIM>& array_grad_phi,
+                      Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                      MultiFab& fluxPrsGrad,
+                      MultiFab& cc_grad_phi,
                       MultiFab& userCtx,
                       MultiFab& velCart,
                       Array<MultiFab, AMREX_SPACEDIM>& velCont,
@@ -183,6 +186,46 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
                       Vector<int> const& phy_bc_hi,
                       const int& n_cell )
 {
+    /*
+    gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for ( MFIter mfi(array_grad_phi[0]); mfi.isValid(); ++mfi )
+    {
+        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+
+        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+        auto const& grad_phi_x = array_grad_phi[0].array(mfi);
+        auto const& grad_phi_y = array_grad_phi[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& grad_phi_z = array_grad_phi[2].array(mfi);
+#endif
+
+        auto const& grad_phi = cc_grad_phi.array(mfi);
+
+        amrex::ParallelFor(xbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            grad_phi_x(i, j, k) = amrex::Real(0.5)*( grad_phi(i-1, j, k, 0) + grad_phi(i, j, k, 0) );
+        });
+
+        amrex::ParallelFor(ybx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            grad_phi_y(i, j, k) = amrex::Real(0.5)*( grad_phi(i, j-1, k, 1) + grad_phi(i, j, k, 1) );
+        });
+#if (AMREX_SPACEDIM > 2)
+        amrex::ParallelFor(zbx,
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
+            grad_phi_z(i, j, k) = amrex::Real(0.5)*( grad_phi(i, j, k-1, 2) + grad_phi(i, j, k, 2) );
+        });
+#endif
+    }
+    */
+    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     //==============================================
     //----- Update the contravariant velocity ------
     //----------------------------------------------
@@ -207,24 +250,24 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
 #if (AMREX_SPACEDIM > 2)
         auto const& zcont = velCont[2].array(mfi);
 #endif
-        auto const& grad_phi_x = grad_phi[0].array(mfi);
-        auto const& grad_phi_y = grad_phi[1].array(mfi);
+        auto const& grad_phi_x = array_grad_phi[0].array(mfi);
+        auto const& grad_phi_y = array_grad_phi[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-        auto const& grad_phi_z = grad_phi[2].array(mfi);
+        auto const& grad_phi_z = array_grad_phi[2].array(mfi);
 #endif
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            xcont(i, j, k) = xstar(i, j, k) - grad_phi_x(i, j, k) * dt / Real(1.5);
+            xcont(i, j, k) = xstar(i, j, k) - ( grad_phi_x(i, j, k) * dt / Real(1.5) );
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            ycont(i, j, k) = ystar(i, j, k) - grad_phi_y(i, j, k) * dt / Real(1.5);
+            ycont(i, j, k) = ystar(i, j, k) - ( grad_phi_y(i, j, k) * dt / Real(1.5) );
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
-            zcont(i, j, k) = zstar(i, j, k) - grad_phi_z(i, j, k) * dt / Real(1.5);
+            zcont(i, j, k) = zstar(i, j, k) - ( grad_phi_z(i, j, k) * dt / Real(1.5) );
         });
 #endif
     } // End of the loop for boxes
@@ -287,4 +330,8 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& grad_phi,
     }
     // Update velCart from the velCont solutions
     cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+
+    // Update the pressure gradient
+    //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }

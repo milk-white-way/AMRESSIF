@@ -6,6 +6,7 @@
 #include <AMReX_MLABecLaplacian.H>
 #include <AMReX_MultiFabUtil.H>
 
+#include <fn_flux_calc.H>
 #include <fn_enforce_wall_bcs.H>
 #include <utilities.H>
 
@@ -20,6 +21,9 @@ void poisson_advance (amrex::MultiFab& poisson_sol,
 void init_phi (amrex::MultiFab& phi);
 
 void update_solution (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_phi,
+                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                      amrex::MultiFab& fluxPrsGrad,
+                      amrex::MultiFab& cc_grad_phi,
                       amrex::MultiFab& userCtx,
                       amrex::MultiFab& velCart,
                       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
