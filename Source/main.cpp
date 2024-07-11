@@ -268,8 +268,6 @@ void main_main ()
     Array<MultiFab, AMREX_SPACEDIM> fluxHalfN3;
 
     // Extra velocity components for Fractional-Step Method
-    Array<MultiFab, AMREX_SPACEDIM> velHat;
-    Array<MultiFab, AMREX_SPACEDIM> velHatDiff;
     Array<MultiFab, AMREX_SPACEDIM> velStar;
     Array<MultiFab, AMREX_SPACEDIM> velStarDiff;
 
@@ -297,8 +295,6 @@ void main_main ()
         fluxHalfN2[dir].define(edge_ba, dm, 1, 0);
         fluxHalfN3[dir].define(edge_ba, dm, 1, 0);
 
-        velHat[dir].define(edge_ba, dm, 1, 0);
-        velHatDiff[dir].define(edge_ba, dm, 1, 0);
         velStar[dir].define(edge_ba, dm, 1, 0);
         velStarDiff[dir].define(edge_ba, dm, 1, 0);
 
@@ -344,13 +340,13 @@ void main_main ()
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
     staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
-    MultiFab::Copy(poisson_sol, userCtx, 1, 0, 1, 1);
-    // Quickly init flux fields as zero
+    // Quickly init other fields as zero
     fluxConvect.setVal(0.0);
     fluxViscous.setVal(0.0);
     fluxPrsGrad.setVal(0.0);
     cc_grad_phi.setVal(0.0);
     poisson_rhs.setVal(0.0);
+    poisson_sol.setVal(0.0);
     for (int comp=0; comp < AMREX_SPACEDIM; ++comp)
     {
         array_grad_p[comp].setVal(0.0);
@@ -393,8 +389,6 @@ void main_main ()
         {
             // Save the previous velocity field to update the diff field later
             MultiFab::Copy(velContPrev[comp], velCont[comp], 0, 0, 1, 0);
-            // Assign the initial guess as the previous flow field
-            MultiFab::Copy(    velStar[comp], velCont[comp], 0, 0, 1, 0);
         }
 
         // Momentum solver
@@ -417,29 +411,30 @@ void main_main ()
             // Assign intermediate velocity at the beginning of the RK4 sub-iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
-                MultiFab::Copy(velHat[comp], velStar[comp], 0, 0, 1, 0);
-                velHatDiff[comp].setVal(0.0);
+                // Assign the initial guess as the previous flow field
+                MultiFab::Copy(velStar[comp], velCont[comp], 0, 0, 1, 0);
+                velStarDiff[comp].setVal(0.0);
             }
 
             // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
                 // ------------------------- FLUX CALCULATION -------------------------
-                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velHat, phy_bc_lo, phy_bc_hi, geom, n_cell);
+                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 viscous_flux_calc(fluxViscous, velCart, geom, ren);
                 total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, array_grad_p, phy_bc_lo, phy_bc_hi, geom);
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
-                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velHat, velHatDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velStarDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
             } // RUNGE-KUTTA | END
 
-            normError = Error_Computation(velHat, velStar, velStarDiff, geom);
+            normError = Error_Computation(velCont, velStar, velStarDiff, geom);
             //amrex::Print() << "error norm2 = " << normError << "\n";
 
             // Re-assign guess for the next iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
-                MultiFab::Copy(velStar[comp], velHat[comp], 0, 0, 1, 0);
+                MultiFab::Copy(velCont[comp], velStar[comp], 0, 0, 1, 0);
             }
             countIter++;
             if ( normError > 1.e-1 )
@@ -464,7 +459,7 @@ void main_main ()
         //    Laplacian(\phi) = (Real(1.5)/dt)*Div(u_i^*)
         // POISSON |1| Calculating the RSH
         poisson_rhs.setVal(0.0);
-        poisson_righthand_side_calc(poisson_rhs, velCart, velStar, geom, dt);
+        poisson_righthand_side_calc(poisson_rhs, velCart, velCont, geom, dt);
         if (plot_int > 0 && n%plot_int == 0)
         {
             const std::string &rhs_export = amrex::Concatenate("pltPoissonRHS", n, 5);

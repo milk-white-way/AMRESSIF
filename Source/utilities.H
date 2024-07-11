@@ -2,6 +2,7 @@
 #include <AMReX_MultiFab.H>
 #include <AMReX_PlotFileUtil.H>
 
+#include "fn_enforce_wall_bcs.H"
 #include <iostream>
 #include <fstream>
 

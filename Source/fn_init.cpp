@@ -136,8 +136,6 @@ void staggered_grid_init (MultiFab& userCtx,
             init_userCtx(i, j, k, ctx, dx, prob_lo);
         });
     }
-
-    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }
 
 void init (MultiFab& userCtx,

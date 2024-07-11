@@ -21,9 +21,9 @@ void convective_flux_calc ( MultiFab& fluxConvect,
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
-    const Real& alp = Real(0.5);
-    const Real& bet = Real(0.125);
-    // QUICK scheme: Calculation of the half-node fluxes
+    // UMIST (Upstream Monotonic Interpolation for Scalar Transport) is a scheme within the flux-limited method. (Lien and Leschziner, 1993)
+    // It is a limited variant of QUICK scheme, and has 3rd order accuracy where monotonic.
+    //Real flux_limited_r, u_over_deltx, v_over_delty;
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -67,69 +67,175 @@ void convective_flux_calc ( MultiFab& fluxConvect,
         amrex::ParallelFor(xbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            if ( west_wall_bcs==0 && east_wall_bcs==0 ) {
-                auto const& ucon = Real(0.5) * xcont(i, j, k);
-                auto const& up = ucon + std::abs(ucon);
-                auto const& um = ucon - std::abs(ucon);
+            //amrex::Print() << "MOMENTUM | Calculating half-node flux at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+            // Note that the half-node flux (face-centered) are calculated in the east face
+            // This leaves the first half-node flux on the west boundary to be prescribed by the boundary conditions
+            // Step 1: Assign local cell-centre nodes
+            auto const& xcart_W  = vcart(i-2, j, k, 0);
+            auto const& xcart_P  = vcart(i-1, j, k, 0);
+            auto const& xcart_E  = vcart(i  , j, k, 0);
+            auto const& xcart_EE = vcart(i+1, j, k, 0);
 
-                // West face for Quick scheme
-                auto const& ucat_x_ww = vcart(i-2, j, k, 0);
-                auto const& ucat_x_w  = vcart(i-1, j, k, 0);
-                auto const& ucat_x_p  = vcart(i  , j, k, 0);
-                auto const& ucat_x_e  = vcart(i+1, j, k, 0);
+            auto const& ycart_W  = vcart(i-2, j, k, 1);
+            auto const& ycart_P  = vcart(i-1, j, k, 1);
+            auto const& ycart_E  = vcart(i  , j, k, 1);
+            auto const& ycart_EE = vcart(i+1, j, k, 1);
 
-                auto const& ucat_y_ww = vcart(i-2, j, k, 1);
-                auto const& ucat_y_w  = vcart(i-1, j, k, 1);
-                auto const& ucat_y_p  = vcart(i  , j, k, 1);
-                auto const& ucat_y_e  = vcart(i+1, j, k, 1);
+            // Step 2: Detect direction of flow
+            auto const& ucon = Real(0.5) * xcont(i, j, k);
+            auto const& fldr = ( ucon - std::abs(ucon) )/xcont(i, j, k); // Print() << "fldr: " << fldr << "\n"; // DEBUGGING
+            //  ucon - |ucon|     -- 0 if ucon > 0, ==> xcont(i, j, k) > 0 (flow to the right)
+            //---------------- = |
+            // xcont(i, j, k)    -- 1 if ucon < 0 ==> xcont(i, j, k) < 0 (flow to the left)
 
-                fluxx_xcont(i, j, k) = up * ( alp * (ucat_x_p + ucat_x_w) - bet * (ucat_x_ww - 2*ucat_x_w + ucat_x_p) )
-                                     + um * ( alp * (ucat_x_p + ucat_x_w) - bet * (ucat_x_w - 2*ucat_x_p + ucat_x_e) );
+            // Default that the flow is to the left
+            Real xcart_UU = xcart_EE;
+            Real xcart_U  = xcart_E;
+            Real xcart_D  = xcart_P;
 
-                fluxy_xcont(i, j, k) = up * ( alp * (ucat_y_p + ucat_y_w) - bet * (ucat_y_ww - 2*ucat_y_w + ucat_y_p) )
-                                     + um * ( alp * (ucat_y_p + ucat_y_w) - bet * (ucat_y_w - 2*ucat_y_p + ucat_y_e) );
-            } else {
-                compute_halfnode_convective_flux_x_contrib_wall(i, j, k, fluxx_xcont, fluxy_xcont, fluxz_xcont, xcont, vcart, bet, n_cell);
+            Real ycart_UU = ycart_EE;
+            Real ycart_U  = ycart_E;
+            Real ycart_D  = ycart_P;
+           if ( fldr == 0 ) {
+                // Flow to the right
+                xcart_UU = xcart_W;
+                xcart_U  = xcart_P;
+                xcart_D  = xcart_E;
+
+                ycart_UU = ycart_W;
+                ycart_U  = ycart_P;
+                ycart_D  = ycart_E;
+            } 
+
+            Real psi = Real(2.0);
+            Real flux_limited_ratio = psi;
+
+            fluxx_xcont(i, j, k) = xcont(i, j, k) * ( - xcart_UU/8 + 3*xcart_U/4 + 3*xcart_D/8);
+            /*
+            if ( xcart_D != xcart_U ) {
+                flux_limited_ratio = ( xcart_U - xcart_UU ) / ( xcart_D - xcart_U );
+                if ( flux_limited_ratio < 0) {
+                    // non-monotonic 
+                    fluxx_xcont(i, j, k) = xcont(i, j, k) * xcart_U;
+                } else {
+                    // monotonic
+                    psi = std::min(psi, 2*flux_limited_ratio);
+                    psi = std::min(psi, (1 + 3*flux_limited_ratio)/4);
+                    psi = std::min(psi, (3 + flux_limited_ratio)/4);
+                    Print() << "psi: " << psi << "\n";
+                    fluxx_xcont(i, j, k) = xcont(i, j, k) * ( xcart_U + Real(0.5)*psi*(xcart_D - xcart_U) );
+                }
+                Print() << "flux_limited_ratio: " << flux_limited_ratio << "\n";
             }
+            */
+
+            fluxy_xcont(i, j, k) = xcont(i, j, k) * ( - ycart_UU/8 + 3*ycart_U/4 + 3*ycart_D/8);
+            /*
+            if ( ycart_D != ycart_U ) {
+                flux_limited_ratio = ( ycart_U - ycart_UU ) / ( ycart_D - ycart_U );
+                if ( flux_limited_ratio < 0) {
+                    // non-monotonic 
+                    fluxy_xcont(i, j, k) = xcont(i, j, k) * ycart_U;
+                } else {
+                    // monotonic
+                    psi = std::min(psi, 2*flux_limited_ratio);
+                    psi = std::min(psi, (1 + 3*flux_limited_ratio)/4);
+                    psi = std::min(psi, (3 + flux_limited_ratio)/4);
+                    Print() << "psi: " << psi << "\n";
+                    fluxy_xcont(i, j, k) = xcont(i, j, k) * ( ycart_U + Real(0.5)*psi*(ycart_D - ycart_U) );
+                }
+                Print() << "flux_limited_ratio: " << flux_limited_ratio << "\n";
+            }
+            */
         });
 
         amrex::ParallelFor(ybx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            if ( south_wall_bcs==0 && north_wall_bcs==0 ) {
-                auto const& ucon = Real(0.5) * ycont(i, j, k);
-                auto const& up = ucon + std::abs(ucon);
-                auto const& um = ucon - std::abs(ucon);
+            // Note that the half-node flux (face-centered) are calculated in the north face
+            // This leaves the first half-node flux on the south boundary to be prescribed by the boundary conditions
+            auto const& xcart_S  = vcart(i, j-2, k, 0);
+            auto const& xcart_P  = vcart(i, j-1, k, 0);
+            auto const& xcart_N  = vcart(i, j  , k, 0);
+            auto const& xcart_NN = vcart(i, j+1, k, 0);
 
-                // South face for Quick scheme
-                auto const& ucat_x_ss = vcart(i, j-2, k, 0);
-                auto const& ucat_x_s  = vcart(i, j-1, k, 0);
-                auto const& ucat_x_p  = vcart(i, j  , k, 0);
-                auto const& ucat_x_n  = vcart(i, j+1, k, 0);
+            auto const& ycart_S  = vcart(i, j-2, k, 1);
+            auto const& ycart_P  = vcart(i, j-1, k, 1);
+            auto const& ycart_N  = vcart(i, j  , k, 1);
+            auto const& ycart_NN = vcart(i, j+1, k, 1);
 
-                auto const& ucat_y_ss = vcart(i, j-2, k, 1);
-                auto const& ucat_y_s  = vcart(i, j-1, k, 1);
-                auto const& ucat_y_p  = vcart(i, j  , k, 1);
-                auto const& ucat_y_n  = vcart(i, j+1, k, 1);
+            // Step 2: Detect direction of flow
+            auto const& ucon = Real(0.5) * ycont(i, j, k);
+            auto const& fldr = ( ucon - std::abs(ucon) )/ycont(i, j, k);
+            //  ucon - |ucon|     -- 0 if ucon > 0, ==> ycont(i, j, k) > 0 (flow to the top)
+            //---------------- = |
+            // ycont(i, j, k)    -- 1 if ucon < 0 ==> ycont(i, j, k) < 0 (flow to the bottom)
 
-                fluxx_ycont(i, j, k) = up * ( alp * (ucat_x_p + ucat_x_s) - bet * (ucat_x_ss - 2*ucat_x_s + ucat_x_p) )
-                                     + um * ( alp * (ucat_x_p + ucat_x_s) - bet * (ucat_x_s - 2*ucat_x_p + ucat_x_n) );
-                
-                fluxy_ycont(i, j, k) = up * ( alp * (ucat_y_p + ucat_y_s) - bet * (ucat_y_ss - 2*ucat_y_s + ucat_y_p) )
-                                     + um * ( alp * (ucat_y_p + ucat_y_s) - bet * (ucat_y_s - 2*ucat_y_p + ucat_y_n) );
-            } else {
-                compute_halfnode_convective_flux_y_contrib_wall(i, j, k, fluxx_ycont, fluxy_ycont, fluxz_ycont, ycont, vcart, bet, n_cell);
+            // Default that the flow is to the bottom
+            Real xcart_UU = xcart_NN;
+            Real xcart_U  = xcart_N;
+            Real xcart_D  = xcart_P;
+
+            Real ycart_UU = ycart_NN;
+            Real ycart_U  = ycart_N;
+            Real ycart_D  = ycart_P;
+           if ( fldr == 0 ) {
+                // Flow to the top
+                xcart_UU = xcart_N;
+                xcart_U  = xcart_P;
+                xcart_D  = xcart_S;
+
+                ycart_UU = ycart_N;
+                ycart_U  = ycart_P;
+                ycart_D  = ycart_S;
+            } 
+
+            Real psi = Real(2.0);
+            Real flux_limited_ratio = psi;
+
+            fluxx_ycont(i, j, k) = ycont(i, j, k) * ( - xcart_UU/8 + 3*xcart_U/4 + 3*xcart_D/8);
+            /*
+            if ( xcart_D != xcart_U ) {
+                flux_limited_ratio = ( xcart_U - xcart_UU ) / ( xcart_D - xcart_U );
+                if ( flux_limited_ratio < 0) {
+                    // non-monotonic 
+                    fluxx_ycont(i, j, k) = ycont(i, j, k) * xcart_U;
+                } else {
+                    // monotonic
+                    psi = std::min(psi, Real(2.0)*flux_limited_ratio);
+                    psi = std::min(psi, (1 + 3*flux_limited_ratio)/4);
+                    psi = std::min(psi, (3 + flux_limited_ratio)/4);
+                    Print() << "psi: " << psi << "\n";
+                    fluxx_xcont(i, j, k) = ycont(i, j, k) * ( xcart_U + Real(0.5)*psi*(xcart_D - xcart_U) );
+                }
+                Print() << "flux_limited_ratio: " << flux_limited_ratio << "\n";
             }
+            */
+            
+            fluxy_ycont(i, j, k) = ycont(i, j, k) * ( - ycart_UU/8 + 3*ycart_U/4 + 3*ycart_D/8);
+            /*
+            if ( ycart_D != ycart_U ) {
+                flux_limited_ratio = ( ycart_U - ycart_UU ) / ( ycart_D - ycart_U );
+                if ( flux_limited_ratio < 0) {
+                    // non-monotonic 
+                    fluxy_ycont(i, j, k) = ycont(i, j, k) * ycart_U;
+                } else {
+                    // monotonic
+                    psi = std::min(psi, 2*flux_limited_ratio);
+                    psi = std::min(psi, (1 + 3*flux_limited_ratio)/4);
+                    psi = std::min(psi, (3 + flux_limited_ratio)/4);
+                    Print() << "psi: " << psi << "\n";
+                    fluxy_xcont(i, j, k) = ycont(i, j, k) * ( ycart_U + Real(0.5)*psi*(ycart_D - ycart_U) );
+                }
+                Print() << "flux_limited_ratio: " << flux_limited_ratio << "\n";
+            }
+            */
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k)
         {
-            if ( front_wall_bcs==0 && back_wall_bcs==0 ) {
-                compute_halfnode_convective_flux_z_contrib_periodic(i, j, k, fluxx_zcont, fluxy_zcont, fluxz_zcont, zcont, vcart, qkcoef);
-            } else {
-                compute_halfnode_convective_flux_z_contrib_wall(i, j, k, fluxx_zcont, fluxy_zcont, fluxz_zcont, zcont, vcart, qkcoef, n_cell);
-            }
+            // Not implemented
         });
 #endif
     }
@@ -246,7 +352,8 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
                                Vector<int> const& phy_bc_hi,
                                int const& n_cell )
 {
-    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    userCtx.FillBoundary(geom.periodicity());
+    //enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
     Box dom(geom.Domain());
@@ -293,7 +400,9 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
             grad_p_x(i, j, k) = ( ctx(i, j, k, 0) - ctx(i-1, j, k, 0) )/dx[0];
+
             grad_phi_x(i, j, k) = ( ctx(i, j, k, 1) - ctx(i-1, j, k, 1) )/dx[0];
+
             if ( (i == lo && west_wall_bcs != 0) || (i == hi && east_wall_bcs != 0) ){
                 grad_p_x(i, j, k) = Real(0.0);
                 grad_phi_x(i, j, k) = Real(0.0);
@@ -306,7 +415,9 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
             grad_p_y(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j-1, k, 0) )/dx[1];
+
             grad_phi_y(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j-1, k, 1) )/dx[1];
+
             if ( (j == lo && south_wall_bcs != 0) || (j == hi && north_wall_bcs !=0) ){
                 grad_p_y(i, j, k) = Real(0.0);
                 grad_phi_y(i, j, k) = Real(0.0);
@@ -320,7 +431,9 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
             grad_p_z(i, j, k) = ( ctx(i, j, k, 0) - ctx(i, j, k-1, 0) )/dx[2];
+
             grad_phi_z(i, j, k) = ( ctx(i, j, k, 1) - ctx(i, j, k-1, 1) )/dx[2];
+
             if ( (k == lo && fron_wall_bcs != 0) || (k == hi && back_wall_bcs != 0) ){
                 grad_p_z(i, j, k) = Real(0.0);
                 grad_phi_z(i, j, k) = Real(0.0);

@@ -1,7 +1,6 @@
 #include <AMReX_MultiFabUtil.H>
 
 #include "utilities.H"
-#include "fn_enforce_wall_bcs.H"
 
 using namespace amrex;
 
@@ -328,12 +327,20 @@ void write_exact_line_solution (Real const& x,
 }
 
 // ===================== UTILITY | ERROR NORM  =====================
-amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velHat,
+amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velCont,
                                Array<MultiFab, AMREX_SPACEDIM>& velStar,
                                Array<MultiFab, AMREX_SPACEDIM>& velStarDiff,
                                Geometry const& geom)
 {
     amrex::Real normError;
+
+    long npts;
+    Box my_domain = geom.Domain();
+#if (AMREX_SPACEDIM == 2)
+    npts = (my_domain.length(0) * my_domain.length(1));
+#elif (AMREX_SPACEDIM == 3)
+    npts = (my_domain.length(0) * my_domain.length(1) * my_domain.length(2));
+#endif
 
     for ( MFIter mfi(velStarDiff[0]); mfi.isValid(); ++mfi )
     {
@@ -343,15 +350,15 @@ amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velHat,
 #if (AMREX_SPACEDIM > 2)
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
-        auto const& xnext = velHat[0].array(mfi);
-        auto const& ynext = velHat[1].array(mfi);
+        auto const& xnext = velStar[0].array(mfi);
+        auto const& ynext = velStar[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-        auto const& znext = velHat[2].array(mfi);
+        auto const& znext = velStar[2].array(mfi);
 #endif
-        auto const& xprev = velStar[0].array(mfi);
-        auto const& yprev = velStar[1].array(mfi);
+        auto const& xprev = velCont[0].array(mfi);
+        auto const& yprev = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
-        auto const& zprev = velStar[2].array(mfi);
+        auto const& zprev = velCont[2].array(mfi);
 #endif
         auto const& xdiff = velStarDiff[0].array(mfi);
         auto const& ydiff = velStarDiff[1].array(mfi);
@@ -376,12 +383,14 @@ amrex::Real Error_Computation (Array<MultiFab, AMREX_SPACEDIM>& velHat,
         });
 #endif
     }// End of all loops for Multi-Fabs
+    Vector<Real> l2_sum(AMREX_SPACEDIM);
+    StagL2Norm(velStarDiff, 0, l2_sum);
 
-    Real xerror = velStarDiff[0].norm2(0, geom.periodicity());
-    Real yerror = velStarDiff[1].norm2(0, geom.periodicity());
+    Real xerror = l2_sum[0]/std::sqrt(npts);
+    Real yerror = l2_sum[1]/std::sqrt(npts);
     normError = std::max(xerror, yerror);
 #if (AMREX_SPACEDIM > 2)
-    Real zerror = velStarDiff[2].norm2(0, geom.periodicity());
+    Real zerror = l2_sum[2]/std::sqrt(npts);
     normError = std::max(normError, zerror);
 #endif
 
