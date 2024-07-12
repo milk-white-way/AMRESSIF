@@ -1,7 +1,7 @@
 nsteps = 1
 plot_int = 1
 
-fixed_dt = 1.e-5
+fixed_dt = 1.e-6
 n_cell = 16
 max_grid_size = 16
 

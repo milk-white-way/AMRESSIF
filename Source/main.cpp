@@ -185,7 +185,6 @@ void main_main ()
     // Cartesian velocities have SPACEDIM as number of components, live in the cell center
     MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
     MultiFab velCartPrev(ba, dm, AMREX_SPACEDIM, Nghost);
-    MultiFab velCartDiff(ba, dm, AMREX_SPACEDIM, Nghost);
 
     // Three type of fluxes contributing the the total flux live in the cell center
     MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, 0);
@@ -320,7 +319,8 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
     }
-    amrex::Real d_tau = Real(0.9889)*dt;
+    //amrex::Real d_tau = Real(0.9889)*dt;
+    amrex::Real d_tau = Real(0.4321)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -339,7 +339,7 @@ void main_main ()
     amrex::Print() << "========================= INITIALIZATION STEP ========================= \n";
     // Current: Taylor-Green Vortex initial conditions
     // How partial periodic boundary conditions can be deployed?
-    staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, velCartDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
+    staggered_grid_init(userCtx, velCont, velContPrev, velContDiff, velCart, velCartPrev, geom, Nghost, phy_bc_lo, phy_bc_hi, time, dt, n_cell);
     // Quickly init other fields as zero
     fluxConvect.setVal(0.0);
     fluxViscous.setVal(0.0);
@@ -363,7 +363,6 @@ void main_main ()
     {
         Export_Flow_Field("pltInit", userCtx, velCart, ba, dm, geom, time, 0);
         Export_Flow_Field("pltInitPrev", userCtx, velCartPrev, ba, dm, geom, time, 0);
-        Export_Flow_Field("pltInitDiff", userCtx, velCartDiff, ba, dm, geom, time, 0);
     }
 
     // Setup Runge-Kutta scheme coefficients
@@ -447,12 +446,13 @@ void main_main ()
         //---------------------------------------
         // MOMENTUM |4| PLOTTING
         // This is just for debugging only !
-        //---------------------------------------
+        shift_face_to_center(velCartPrev, velCont);
         if (plot_int > 0 && n%plot_int == 0)
         {
-            Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
-            Export_Flow_Field("pltMomentum", userCtx, velCart, ba, dm, geom, time, n);
+            const std::string &momentum_export = amrex::Concatenate("pltMomentum", n, 5);
+            WriteSingleLevelPlotfile(momentum_export, velCartPrev, {"ucont-star", "vcont-star"}, geom, time, n);
         }
+        //---------------------------------------
         amrex::Print() << "\nSOLVING| finished solving Momentum equation. \n";
         amrex::Print() << "\n";
 
