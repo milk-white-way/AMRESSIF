@@ -272,11 +272,16 @@ void shift_face_to_center (MultiFab& cc_analytical_diff,
 
         auto const& vel_cont_x = velCont[0].array(mfi);
         auto const& vel_cont_y = velCont[1].array(mfi);
-    
+#if (AMREX_SPACEDIM > 2)
+        auto const& vel_cont_z = velCont[2].array(mfi);
+#endif    
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
             cc_sol(i, j, k, 0) = vel_cont_x(i, j, k);
             cc_sol(i, j, k, 1) = vel_cont_y(i, j, k);
+#if (AMREX_SPACEDIM > 2)
+            cc_sol(i, j, k, 2) = vel_cont_z(i, j, k);
+#endif
         });
     }
 }

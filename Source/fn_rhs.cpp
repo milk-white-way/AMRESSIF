@@ -5,9 +5,14 @@
 using namespace amrex;
 
 // ==================================== MODULE | MOMENTUM ====================================
-void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
-                                    MultiFab& fluxTotal )
+void momentum_righthand_side_calc ( MultiFab& fluxTotal,
+                                    Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                                    Array<MultiFab, AMREX_SPACEDIM>& rhs,
+                                    Vector<int> const& phy_bc_lo,
+                                    Vector<int> const& phy_bc_hi,
+                                    const Geometry& geom )
 {
+    fluxTotal.FillBoundary(geom.periodicity());
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -19,64 +24,43 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
+
+        auto const& total_flux = fluxTotal.array(mfi);
+
+        auto const& grad_p_x = array_grad_p[0].array(mfi);
+        auto const& grad_p_y = array_grad_p[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& grad_p_z = array_grad_p[2].array(mfi);
+#endif
+
         auto const& xrhs = rhs[0].array(mfi);
         auto const& yrhs = rhs[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
         auto const& zrhs = rhs[2].array(mfi);
 #endif
 
-        auto const& total_flux = fluxTotal.array(mfi);
-
         //int const& box_id = mfi.LocalIndex();
         //print_box(box_id);
 
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
-
-            // FIXME - check walls
-            /*
-            if (i == 0 || i == xbx.bigEnd(0)) {
-                xrhs(i, j, k) = amrex::Real(0.0);
-            }
-            */
-
-            //if (i == 1) {
-            //    xrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i-1, j, k, 0) + 6*total_flux(i, j, k, 0) - total_flux(i+1, j, k, 0) );
-            //} else {
-            //    xrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k, 0) + 6*total_flux(i-1, j, k, 0) - total_flux(i-2, j, k, 0) );
-            //}
+            xrhs(i, j, k) = - grad_p_x(i, j, k) + amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
-
-            // FIXME - check walls
-            /*
-            if (j == 0 || j == ybx.bigEnd(1)) {
-                yrhs(i, j, k) = amrex::Real(0.0);
-            }
-            */
-            //if (j == 1) {
-            //    yrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j-1, k, 1) + 6*total_flux(i, j, k, 1) - total_flux(i, j+1, k, 1) );
-            //} else {
-            //    yrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k, 1) + 6*total_flux(i, j-1, k, 1) - total_flux(i, j-2, k, 1) );
-            //}
+            yrhs(i, j, k) = - grad_p_y(i, j, k) + amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
-            // FIXME - check walls
-            /*
-            if (k == 0 || k == zbx.bigEnd(2)) {
-                zrhs(i, j, k) = amrex::Real(0.0);
-            }
-            */
+            zrhs(i, j, k) = - grad_p_z(i, j, k) + amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
         });
 #endif
     }
+    
+    shift_face_to_center(fluxTotal, rhs);
+    WriteSingleLevelPlotfile("pltMomentumRHS-to-Face", fluxTotal, {"xrhs", "yrhs"}, geom, 0, 0);
 }
 
 // ==================================== MODULE | POISSON ====================================

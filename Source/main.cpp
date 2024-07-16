@@ -352,6 +352,9 @@ void main_main ()
         array_grad_p[comp].setVal(0.0);
         array_grad_phi[comp].setVal(0.0);
         momentum_rhs[comp].setVal(0.0);
+        fluxHalfN1[comp].setVal(0.0);
+        fluxHalfN2[comp].setVal(0.0);
+        fluxHalfN3[comp].setVal(0.0);
     }
 
     //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
@@ -402,8 +405,8 @@ void main_main ()
         {
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
                            << " => normError = " << normError << "\n";
-
-            // Assign intermediate velocity at the beginning of the RK4 sub-iteration
+            
+            fluxTotal.setVal(0.0);
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
                 // Assign the initial guess as the previous flow field
@@ -415,9 +418,9 @@ void main_main ()
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
                 // ------------------------- FLUX CALCULATION -------------------------
-                convective_flux_calc(fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell);
-                viscous_flux_calc(fluxViscous, velCart, geom, ren);
-                total_flux_calc(fluxTotal, fluxConvect, fluxViscous, fluxPrsGrad, momentum_rhs, array_grad_p, phy_bc_lo, phy_bc_hi, geom);
+                convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell, sub);
+                viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
+                momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
                 runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velStarDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
@@ -449,6 +452,7 @@ void main_main ()
         shift_face_to_center(velCartPrev, velCont);
         if (plot_int > 0 && n%plot_int == 0)
         {
+            Export_Fluxes(fluxConvect, fluxViscous, fluxPrsGrad, ba, dm, geom, time, n);
             const std::string &momentum_export = amrex::Concatenate("pltMomentum", n, 5);
             WriteSingleLevelPlotfile(momentum_export, velCartPrev, {"ucont-star", "vcont-star"}, geom, time, n);
         }
