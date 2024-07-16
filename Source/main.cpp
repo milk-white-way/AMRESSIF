@@ -344,6 +344,7 @@ void main_main ()
     fluxConvect.setVal(0.0);
     fluxViscous.setVal(0.0);
     fluxPrsGrad.setVal(0.0);
+    fluxTotal.setVal(0.0);
     cc_grad_phi.setVal(0.0);
     poisson_rhs.setVal(0.0);
     poisson_sol.setVal(0.0);
@@ -406,7 +407,6 @@ void main_main ()
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
                            << " => normError = " << normError << "\n";
             
-            fluxTotal.setVal(0.0);
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
                 // Assign the initial guess as the previous flow field
@@ -424,6 +424,8 @@ void main_main ()
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
                 runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velStarDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                //explicit_time_marching();
+                fluxTotal.setVal(0.0);
             } // RUNGE-KUTTA | END
 
             normError = Error_Computation(velCont, velStar, velStarDiff, geom);
