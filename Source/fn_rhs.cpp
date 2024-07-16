@@ -10,7 +10,8 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
                                     Array<MultiFab, AMREX_SPACEDIM>& rhs,
                                     Vector<int> const& phy_bc_lo,
                                     Vector<int> const& phy_bc_hi,
-                                    const Geometry& geom )
+                                    const Geometry& geom,
+                                    int const& sub )
 {
     fluxTotal.FillBoundary(geom.periodicity());
 #ifdef AMREX_USE_OMP
@@ -58,9 +59,12 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
         });
 #endif
     }
-    
-    shift_face_to_center(fluxTotal, rhs);
-    WriteSingleLevelPlotfile("pltMomentumRHS-to-Face", fluxTotal, {"xrhs", "yrhs"}, geom, 0, 0);
+
+    if (sub == 3)
+    {
+        shift_face_to_center(fluxTotal, rhs);
+        WriteSingleLevelPlotfile("pltMomentumRHS-to-Face", fluxTotal, {"xrhs", "yrhs"}, geom, 0, 0);
+    }
 }
 
 // ==================================== MODULE | POISSON ====================================

@@ -18,8 +18,7 @@ void convective_flux_calc ( MultiFab& fluxTotal,
                             Vector<int> const& phy_bc_lo,
                             Vector<int> const& phy_bc_hi,
                             Geometry const& geom,
-                            int const& n_cell,
-                            int const& sub )
+                            int const& n_cell )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
     // UMIST (Upstream Monotonic Interpolation for Scalar Transport) is a scheme within the flux-limited method. (Lien and Leschziner, 1993)
@@ -362,7 +361,7 @@ void convective_flux_calc ( MultiFab& fluxTotal,
 
             for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
             {
-                total_flux(i, j, k, dir) = total_flux(i, j, k, dir) - conv_flux(i, j, k, dir);
+                total_flux(i, j, k, dir) = - conv_flux(i, j, k, dir);
             }
         });
     }
@@ -397,7 +396,7 @@ void viscous_flux_calc ( MultiFab& fluxTotal,
                 auto const& westMAC   = vel_cart(i-1, j  , k, dir);
                 auto const& eastMAC   = vel_cart(i+1, j  , k, dir);
 
-                visc_flux(i, j, k, dir) = ( (westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (southMAC - 2*centerMAC + northMAC)/(dx[1]*dx[1]) )/ren;
+                visc_flux(i, j, k, dir) = ( (westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (northMAC - 2*centerMAC + southMAC)/(dx[1]*dx[1]) )/ren;
                 total_flux(i, j, k, dir) = total_flux(i, j, k, dir) + visc_flux(i, j, k, dir);
             }
         });

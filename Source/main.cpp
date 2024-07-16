@@ -54,7 +54,7 @@ void main_main ()
     // AMREX_SPACEDIM: number of dimensions
     // These are stock params for AMReX
     int n_cell, max_grid_size, nsteps, plot_int;
-    int IterNum;
+    int IterNum, EXPLICIT_MOMENTUM;
 
     // Porting extra params from Julian code
     Real ren, vis, cfl, fixed_dt;
@@ -107,6 +107,9 @@ void main_main ()
         // Parsing boundary condition from input file
         pp.queryarr("phy_bc_lo", phy_bc_lo);
         pp.queryarr("phy_bc_hi", phy_bc_hi);
+
+        EXPLICIT_MOMENTUM = 0;
+        pp.query("EXPLICIT_MOMENTUM", EXPLICIT_MOMENTUM);
 
         // Parsing the target resolution from input file
         target_resolution = -1;
@@ -202,41 +205,6 @@ void main_main ()
     // Comp 1 is velocity field along y-axis
     // Comp 2 is pressure field
 
-    //---------------------------------------------------------------
-    // Defining the boundary conditions for each face of the domain
-    // --------------------------------------------------------------
-    Vector<BCRec> bc(poisson_sol.nComp());
-    for (int n = 0; n < poisson_sol.nComp(); ++n)
-    {
-        for(int idim = 0; idim < AMREX_SPACEDIM; ++idim)
-        {
-            // If phy_bc_lo == 0 then 209
-            //Internal Dirichlet Periodic Boundary conditions, or bc_lo = bc_hi = 0
-            if (phy_bc_lo[idim] == 0) {
-                bc[n].setLo(idim, BCType::int_dir);
-            }
-                //First Order Extrapolation for Neumann boundary conditions or bc_lo, bc_hi = 2
-            else if (std::abs(phy_bc_lo[idim]) == 1) {
-                bc[n].setLo(idim, BCType::foextrap);
-            }
-            else {
-                amrex::Abort("Invalid bc_lo");
-            }
-
-            //Internal Dirichlet Periodic Boundary conditions, or bc_lo = bc_hi = 0
-            if (phy_bc_hi[idim] == 0) {
-                bc[n].setHi(idim, BCType::int_dir);
-            }
-                //First Order Extrapolation for Neumann boundary conditions or bc_lo, bc_hi = 2
-            else if (std::abs(phy_bc_hi[idim]) == 1) {
-                bc[n].setHi(idim, BCType::foextrap);
-            }
-            else {
-                amrex::Abort("Invalid bc_hi");
-            }
-        }
-    }
-
     /* --------------------------------------
      * Face center variables - FLUXES -------
      * and Variables ------------------------
@@ -303,6 +271,36 @@ void main_main ()
         array_analytical_vel[dir].define(edge_ba, dm, 1, 0);
     }
 
+    //---------------------------------------------------------------
+    // Boundary conditions for the Poisson equation
+    // --------------------------------------------------------------
+    Vector<BCRec> bc(poisson_sol.nComp());
+    for (int n = 0; n < poisson_sol.nComp(); ++n)
+    {
+        for(int idim = 0; idim < AMREX_SPACEDIM; ++idim)
+        {
+            if (phy_bc_lo[idim] == 0) {
+                bc[n].setLo(idim, BCType::int_dir);
+            }
+            else if (std::abs(phy_bc_lo[idim]) == 1) {
+                bc[n].setLo(idim, BCType::foextrap);
+            }
+            else {
+                amrex::Abort("Invalid bc_lo");
+            }
+
+            if (phy_bc_hi[idim] == 0) {
+                bc[n].setHi(idim, BCType::int_dir);
+            }
+            else if (std::abs(phy_bc_hi[idim]) == 1) {
+                bc[n].setHi(idim, BCType::foextrap);
+            }
+            else {
+                amrex::Abort("Invalid bc_hi");
+            }
+        }
+    }
+
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
     Real coeff = AMREX_D_TERM( 1./(dx[0]*dx[0]),
                              + 1./(dx[1]*dx[1]),
@@ -314,13 +312,14 @@ void main_main ()
 
     amrex::Print() << "PARAMS| cfl value: " << cfl << "\n";
     amrex::Print() << "PARAMS| dt value from above cfl: " << dt << "\n";
+    amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
 
     if (fixed_dt != -1.0) {
         dt = fixed_dt;
-        amrex::Print() << "INFO| dt overidden with fixed_dt: " << dt << "\n";
+        amrex::Print() << "INFO| dt overridden with fixed_dt: " << dt << "\n";
     }
-    //amrex::Real d_tau = Real(0.9889)*dt;
-    amrex::Real d_tau = Real(0.4321)*dt;
+    amrex::Real d_tau = Real(0.9889)*dt;
+    //amrex::Real d_tau = Real(0.4321)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -328,8 +327,6 @@ void main_main ()
     // Print desired variables for debugging
     amrex::Print() << "INFO| number of dimensions: " << AMREX_SPACEDIM << "\n";
     amrex::Print() << "INFO| geometry: " << geom << "\n";
-    amrex::Print() << "PARAMS| number of ghost cells for each array: " << Nghost << "\n";
-    amrex::Print() << "PARAMS| number of components for each array: " << Ncomp << "\n";
 
     /**--------------------------------------------------------------------------------------
      * =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Initialization =-=-=-=-=-=-=-=-=-=-=-=-=-=-------------
@@ -360,6 +357,7 @@ void main_main ()
 
     //gradient_calc_approach1(fluxPrsGrad, cc_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    shift_face_to_center(fluxPrsGrad, array_grad_p); // for convience of plotting the Pressure Gradient
 
     // Write a plotfile of the initial data if plot_int > 0
     // (plot_int was defined in the inputs file)
@@ -405,7 +403,7 @@ void main_main ()
         while ( normError > momentum_tolerance )
         {
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
-                           << " => normError = " << normError << "\n";
+                           << " => latest error norm = " << normError << "\n";
             
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
@@ -422,14 +420,14 @@ void main_main ()
                 sub = 3;
 #endif 
                 // ------------------------- FLUX CALCULATION -------------------------
-                convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell, sub);
+                convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
-                momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
+                momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom, sub);
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
                 runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
                 //explicit_time_marching(momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
-                fluxTotal.setVal(0.0);
+                break;
             } // RUNGE-KUTTA | END
 
             normError = Error_Computation(velCont, velStar, velStarDiff, geom);
@@ -451,6 +449,7 @@ void main_main ()
                 amrex::Print() << "WARNING| Momentum | normError = " << normError << "\n";
                 break;
             }
+            break;
         }// End of the Momentum loop iteration!
         //---------------------------------------
         // MOMENTUM |4| PLOTTING
@@ -465,12 +464,14 @@ void main_main ()
         //---------------------------------------
         amrex::Print() << "\nSOLVING| finished solving Momentum equation. \n";
         amrex::Print() << "\n";
+        break;
 
         // Poisson solver
         //    Laplacian(\phi) = (Real(1.5)/dt)*Div(u_i^*)
         // POISSON |1| Calculating the RSH
         poisson_righthand_side_calc(poisson_rhs, velCont, geom, dt);
         // POISSON |2| Init Phi at the begining of the Poisson solver
+        poisson_sol.setVal(0.0);
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
         amrex::Print() << "\nSOLVING| finished solving Poisson equation. \n";
         amrex::Print() << "\n";
@@ -483,9 +484,10 @@ void main_main ()
 
         // Update the solution
         // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
-        // p^{n+1} = p^n  + \phi^{n+1}
+        // p^{n+1} = p^n  + \phi^{n+1} - Re^-1 * div(u_i^*)
         // also update velContDiff = velCont-velContPrev
-        update_solution(array_grad_phi, array_grad_phi, fluxPrsGrad, cc_grad_phi, userCtx, velCart, velCont, velContPrev, velContDiff, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+        update_solution(array_grad_phi, array_grad_phi, fluxPrsGrad, cc_grad_phi, poisson_rhs, userCtx, velCart, velCont, velContPrev, velContDiff, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell, ren);
+        gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         amrex::Print() << "SOLVING| finished updating all fields \n";
 

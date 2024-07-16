@@ -18,8 +18,7 @@ void convective_flux_calc (amrex::MultiFab& fluxTotal,
                            amrex::Vector<int> const& phy_bc_lo,
                            amrex::Vector<int> const& phy_bc_hi,
                            amrex::Geometry const& geom,
-                           int const& n_cell,
-                           int const& sub);
+                           int const& n_cell);
 
 void viscous_flux_calc (amrex::MultiFab& fluxTotal,
                         amrex::MultiFab& fluxViscous,
