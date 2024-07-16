@@ -417,14 +417,18 @@ void main_main ()
             // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
+#if (EXPLICIT_MOMENTUM == 1)
+                // Explicit time marching
+                sub = 3;
+#endif 
                 // ------------------------- FLUX CALCULATION -------------------------
                 convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell, sub);
                 viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
                 momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
-                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velStarDiff, velCont, velContDiff, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
-                //explicit_time_marching();
+                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                //explicit_time_marching(momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
                 fluxTotal.setVal(0.0);
             } // RUNGE-KUTTA | END
 
