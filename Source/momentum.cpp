@@ -85,6 +85,8 @@ void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
 #endif
     }
     // ------------------ CONVERT Ucont^{*,l} => Ucart^{*,l} ------------------
+    //shift_face_to_center(velCart, velStar);
+    //WriteSingleLevelPlotfile("pltIntermediateVel", velCart, {"u-star", "v-star"}, geom, 0, 0);
     cont2cart(velCart, velStar, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }
 

@@ -255,13 +255,13 @@ void convective_flux_calc ( MultiFab& fluxTotal,
 
     /* // DEBUGGING
     shift_face_to_center(fluxTotal, fluxHalfN1);
-    WriteSingleLevelPlotfile("pltConvective-Ucart-to-Face", fluxTotal, {"ucart-xface", "ucart-yface"}, geom, 0, (sub+1));
+    WriteSingleLevelPlotfile("pltConvective-Ucart-to-Face", fluxTotal, {"ucart-xface", "ucart-yface"}, geom, 0, 0);
 
     shift_face_to_center(fluxTotal, fluxHalfN2);
-    WriteSingleLevelPlotfile("pltConvective-Vcart-to-Face", fluxTotal, {"vcart-xface", "vcart-yface"}, geom, 0, (sub+1));
+    WriteSingleLevelPlotfile("pltConvective-Vcart-to-Face", fluxTotal, {"vcart-xface", "vcart-yface"}, geom, 0, 0);
 
     shift_face_to_center(fluxTotal, fluxHalfN3);
-    WriteSingleLevelPlotfile("pltConvective-Wcart-to-Face", fluxTotal, {"wcart-xface", "wcart-yface"}, geom, 0, (sub+1));
+    WriteSingleLevelPlotfile("pltConvective-Wcart-to-Face", fluxTotal, {"wcart-xface", "wcart-yface"}, geom, 0, 0);
     */
 
 /*
@@ -396,11 +396,12 @@ void viscous_flux_calc ( MultiFab& fluxTotal,
                 auto const& westMAC   = vel_cart(i-1, j  , k, dir);
                 auto const& eastMAC   = vel_cart(i+1, j  , k, dir);
 
-                visc_flux(i, j, k, dir) = ( (westMAC - 2*centerMAC + eastMAC)/(dx[0]*dx[0]) + (northMAC - 2*centerMAC + southMAC)/(dx[1]*dx[1]) )/ren;
+                visc_flux(i, j, k, dir) = ( (eastMAC - 2*centerMAC + westMAC)/(dx[0]*dx[0]) + (northMAC - 2*centerMAC + southMAC)/(dx[1]*dx[1]) )/ren;
                 total_flux(i, j, k, dir) = total_flux(i, j, k, dir) + visc_flux(i, j, k, dir);
             }
         });
     }
+    //WriteSingleLevelPlotfile("pltTotalFlux", fluxTotal, {"flux-x", "flux-y"}, geom, 0, 0);
 }
 
 // +++++++++++++++++++++++++ Gradient Flux  +++++++++++++++++++++++++

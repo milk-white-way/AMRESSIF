@@ -10,8 +10,7 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
                                     Array<MultiFab, AMREX_SPACEDIM>& rhs,
                                     Vector<int> const& phy_bc_lo,
                                     Vector<int> const& phy_bc_hi,
-                                    const Geometry& geom,
-                                    int const& sub )
+                                    const Geometry& geom )
 {
     fluxTotal.FillBoundary(geom.periodicity());
 #ifdef AMREX_USE_OMP
@@ -60,11 +59,8 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
 #endif
     }
 
-    if (sub == 3)
-    {
-        shift_face_to_center(fluxTotal, rhs);
-        WriteSingleLevelPlotfile("pltMomentumRHS-to-Face", fluxTotal, {"xrhs", "yrhs"}, geom, 0, 0);
-    }
+    //shift_face_to_center(fluxTotal, rhs);
+    //WriteSingleLevelPlotfile("pltMomentumRHS", fluxTotal, {"rhs-x", "rhs-y"}, geom, 0, 0);
 }
 
 // ==================================== MODULE | POISSON ====================================
@@ -92,13 +88,13 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
         //Loop for all i,j,k in the local domain
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-            rhs(i, j, k) = ( vel_cont_x(i+1, j, k) - vel_cont_x(i, j, k) )/dx[0] + ( vel_cont_y(i, j+1, k) - vel_cont_y(i, j, k) )/dx[1]
+            rhs(i, j, k, 0) = ( vel_cont_x(i+1, j, k) - vel_cont_x(i, j, k) )/dx[0] + ( vel_cont_y(i, j+1, k) - vel_cont_y(i, j, k) )/dx[1]
 #if (AMREX_SPACEDIM > 2)
                 + ( vel_cont_z(i, j, k+1) - vel_cont_z(i, j, k) )/dx[2];
 #else
             ;
 #endif
-            rhs(i, j, k) = (Real(1.5)/dt) * rhs(i, j, k);
+            rhs(i, j, k, 0) = (Real(1.5)/dt) * rhs(i, j, k, 0);
         });
     } // End of all box loops
     Print() << "SOLVING| Poisson  | sum of components of RHS = " << poisson_rhs.sum(0) << '\n';

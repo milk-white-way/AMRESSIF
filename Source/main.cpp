@@ -54,7 +54,7 @@ void main_main ()
     // AMREX_SPACEDIM: number of dimensions
     // These are stock params for AMReX
     int n_cell, max_grid_size, nsteps, plot_int;
-    int IterNum, EXPLICIT_MOMENTUM;
+    int IterNum;
 
     // Porting extra params from Julian code
     Real ren, vis, cfl, fixed_dt;
@@ -107,9 +107,6 @@ void main_main ()
         // Parsing boundary condition from input file
         pp.queryarr("phy_bc_lo", phy_bc_lo);
         pp.queryarr("phy_bc_hi", phy_bc_hi);
-
-        EXPLICIT_MOMENTUM = 0;
-        pp.query("EXPLICIT_MOMENTUM", EXPLICIT_MOMENTUM);
 
         // Parsing the target resolution from input file
         target_resolution = -1;
@@ -318,8 +315,8 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overridden with fixed_dt: " << dt << "\n";
     }
-    amrex::Real d_tau = Real(0.9889)*dt;
-    //amrex::Real d_tau = Real(0.4321)*dt;
+    //amrex::Real d_tau = Real(0.9889)*dt;
+    amrex::Real d_tau = Real(0.4321)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -398,7 +395,7 @@ void main_main ()
         Real normError = 1.e19;
 
         //-----------------------------------------------
-        // This is the sub-iteration of the implicit RK4
+        // This is the sub-iteration of the semi-implicit scheme
         //-----------------------------------------------
         while ( normError > momentum_tolerance )
         {
@@ -412,27 +409,30 @@ void main_main ()
                 velStarDiff[comp].setVal(0.0);
             }
 
+            /*
+            // EXPLICIT TIME MARCHING
+            // ------------------------- FLUX CALCULATION -------------------------
+            convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell);
+            viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
+            momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
+            // --------------------------- MOMENTUM SOLVER ---------------------------
+            explicit_time_marching(momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+            */
+
             // 4 sub-iterations of one RK4 iteration
             for (int sub = 0; sub < RungeKuttaOrder; ++sub )
             {
-#if (EXPLICIT_MOMENTUM == 1)
-                // Explicit time marching
-                sub = 3;
-#endif 
                 // ------------------------- FLUX CALCULATION -------------------------
                 convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
-                momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom, sub);
+                momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
 
                 // --------------------------- MOMENTUM SOLVER ---------------------------
                 runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
-                //explicit_time_marching(momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
-                break;
+                //break; // Tactical breakpoint
             } // RUNGE-KUTTA | END
-
             normError = Error_Computation(velCont, velStar, velStarDiff, geom);
-            //amrex::Print() << "error norm2 = " << normError << "\n";
-
+            //amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
             // Re-assign guess for the next iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
             {
@@ -440,16 +440,18 @@ void main_main ()
             }
             countIter++;
             // Handler for blowing-up situation
+            //if (countIter == 2) {
             if (countIter > IterNum) {
-                amrex::Print() << "Exceeded number of momenum iterations; exiting loop\n";
+                amrex::Print() << "WARNING| Exceeded number of momenum iterations; exiting loop\n";
+                //amrex::Print() << "Forced break at pseudo step " << countIter << "\n";
                 break;
             }
-            if ( normError > 1.e-1 )
+            if ( normError > 1.e2 )
             {
-                amrex::Print() << "WARNING| Momentum | normError = " << normError << "\n";
+                amrex::Print() << "WARNING| Error Norm diverges, exiting loop\n";
                 break;
             }
-            break;
+            //break; // Tactical breakpoint
         }// End of the Momentum loop iteration!
         //---------------------------------------
         // MOMENTUM |4| PLOTTING
@@ -464,14 +466,13 @@ void main_main ()
         //---------------------------------------
         amrex::Print() << "\nSOLVING| finished solving Momentum equation. \n";
         amrex::Print() << "\n";
-        break;
+        //break; // Tactical breakpoint
 
         // Poisson solver
         //    Laplacian(\phi) = (Real(1.5)/dt)*Div(u_i^*)
         // POISSON |1| Calculating the RSH
         poisson_righthand_side_calc(poisson_rhs, velCont, geom, dt);
         // POISSON |2| Init Phi at the begining of the Poisson solver
-        poisson_sol.setVal(0.0);
         poisson_advance(poisson_sol, poisson_rhs, geom, ba, dm, bc);
         amrex::Print() << "\nSOLVING| finished solving Poisson equation. \n";
         amrex::Print() << "\n";
