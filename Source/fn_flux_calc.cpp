@@ -362,6 +362,7 @@ void convective_flux_calc ( MultiFab& fluxTotal,
             for ( int dir=0; dir < AMREX_SPACEDIM; ++dir )
             {
                 total_flux(i, j, k, dir) = - conv_flux(i, j, k, dir);
+                //total_flux(i, j, k, dir) = Real(0.0);
             }
         });
     }
@@ -398,6 +399,7 @@ void viscous_flux_calc ( MultiFab& fluxTotal,
 
                 visc_flux(i, j, k, dir) = ( (eastMAC - 2*centerMAC + westMAC)/(dx[0]*dx[0]) + (northMAC - 2*centerMAC + southMAC)/(dx[1]*dx[1]) )/ren;
                 total_flux(i, j, k, dir) = total_flux(i, j, k, dir) + visc_flux(i, j, k, dir);
+                //total_flux(i, j, k, dir) = total_flux(i, j, k, dir);
             }
         });
     }

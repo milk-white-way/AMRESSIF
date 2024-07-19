@@ -80,9 +80,9 @@ void staggered_grid_init (MultiFab& userCtx,
             amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
             
             vel_cont_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
-            //vel_cont_x(i, j, k) = amrex::Real(1.0);
-
             vel_cont_prev_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
+            //vel_cont_x(i, j, k) = amrex::Real(1.0);
+            //vel_cont_prev_x(i, j, k) = amrex::Real(1.0);
 
             vel_cont_diff_x(i, j, k) = vel_cont_x(i, j, k) - vel_cont_prev_x(i, j, k);
         });
@@ -92,9 +92,10 @@ void staggered_grid_init (MultiFab& userCtx,
             amrex::Real y = prob_lo[1] + (j + Real(0.0)) * dx[1];
 
             vel_cont_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
-            //vel_cont_y(i, j, k) = amrex::Real(1.0);
-
             vel_cont_prev_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
+            // Uniform flow
+            //vel_cont_y(i, j, k) = amrex::Real(1.0);
+            //vel_cont_prev_y(i, j, k) = amrex::Real(1.0);
 
             vel_cont_diff_y(i, j, k) = vel_cont_y(i, j, k) - vel_cont_prev_y(i, j, k);
         });

@@ -1,7 +1,7 @@
-nsteps = 10
-plot_int = 10
+nsteps = 100
+plot_int = 50
 
-fixed_dt = 1.e-5
+fixed_dt = 1.e-3
 n_cell = 16
 max_grid_size = 16
 
