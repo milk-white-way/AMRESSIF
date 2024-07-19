@@ -33,7 +33,6 @@ void staggered_grid_init (MultiFab& userCtx,
                           Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
                           MultiFab& velCart,
                           MultiFab& velCartPrev,
-                          MultiFab& velCartDiff,
                           Geometry const& geom,
                           int const& Nghost,
                           Vector<int> const& phy_bc_lo,
@@ -81,9 +80,9 @@ void staggered_grid_init (MultiFab& userCtx,
             amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
             
             vel_cont_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
-            //vel_cont_x(i, j, k) = amrex::Real(1.0);
-
             vel_cont_prev_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
+            //vel_cont_x(i, j, k) = amrex::Real(1.0);
+            //vel_cont_prev_x(i, j, k) = amrex::Real(1.0);
 
             vel_cont_diff_x(i, j, k) = vel_cont_x(i, j, k) - vel_cont_prev_x(i, j, k);
         });
@@ -93,9 +92,10 @@ void staggered_grid_init (MultiFab& userCtx,
             amrex::Real y = prob_lo[1] + (j + Real(0.0)) * dx[1];
 
             vel_cont_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
-            //vel_cont_y(i, j, k) = amrex::Real(1.0);
-
             vel_cont_prev_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
+            // Uniform flow
+            //vel_cont_y(i, j, k) = amrex::Real(1.0);
+            //vel_cont_prev_y(i, j, k) = amrex::Real(1.0);
 
             vel_cont_diff_y(i, j, k) = vel_cont_y(i, j, k) - vel_cont_prev_y(i, j, k);
         });
@@ -119,8 +119,6 @@ void staggered_grid_init (MultiFab& userCtx,
     //amrex::Print() << "=================================================================== \n";
     cont2cart(velCartPrev, velContPrev, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     //amrex::Print() << "=================================================================== \n";
-    cont2cart(velCartDiff, velContDiff, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    //amrex::Print() << "=================================================================== \n";
 
 // Initialize pressure components at celll centers
 #ifdef AMREX_USE_OMP
@@ -136,8 +134,6 @@ void staggered_grid_init (MultiFab& userCtx,
             init_userCtx(i, j, k, ctx, dx, prob_lo);
         });
     }
-
-    enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }
 
 void init (MultiFab& userCtx,

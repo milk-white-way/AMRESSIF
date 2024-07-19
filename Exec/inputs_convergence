@@ -1,11 +1,11 @@
 ##########################
 # TEMPORAL CONVERGENCE TESTING
 
-fixed_dt = 1.e-5
+fixed_dt = 1.e-15
 nsteps = 1
 plot_int = 1
-n_cell = 128
-max_grid_size = 128
+n_cell = 32
+max_grid_size = 16
 
 #fixed_dt = 5.e-6
 #nsteps = 2

@@ -249,7 +249,6 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCa
 #endif
     for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
     {
-
         const Box& vbx = mfi.growntilebox(Nghost);
         auto const& vel_cart = velCart.array(mfi);
 

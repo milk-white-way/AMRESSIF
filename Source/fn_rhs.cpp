@@ -5,9 +5,14 @@
 using namespace amrex;
 
 // ==================================== MODULE | MOMENTUM ====================================
-void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
-                                    MultiFab& fluxTotal )
+void momentum_righthand_side_calc ( MultiFab& fluxTotal,
+                                    Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                                    Array<MultiFab, AMREX_SPACEDIM>& rhs,
+                                    Vector<int> const& phy_bc_lo,
+                                    Vector<int> const& phy_bc_hi,
+                                    const Geometry& geom )
 {
+    fluxTotal.FillBoundary(geom.periodicity());
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -19,69 +24,47 @@ void momentum_righthand_side_calc ( Array<MultiFab, AMREX_SPACEDIM>& rhs,
 
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
+
+        auto const& total_flux = fluxTotal.array(mfi);
+
+        auto const& grad_p_x = array_grad_p[0].array(mfi);
+        auto const& grad_p_y = array_grad_p[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const& grad_p_z = array_grad_p[2].array(mfi);
+#endif
+
         auto const& xrhs = rhs[0].array(mfi);
         auto const& yrhs = rhs[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
         auto const& zrhs = rhs[2].array(mfi);
 #endif
 
-        auto const& total_flux = fluxTotal.array(mfi);
-
         //int const& box_id = mfi.LocalIndex();
         //print_box(box_id);
 
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            xrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
-
-            // FIXME - check walls
-            /*
-            if (i == 0 || i == xbx.bigEnd(0)) {
-                xrhs(i, j, k) = amrex::Real(0.0);
-            }
-            */
-
-            //if (i == 1) {
-            //    xrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i-1, j, k, 0) + 6*total_flux(i, j, k, 0) - total_flux(i+1, j, k, 0) );
-            //} else {
-            //    xrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k, 0) + 6*total_flux(i-1, j, k, 0) - total_flux(i-2, j, k, 0) );
-            //}
+            xrhs(i, j, k) = - grad_p_x(i, j, k) + amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            yrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
-
-            // FIXME - check walls
-            /*
-            if (j == 0 || j == ybx.bigEnd(1)) {
-                yrhs(i, j, k) = amrex::Real(0.0);
-            }
-            */
-            //if (j == 1) {
-            //    yrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j-1, k, 1) + 6*total_flux(i, j, k, 1) - total_flux(i, j+1, k, 1) );
-            //} else {
-            //    yrhs(i, j, k) = amrex::Real(0.125)*( 3*total_flux(i, j, k, 1) + 6*total_flux(i, j-1, k, 1) - total_flux(i, j-2, k, 1) );
-            //}
+            yrhs(i, j, k) = - grad_p_y(i, j, k) + amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            zrhs(i, j, k) = amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
-            // FIXME - check walls
-            /*
-            if (k == 0 || k == zbx.bigEnd(2)) {
-                zrhs(i, j, k) = amrex::Real(0.0);
-            }
-            */
+            zrhs(i, j, k) = - grad_p_z(i, j, k) + amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
         });
 #endif
     }
+
+    //shift_face_to_center(fluxTotal, rhs);
+    //WriteSingleLevelPlotfile("pltMomentumRHS", fluxTotal, {"rhs-x", "rhs-y"}, geom, 0, 0);
 }
 
 // ==================================== MODULE | POISSON ====================================
 void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
-                                   MultiFab& velCart,
                                    Array<MultiFab, AMREX_SPACEDIM>& velCont,
                                    Geometry const& geom,
                                    Real const& dt )
@@ -95,8 +78,7 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
     for ( MFIter mfi(poisson_rhs); mfi.isValid(); ++mfi )
     {
         const Box& vbx = mfi.validbox();
-        auto const& rhs  = poisson_rhs.array(mfi);
-        auto const& vel_cart = velCart.array(mfi);
+        auto const& rhs = poisson_rhs.array(mfi);
 
         auto const& vel_cont_x = velCont[0].array(mfi);
         auto const& vel_cont_y = velCont[1].array(mfi);
@@ -106,15 +88,13 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
         //Loop for all i,j,k in the local domain
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
+            rhs(i, j, k, 0) = ( vel_cont_x(i+1, j, k) - vel_cont_x(i, j, k) )/dx[0] + ( vel_cont_y(i, j+1, k) - vel_cont_y(i, j, k) )/dx[1]
 #if (AMREX_SPACEDIM > 2)
-            //compute_flux_divergence_3D(i, j, k, vrhs, xcont, ycont, zcont, dx);
+                + ( vel_cont_z(i, j, k+1) - vel_cont_z(i, j, k) )/dx[2];
 #else
-            //compute_flux_divergence_2D(i, j, k, vrhs, xcont, ycont, dx);
-            //rhs(i, j, k) = ( vel_cont_x(i+1, j, k) - vel_cont_x(i, j, k) )/dx[0] + ( vel_cont_y(i, j+1, k) - vel_cont_y(i, j, k) )/dx[1];
-            rhs(i, j, k) = ( vel_cart(i+1, j, k, 0) - vel_cart(i-1, j, k, 0) )/( Real(2.0)*dx[0] ) + ( vel_cart(i, j+1, k, 1) - vel_cart(i, j-1, k, 1) )/( Real(2.0)*dx[1] );
-
-            rhs(i, j, k) = (Real(1.5)/dt) * rhs(i, j, k);
+            ;
 #endif
+            rhs(i, j, k, 0) = (Real(1.5)/dt) * rhs(i, j, k, 0);
         });
     } // End of all box loops
     Print() << "SOLVING| Poisson  | sum of components of RHS = " << poisson_rhs.sum(0) << '\n';
