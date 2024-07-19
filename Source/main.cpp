@@ -318,8 +318,8 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overridden with fixed_dt: " << dt << "\n";
     }
-    //amrex::Real d_tau = Real(0.9889)*dt;
-    amrex::Real d_tau = Real(0.4321)*dt;
+    amrex::Real d_tau = Real(0.9889)*dt;
+    //amrex::Real d_tau = Real(0.3223)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
     amrex::Print() << "INFO| Reynolds number from length scale: " << ren << "\n";
@@ -432,8 +432,9 @@ void main_main ()
                 // --------------------------- MOMENTUM SOLVER ---------------------------
                 runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
                 //break; // Tactical breakpoint
-            } // RUNGE-KUTTA | END
-            normError = Error_Computation(velCont, velStar, velStarDiff, geom);
+                } // RUNGE-KUTTA | END
+                normError = Error_Computation(velCont, velStar, velStarDiff, geom);
+            }
             //amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
             // Re-assign guess for the next iteration
             for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
@@ -480,8 +481,10 @@ void main_main ()
         amrex::Print() << "\n";
         if (plot_int > 0 && n%plot_int == 0)
         {
-            const std::string &rhs_export = amrex::Concatenate("pltPoisson", n, 5);
-            WriteSingleLevelPlotfile(rhs_export, poisson_sol, {"phi"}, geom, time, n);
+            const std::string &rhs_export = amrex::Concatenate("pltPoissonRHS", n, 5);
+            WriteSingleLevelPlotfile(rhs_export, poisson_rhs, {"poissonRHS"}, geom, time, n);
+            const std::string &poisson_export = amrex::Concatenate("pltPhi", n, 5);
+            WriteSingleLevelPlotfile(poisson_export, poisson_sol, {"phi"}, geom, time, n);
         }
         MultiFab::Copy(userCtx, poisson_sol, 0, 1, 1, 0);
 
@@ -489,7 +492,7 @@ void main_main ()
         // u_i^{n+1} = u_i^*- 2dt/3 * grad(\phi^{n+1})
         // p^{n+1} = p^n  + \phi^{n+1} - Re^-1 * div(u_i^*)
         // also update velContDiff = velCont-velContPrev
-        update_solution(array_grad_phi, array_grad_phi, fluxPrsGrad, cc_grad_phi, poisson_rhs, userCtx, velCart, velCont, velContPrev, velContDiff, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell, ren);
+        update_solution(array_grad_p, array_grad_phi, fluxPrsGrad, cc_grad_phi, poisson_rhs, userCtx, velCart, velCont, velContPrev, velContDiff, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell, ren);
         gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         //array_analytical_vel_calc(array_analytical_vel, geom, time);
