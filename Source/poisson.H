@@ -20,8 +20,8 @@ void poisson_advance (amrex::MultiFab& poisson_sol,
 
 void init_phi (amrex::MultiFab& phi);
 
-void update_solution (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_phi,
-                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_p,
+void update_solution (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_p,
+                      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& array_grad_phi,
                       amrex::MultiFab& fluxPrsGrad,
                       amrex::MultiFab& cc_grad_phi,
                       amrex::MultiFab& poisson_rhs,
