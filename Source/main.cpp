@@ -429,11 +429,10 @@ void main_main ()
                     viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
                     momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
 
-                    // --------------------------- MOMENTUM SOLVER ---------------------------
-                    runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
-                    //break; // Tactical breakpoint
-                } // RUNGE-KUTTA | END
-            }
+                // --------------------------- MOMENTUM SOLVER ---------------------------
+                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                //break; // Tactical breakpoint
+            } // RUNGE-KUTTA | END
             normError = Error_Computation(velCont, velStar, velStarDiff, geom);
             //amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
             // Re-assign guess for the next iteration
@@ -491,10 +490,6 @@ void main_main ()
         // p^{n+1} = p^n  + \phi^{n+1} - Re^-1 * div(u_i^*)
         // also update velContDiff = velCont-velContPrev
         update_solution(array_grad_phi, array_grad_phi, fluxPrsGrad, cc_grad_phi, poisson_rhs, userCtx, velCart, velCont, velContPrev, velContDiff, geom, dt, Nghost, phy_bc_lo, phy_bc_hi, n_cell, ren);
-        
-        cc_analytical_calc(cc_analytical_diff, geom, time);
-        //MultiFab::Copy(userCtx, cc_analytical_diff, 2, 0, 1, 0);
-
         gradient_calc_approach2(array_grad_p, array_grad_phi, userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 
         //array_analytical_vel_calc(array_analytical_vel, geom, time);
