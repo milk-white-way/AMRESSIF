@@ -404,23 +404,24 @@ void main_main ()
         {
             amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
                            << " => latest error norm = " << normError << "\n";
-            
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
-            {
-                // Assign the initial guess as the previous flow field
-                MultiFab::Copy(velStar[comp], velCont[comp], 0, 0, 1, 0);
-                velStarDiff[comp].setVal(0.0);
-            }
 
             if ( PSEUDO_TIMESTEPPING == 0 ) {
                 // EXPLICIT TIME MARCHING
+                amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching\n";
                 // ------------------------- FLUX CALCULATION -------------------------
-                convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell);
+                convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velCont, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
                 momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
                 // --------------------------- MOMENTUM SOLVER ---------------------------
-                explicit_time_marching(momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                explicit_time_marching(momentum_rhs, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
             } else {
+            
+                for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
+                {
+                // Assign the initial guess as the previous flow field
+                    MultiFab::Copy(velStar[comp], velCont[comp], 0, 0, 1, 0);
+                    velStarDiff[comp].setVal(0.0);
+                }
                 // 4 sub-iterations of one RK4 iteration
                 for (int sub = 0; sub < RungeKuttaOrder; ++sub )
                 {
@@ -434,14 +435,14 @@ void main_main ()
                 //break; // Tactical breakpoint
                 } // RUNGE-KUTTA | END
                 normError = Error_Computation(velCont, velStar, velStarDiff, geom);
-                poisson_righthand_side_calc(poisson_rhs, velStar, geom, dt);
+                amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
+                // Re-assign guess for the next iteration
+                for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
+                {
+                    MultiFab::Copy(velCont[comp], velStar[comp], 0, 0, 1, 0);
+                }
             }
-            //amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
-            // Re-assign guess for the next iteration
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
-            {
-                MultiFab::Copy(velCont[comp], velStar[comp], 0, 0, 1, 0);
-            }
+            poisson_righthand_side_calc(poisson_rhs, velCont, geom, dt);
             countIter++;
             // Handler for blowing-up situation
             //if (countIter == 2) {

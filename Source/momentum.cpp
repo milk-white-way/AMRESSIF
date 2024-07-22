@@ -63,30 +63,16 @@ void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
         auto const &vel_cont_prev_z = velContPrev[2].array(mfi);
 #endif
 
-        int lo = dom.smallEnd(0);
-        int hi = dom.bigEnd(0)+1;
         amrex::ParallelFor(xbx, 
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
             xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*( vel_star_x(i, j, k) - vel_cont_prev_x(i, j, k) ) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
-            if ( phy_bc_lo[0] != 0 || phy_bc_lo[0] != 0 || phy_bc_hi[0] != 0 || phy_bc_hi[0] != 0 ) {
-                if ( i == lo || i == hi ) {
-                    xrhs(i, j, k) = Real(0.0);
-                } 
-            }
 
             vel_star_x(i, j, k) = vel_cont_x(i, j, k) + ( rk[sub] * xrhs(i, j, k) );
         });
         
-        lo = dom.smallEnd(1);
-        hi = dom.bigEnd(1)+1;
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
             yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*( vel_star_y(i, j, k) - vel_cont_prev_y(i, j, k) ) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
-            if ( phy_bc_lo[0] != 0 || phy_bc_lo[0] != 0 || phy_bc_hi[0] != 0 || phy_bc_hi[0] != 0 ) {
-                if ( j == lo || j == hi ) {
-                    xrhs(i, j, k) = Real(0.0);
-                } 
-            }
                         
             vel_star_y(i, j, k) = vel_cont_y(i, j, k) + ( rk[sub] * yrhs(i, j, k) );
         });
@@ -106,7 +92,6 @@ void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
 }
 
 void explicit_time_marching (Array<MultiFab, AMREX_SPACEDIM>& momentum_rhs,
-                             Array<MultiFab, AMREX_SPACEDIM>& velStar,
                              Array<MultiFab, AMREX_SPACEDIM>& velCont,
                              Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
                              Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
@@ -135,12 +120,6 @@ void explicit_time_marching (Array<MultiFab, AMREX_SPACEDIM>& momentum_rhs,
         auto const& zrhs = momentum_rhs[2].array(mfi);
 #endif
 
-        auto const &vel_star_x = velStar[0].array(mfi);
-        auto const &vel_star_y = velStar[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const &vel_star_z = velStar[2].array(mfi);
-#endif
-
         auto const &vel_cont_x = velCont[0].array(mfi);
         auto const &vel_cont_y = velCont[1].array(mfi);
 #if (AMREX_SPACEDIM > 2)
@@ -161,26 +140,20 @@ void explicit_time_marching (Array<MultiFab, AMREX_SPACEDIM>& momentum_rhs,
 
         amrex::ParallelFor(xbx, 
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            xrhs(i, j, k) = xrhs(i, j, k) + ( Real(1.5)/dt )*vel_cont_prev_x(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
-
-            vel_star_x(i, j, k) = ( dt*xrhs(i, j, k) )/Real(1.5);
+            vel_cont_x(i, j, k) = vel_cont_prev_x(i, j, k) + ( Real(1/3))*vel_cont_diff_x(i, j, k) + ( Real(2/3) * dt )*xrhs(i, j, k);
         });
         
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*vel_cont_prev_y(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
-                        
-            vel_star_y(i, j, k) = ( dt*yrhs(i, j, k) )/Real(1.5);
+            vel_cont_y(i, j, k) = vel_cont_prev_y(i, j, k) + ( Real(1/3))*vel_cont_diff_y(i, j, k) + ( Real(2/3) * dt )*yrhs(i, j, k);
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            zrhs(i, j, k) = zrhs(i, j, k) - ( Real(1.5)/dt )*vel_cont_prev_z(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_z(i, j, k);
-                        
-            vel_star_z(i, j, k) = ( dt*zrhs(i, j, k) )/Real(1.5);
+            vel_cont_z(i, j, k) = vel_cont_prev_z(i, j, k) + ( Real(1/3))*vel_cont_diff_z(i, j, k) + ( Real(2/3) * dt )*zrhs(i, j, k);
         });
 #endif
     }
     // ------------------ CONVERT Ucont^{*,l} => Ucart^{*,l} ------------------
-    cont2cart(velCart, velStar, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
 }

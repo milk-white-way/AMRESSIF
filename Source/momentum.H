@@ -31,7 +31,6 @@ void runge_kutta4_pseudo_time_stepping (const amrex::GpuArray<amrex::Real,MAX_RK
                                         amrex::Real const& dt);
 
 void explicit_time_marching (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
-                             amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velStar,
                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContPrev,

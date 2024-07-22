@@ -115,6 +115,10 @@ void staggered_grid_init (MultiFab& userCtx,
      * 
      */
     cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    const std::string &cont2cart_x_export = amrex::Concatenate("pltCont2Cart_X", 0, 1);
+    WriteSingleLevelPlotfile(cont2cart_x_export, velCont[0], {"ucont"}, geom, time, 0);
+    const std::string &cont2cart_y_export = amrex::Concatenate("pltCont2Cart_Y", 0, 1);
+    WriteSingleLevelPlotfile(cont2cart_y_export, velCont[1], {"vcont"}, geom, time, 0);
     //amrex::Print() << "=================================================================== \n";
     cont2cart(velCartPrev, velContPrev, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     //amrex::Print() << "=================================================================== \n";

@@ -1,9 +1,9 @@
-nsteps = 1
-plot_int = 1
+nsteps = 2000
+plot_int = 1000
 
-fixed_dt = 1.e-4
-n_cell = 4
-max_grid_size = 4
+fixed_dt = 1.e-9
+n_cell = 16
+max_grid_size = 16
 
 target_resolution = 4
 momentum_tolerance = 1.e-14
@@ -14,6 +14,8 @@ IterNum = 100
 
 ren = 1
 vis = 1
+
+PSEUDO_TIMESTEPPING = 0
 
 # phy_bc params declare the type of wall
 # 0 - periodic

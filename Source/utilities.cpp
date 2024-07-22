@@ -245,34 +245,6 @@ void cont2cart (MultiFab& velCart,
                 }
             }
         }
-
-        for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
-        {
-            int const& box_id = mfi.LocalIndex();
-
-            const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-            auto const& vel_cont_x = velCont[0].array(mfi);
-
-            auto const& vel_cart = velCart.array(mfi);
-
-            int lo = dom.smallEnd(0);
-            int hi = dom.bigEnd(0)+1;
-
-            amrex::ParallelFor(xbx,
-                              [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-                if ( i == lo ) {
-                    vel_cont_x(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
-                }
-            });
-
-            amrex::ParallelFor(xbx,
-                               [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-                if ( i == hi ) {
-                    vel_cont_x(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
-                }
-            });
-        }
-        //enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     } else if ( phy_bc_lo[0] == -2 || phy_bc_hi[0] == -2 ) {
         Print() << "INFO| Applying inlet boundary conditions on the x-physical boundaries\n";
     } else if ( phy_bc_lo[0] == 2 || phy_bc_hi[0] == 2 ) {
@@ -341,31 +313,6 @@ void cont2cart (MultiFab& velCart,
                 }
             }
         }
-
-        for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
-        {
-            const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-            auto const& vel_cont_y = velCont[1].array(mfi);
-            auto const& vel_cart = velCart.array(mfi);
-
-            int lo = dom.smallEnd(1);
-            int hi = dom.bigEnd(1)+1;
-
-            amrex::ParallelFor(ybx,
-                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-                if ( j == lo ) {
-                    vel_cont_y(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
-                }
-            });
-
-            amrex::ParallelFor(ybx,
-                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-                if ( j == hi ) {
-                    vel_cont_y(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
-                }
-            });
-        }
-        //enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     } else if ( phy_bc_lo[1] == -2 || phy_bc_hi[1] == -2 ) {
         Print() << "INFO| Applying inlet boundary conditions on the y-physical boundaries\n";
     } else if ( phy_bc_lo[1] == 2 || phy_bc_hi[1] == 2 ) {
@@ -383,6 +330,14 @@ void cont2cart (MultiFab& velCart,
     }
 #endif
 
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    /**
+     * @brief Interpolate boundary conditions on the ghost cells to face-centered velocities on the physical boundary
+     * 
+     */
     for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
     {
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));

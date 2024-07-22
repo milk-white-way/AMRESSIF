@@ -71,6 +71,11 @@ void convective_flux_calc ( MultiFab& fluxTotal,
             // Note that the half-node flux (face-centered) are calculated in the east face
             // This leaves the first half-node flux on the west boundary to be prescribed by the boundary conditions
             // Step 1: Assign local cell-centre nodes
+            auto const& ucart_W = vel_cart(i-2, j, k, 0);
+            auto const& ucart_P = vel_cart(i-1, j, k, 0);
+            auto const& ucart_E = vel_cart(i  , j, k, 0);
+            auto const& ucart_EE = vel_cart(i+1, j, k, 0);
+
             auto const& vcart_W  = vel_cart(i-2, j, k, 1);
             auto const& vcart_P  = vel_cart(i-1, j, k, 1);
             auto const& vcart_E  = vel_cart(i  , j, k, 1);
@@ -89,6 +94,16 @@ void convective_flux_calc ( MultiFab& fluxTotal,
             //                  |-- 1 if ucon < 0, ==> ucont(i, j, k) <  0 (flow to the left)
 
             // Default that the flow is to the left
+            Real ucart_UU = ucart_EE;
+            Real ucart_U  = ucart_E;
+            Real ucart_D  = ucart_P;
+            if ( fldr == 0 ) {
+                // Flow to the right
+                ucart_UU = ucart_W;
+                ucart_U  = ucart_P;
+                ucart_D  = ucart_E;
+            }
+
             Real vcart_UU = vcart_EE;
             Real vcart_U  = vcart_E;
             Real vcart_D  = vcart_P;
@@ -114,7 +129,7 @@ void convective_flux_calc ( MultiFab& fluxTotal,
             Real psi = Real(2.0);
             Real flux_limited_ratio = psi;
 #endif
-
+            ucart_xface(i, j, k) = - ucart_UU/8 + 3*ucart_U/4 + 3*ucart_D/8;
             vcart_xface(i, j, k) = - vcart_UU/8 + 3*vcart_U/4 + 3*vcart_D/8;
 #if (UMIST == 1)
             if ( vcart_D != vcart_U ) {
@@ -163,6 +178,12 @@ void convective_flux_calc ( MultiFab& fluxTotal,
             auto const& ucart_P  = vel_cart(i, j-1, k, 0);
             auto const& ucart_N  = vel_cart(i, j  , k, 0);
             auto const& ucart_NN = vel_cart(i, j+1, k, 0);
+            
+            auto const& vcart_S = vel_cart(i, j-2, k, 1);
+            auto const& vcart_P = vel_cart(i, j-1, k, 1);
+            auto const& vcart_N = vel_cart(i, j  , k, 1);
+            auto const& vcart_NN = vel_cart(i, j+1, k, 1);
+            
 #if (AMREX_SPACEDIM > 2)
             auto const& wcart_S  = vel_cart(i, j-2, k, 2);
             auto const& wcart_P  = vel_cart(i, j-1, k, 2);
@@ -186,6 +207,17 @@ void convective_flux_calc ( MultiFab& fluxTotal,
                 ucart_U  = ucart_P;
                 ucart_D  = ucart_N;
             }
+
+            Real vcart_UU = vcart_NN;
+            Real vcart_U  = vcart_N;
+            Real vcart_D  = vcart_P;
+            if ( fldr == 0 ) {
+                // Flow to the top
+                vcart_UU = vcart_S;
+                vcart_U  = vcart_P;
+                vcart_D  = vcart_N;
+            }
+            
 #if (AMREX_SPACEDIM > 2)
             Real wcart_UU = wcart_NN;
             Real wcart_U  = wcart_N;
@@ -202,8 +234,8 @@ void convective_flux_calc ( MultiFab& fluxTotal,
             Real psi = Real(2.0);
             Real flux_limited_ratio = psi;
 #endif
-
             ucart_yface(i, j, k) = - ucart_UU/8 + 3*ucart_U/4 + 3*ucart_D/8;
+            vcart_yface(i, j, k) = - vcart_UU/8 + 3*vcart_U/4 + 3*vcart_D/8;
 #if (UMIST == 1)
             if ( ucart_D != ucart_U ) {
                 flux_limited_ratio = ( ucart_U - ucart_UU ) / ( ucart_D - ucart_U );
@@ -253,60 +285,6 @@ void convective_flux_calc ( MultiFab& fluxTotal,
 #endif
     }
 
-    /* // DEBUGGING
-    shift_face_to_center(fluxTotal, fluxHalfN1);
-    WriteSingleLevelPlotfile("pltConvective-Ucart-to-Face", fluxTotal, {"ucart-xface", "ucart-yface"}, geom, 0, 0);
-
-    shift_face_to_center(fluxTotal, fluxHalfN2);
-    WriteSingleLevelPlotfile("pltConvective-Vcart-to-Face", fluxTotal, {"vcart-xface", "vcart-yface"}, geom, 0, 0);
-
-    shift_face_to_center(fluxTotal, fluxHalfN3);
-    WriteSingleLevelPlotfile("pltConvective-Wcart-to-Face", fluxTotal, {"wcart-xface", "wcart-yface"}, geom, 0, 0);
-    */
-
-/*
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(fluxConvect); mfi.isValid(); ++mfi ) {
-        const Box& vbx = mfi.validbox();
-        auto const& conv_flux = fluxConvect.array(mfi);
-
-        auto const& ucart_xface = fluxHalfN1[0].array(mfi);
-        auto const& vcart_xface = fluxHalfN2[0].array(mfi);
-        auto const& wcart_xface = fluxHalfN3[0].array(mfi);
-
-        auto const& ucart_yface = fluxHalfN1[1].array(mfi);
-        auto const& vcart_yface = fluxHalfN2[1].array(mfi);
-        auto const& wcart_yface = fluxHalfN3[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const& ucart_zface = fluxHalfN1[2].array(mfi);
-        auto const& vcart_zface = fluxHalfN2[2].array(mfi);
-        auto const& wcart_zface = fluxHalfN3[2].array(mfi);
-#endif
-
-        amrex::ParallelFor(vbx,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-            conv_flux(i, j, k, 0) = (ucart_xface(i+1, j, k) - fluxx_ucont(i, j, k))/(dx[0]) + (ucart_yface(i, j+1, k) - ucart_yface(i, j, k))/(dx[1])
-#if (AMREX_SPACEDIM > 2)
-                + (ucart_zface(i, j, k+1) - ucart_zface(i, j, k))/(dx[2]);
-#else
-            ;
-#endif
-
-            conv_flux(i, j, k, 1) = (vcart_xhalf(i+1, j, k) - vcart_xhalf(i, j, k))/(dx[0]) + (vcart_vcont(i, j+1, k) - vcart_vcont(i, j, k))/(dx[1])
-#if (AMREX_SPACEDIM > 2)
-                + (vcart_zface(i, j, k+1) - vcart_zface(i, j, k))/(dx[2]);
-#else
-            ;
-#endif
-
-#if (AMREX_SPACEDIM > 2)
-            conv_flux(i, j, k, 2) = (wcart_xface(i+1, j, k) - wcart_xface(i, j, k))/(dx[0]) + (wcart_yface(i, j+1, k) - wcart_yface(i, j, k))/(dx[1]) + (wcart_zface(i, j, k+1) - wcart_zface(i, j, k))/(dx[2]);
-#endif
-        });
-    }
-*/
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -338,16 +316,15 @@ void convective_flux_calc ( MultiFab& fluxTotal,
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
             conv_flux(i, j, k, 0) = ( ucont(i+1, j, k) * ucont(i+1, j, k) - ucont(i, j, k) * ucont(i, j, k) )/( dx[0] ) + ( vcont(i, j+1, k) * ucart_yface(i, j+1, k) - vcont(i, j, k) * ucart_yface(i, j, k) )/( dx[1] )
-            //conv_flux(i, j, k, 0) = ( vcont(i, j+1, k) * ucart_yface(i, j+1, k) - vcont(i, j, k) * ucart_yface(i, j, k) )/( dx[1] )
+            //conv_flux(i, j, k, 0) = ( ucont(i+1, j, k) * ucart_xface(i+1, j, k) - ucont(i, j, k) * ucart_xface(i, j, k) )/( dx[0] ) + ( vcont(i, j+1, k) * ucart_yface(i, j+1, k) - vcont(i, j, k) * ucart_yface(i, j, k) )/( dx[1] )
 #if (AMREX_SPACEDIM > 2)
                 + ( wcont(i, j, k+1) * ucart_zface(i, j, k+1) - wcont(i, j, k) * ucart_zface(i, j, k+1) )/( dx[2] );
 #else
             ;
 #endif
             
-
             conv_flux(i, j, k, 1) = ( vcont(i, j+1, k) * vcont(i, j+1, k) - vcont(i, j, k) * vcont(i, j, k) )/( dx[1] ) + ( ucont(i+1, j, k) * vcart_xface(i+1, j, k) - ucont(i, j, k) * vcart_xface(i, j, k) )/( dx[0] )
-            //conv_flux(i, j, k, 1) = ( ucont(i+1, j, k) * vcart_xface(i+1, j, k) - ucont(i, j, k) * vcart_xface(i, j, k) )/( dx[0] )
+            //conv_flux(i, j, k, 1) = ( vcont(i, j+1, k) * vcart_yface(i, j+1, k) - vcont(i, j, k) * vcart_yface(i, j, k) )/( dx[1] ) + ( ucont(i+1, j, k) * vcart_xface(i+1, j, k) - ucont(i, j, k) * vcart_xface(i, j, k) )/( dx[0] )
 #if (AMREX_SPACEDIM > 2)
                 + ( wcont(i, j, k+1) * vcart_zface(i, j, k+1) - wcont(i, j, k) * vcart_zface(i, j, k) )/( dx[2] );
 #else
@@ -355,7 +332,8 @@ void convective_flux_calc ( MultiFab& fluxTotal,
 #endif
 
 #if (AMREX_SPACEDIM > 2)
-            conv_flux(i, j, k, 2) = ( ucont(i+1, j, k) * wcart_xface(i+1, j, k) - ucont(i, j, k) * wcart_xface(i, j, k) )/( dx[0] ) + ( vcont(i, j+1, k) * wcart_yface(i, j+1, k) - vcont(i, j, k) * wcart_yface(i, j, k) )/( dx[1] ) + ( wcont(i, j, k+1) * wcont(i, j, k+1) - wcont(i, j, k) * wcont(i, j, k) )/( dx[2] );
+            conv_flux(i, j, k, 2) = ( wcont(i, j, k+1) * wcart_zface(i, j, k+1) - wcont(i, j, k) * wcart_zface(i, j, k) )/( dx[2] ) + ( ucont(i+1, j, k) * wcart_xface(i+1, j, k) - ucont(i, j, k) * wcart_xface(i, j, k) )/( dx[0] ) + ( vcont(i, j+1, k) * wcart_yface(i, j+1, k) - vcont(i, j, k) * wcart_yface(i, j, k) )/( dx[1] );
+            //conv_flux(i, j, k, 2) = ( ucont(i+1, j, k) * wcart_xface(i+1, j, k) - ucont(i, j, k) * wcart_xface(i, j, k) )/( dx[0] ) + ( vcont(i, j+1, k) * wcart_yface(i, j+1, k) - vcont(i, j, k) * wcart_yface(i, j, k) )/( dx[1] ) + ( wcont(i, j, k+1) * wcart_zface(i, j, k+1) - wcont(i, j, k) * wcart_zface(i, j, k) )/( dx[2] );
 #endif
 
 
