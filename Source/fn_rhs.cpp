@@ -41,7 +41,6 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
 
         //int const& box_id = mfi.LocalIndex();
         //print_box(box_id);
-
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
             xrhs(i, j, k) = - grad_p_x(i, j, k) + amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );

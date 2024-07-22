@@ -239,7 +239,7 @@ void update_solution( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
         amrex::ParallelFor(vbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){
             //Update the pressure field
-            ctx(i, j, k, 0) = ctx(i, j, k, 0) + ctx(i, j, k, 1); // - ( dt * grad_u(i, j, k, 0) )/Real(1.5)/ren;
+            ctx(i, j, k, 0) = ctx(i, j, k, 0) + ctx(i, j, k, 1);// - ( dt * grad_u(i, j, k, 0) )/Real(1.5)/ren;
         });
     } // End of the loop for boxes
 

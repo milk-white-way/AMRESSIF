@@ -282,7 +282,7 @@ void main_main ()
             if (phy_bc_lo[idim] == 0) {
                 bc[n].setLo(idim, BCType::int_dir);
             }
-            else if (std::abs(phy_bc_lo[idim]) == 1) {
+            else if (std::abs(phy_bc_lo[idim]) != 0) {
                 bc[n].setLo(idim, BCType::foextrap);
             }
             else {
@@ -292,7 +292,7 @@ void main_main ()
             if (phy_bc_hi[idim] == 0) {
                 bc[n].setHi(idim, BCType::int_dir);
             }
-            else if (std::abs(phy_bc_hi[idim]) == 1) {
+            else if (std::abs(phy_bc_hi[idim]) != 0) {
                 bc[n].setHi(idim, BCType::foextrap);
             }
             else {
@@ -434,6 +434,7 @@ void main_main ()
                 //break; // Tactical breakpoint
                 } // RUNGE-KUTTA | END
                 normError = Error_Computation(velCont, velStar, velStarDiff, geom);
+                poisson_righthand_side_calc(poisson_rhs, velStar, geom, dt);
             }
             //amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
             // Re-assign guess for the next iteration

@@ -46,6 +46,140 @@ void cont2cart (MultiFab& velCart,
     // -- wall: -1, 1
     // -- inlet: -2
     // -- outlet: 2
+    // -- Direclet: 10, 11
+    if ( phy_bc_lo[0] == 10 || phy_bc_lo[0] == 10 || phy_bc_hi[0] == 10 || phy_bc_hi[0] == 10 ) {
+        //Print() << "INFO| Applying Direclet conditions on the volume centers on ghost node\n";
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
+        {
+
+            const Box& vbx = mfi.growntilebox(Nghost);
+            auto const& vel_cart = velCart.array(mfi);
+
+            int lo = dom.smallEnd(0);
+            int hi = dom.bigEnd(0);
+
+            if (vbx.smallEnd(0) < lo) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( i < lo ) {
+                        for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+                            vel_cart(i, j, k, dir) = Real(1.0);
+                        }
+                    }
+                });
+            }
+            if (vbx.bigEnd(0) > hi) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( i > hi ) {
+                        for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+                            vel_cart(i, j, k, dir) = Real(1.0);
+                        }
+                    }
+                });
+            }
+
+            lo = dom.smallEnd(1);
+            hi = dom.bigEnd(1);
+
+            if (vbx.smallEnd(1) < lo) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( j < lo ) {
+                        for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+                            vel_cart(i, j, k, dir) = Real(1.0);
+                        }
+                    }
+                });
+            }
+            if (vbx.bigEnd(1) > hi) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( j > hi ) {
+                        for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+                            vel_cart(i, j, k, dir) = Real(1.0);
+                        }
+                    }
+                });
+            }
+        }
+    }
+    /**
+     * @brief Direclet boundary for steady flow with Taylor-Green Vortex boundary
+     * 
+     */
+    GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
+    GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
+
+    if ( phy_bc_lo[0] == 11 || phy_bc_lo[0] == 11 || phy_bc_hi[0] == 11 || phy_bc_hi[0] == 11 ) {
+        //Print() << "INFO| Applying Direclet conditions on the volume centers on ghost node\n";
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
+        {
+
+            const Box& vbx = mfi.growntilebox(Nghost);
+            auto const& vel_cart = velCart.array(mfi);
+
+            int lo = dom.smallEnd(0);
+            int hi = dom.bigEnd(0);
+
+            if (vbx.smallEnd(0) < lo) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( i < lo ) {
+                        amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+                        amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+                        vel_cart(i, j, k, 0) = Real(0.0);// std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 1) = Real(0.0);//-std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+                    }
+                });
+            }
+            if (vbx.bigEnd(0) > hi) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( i > hi ) {
+                        amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+                        amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+                        vel_cart(i, j, k, 0) = Real(0.0);// std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 1) = Real(0.0);//-std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+                    }
+                });
+            }
+
+            lo = dom.smallEnd(1);
+            hi = dom.bigEnd(1);
+
+            if (vbx.smallEnd(1) < lo) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( j < lo ) {
+                        amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+                        amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+                        vel_cart(i, j, k, 0) = Real(0.0);// std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 1) = Real(0.0);//-std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+                    }
+                });
+            }
+            if (vbx.bigEnd(1) > hi) {
+                amrex::ParallelFor(vbx, 
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                    if ( j > hi ) {
+                        amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
+                        amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+                        vel_cart(i, j, k, 0) = Real(0.0);// std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 1) = Real(0.0);//-std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+                    }
+                });
+            }
+        }
+    }
+
+
     if ( phy_bc_lo[0] == -1 || phy_bc_lo[0] == 1 || phy_bc_hi[0] == -1 || phy_bc_hi[0] == 1 ) {
         Print() << "INFO| Applying wall conditions on the x-physical boundaries (west-east)\n";
 #ifdef AMREX_USE_OMP
