@@ -402,8 +402,8 @@ void main_main ()
         //-----------------------------------------------
         while ( normError > momentum_tolerance )
         {
-            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
-                           << " => latest error norm = " << normError << "\n";
+            //amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
+            //               << " => latest error norm = " << normError << "\n";
 
             if ( PSEUDO_TIMESTEPPING == 0 ) {
                 // EXPLICIT TIME MARCHING

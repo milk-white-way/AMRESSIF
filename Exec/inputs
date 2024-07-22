@@ -1,9 +1,9 @@
-nsteps = 2000
-plot_int = 1000
+nsteps = 200
+plot_int = 100
 
 fixed_dt = 1.e-9
-n_cell = 16
-max_grid_size = 16
+n_cell = 128
+max_grid_size = 64
 
 target_resolution = 4
 momentum_tolerance = 1.e-14

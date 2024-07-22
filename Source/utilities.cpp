@@ -65,9 +65,8 @@ void cont2cart (MultiFab& velCart,
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( i < lo ) {
-                        for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                            vel_cart(i, j, k, dir) = Real(1.0);
-                        }
+                        vel_cart(i, j, k, 0) = Real(1.0);
+                        vel_cart(i, j, k, 1) = Real(0.0);
                     }
                 });
             }
@@ -76,7 +75,8 @@ void cont2cart (MultiFab& velCart,
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( i > hi ) {
                         for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                            vel_cart(i, j, k, dir) = Real(1.0);
+                            vel_cart(i, j, k, 0) = Real(1.0);
+                            vel_cart(i, j, k, 1) = Real(0.0);
                         }
                     }
                 });
@@ -89,9 +89,8 @@ void cont2cart (MultiFab& velCart,
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( j < lo ) {
-                        for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                            vel_cart(i, j, k, dir) = Real(1.0);
-                        }
+                        vel_cart(i, j, k, 0) = Real(1.0);
+                        vel_cart(i, j, k, 1) = Real(0.0);
                     }
                 });
             }
@@ -99,9 +98,8 @@ void cont2cart (MultiFab& velCart,
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( j > hi ) {
-                        for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                            vel_cart(i, j, k, dir) = Real(1.0);
-                        }
+                        vel_cart(i, j, k, 0) = Real(1.0);
+                        vel_cart(i, j, k, 1) = Real(0.0);
                     }
                 });
             }
@@ -134,8 +132,8 @@ void cont2cart (MultiFab& velCart,
                     if ( i < lo ) {
                         amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
                         amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
-                        vel_cart(i, j, k, 0) = Real(0.0);// std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
-                        vel_cart(i, j, k, 1) = Real(0.0);//-std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 0) =  std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 1) = -std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
                     }
                 });
             }
@@ -145,8 +143,8 @@ void cont2cart (MultiFab& velCart,
                     if ( i > hi ) {
                         amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
                         amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
-                        vel_cart(i, j, k, 0) = Real(0.0);// std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
-                        vel_cart(i, j, k, 1) = Real(0.0);//-std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 0) =  std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 1) = -std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
                     }
                 });
             }
@@ -160,8 +158,8 @@ void cont2cart (MultiFab& velCart,
                     if ( j < lo ) {
                         amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
                         amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
-                        vel_cart(i, j, k, 0) = Real(0.0);// std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
-                        vel_cart(i, j, k, 1) = Real(0.0);//-std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 0) =  std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 1) = -std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
                     }
                 });
             }
@@ -171,14 +169,13 @@ void cont2cart (MultiFab& velCart,
                     if ( j > hi ) {
                         amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
                         amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
-                        vel_cart(i, j, k, 0) = Real(0.0);// std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
-                        vel_cart(i, j, k, 1) = Real(0.0);//-std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 0) =  std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+                        vel_cart(i, j, k, 1) = -std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
                     }
                 });
             }
         }
     }
-
 
     if ( phy_bc_lo[0] == -1 || phy_bc_lo[0] == 1 || phy_bc_hi[0] == -1 || phy_bc_hi[0] == 1 ) {
         Print() << "INFO| Applying wall conditions on the x-physical boundaries (west-east)\n";
