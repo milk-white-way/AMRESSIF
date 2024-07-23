@@ -318,7 +318,7 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overridden with fixed_dt: " << dt << "\n";
     }
-    amrex::Real d_tau = Real(0.9889)*dt;
+    amrex::Real d_tau = Real(0.09889)*dt;
     //amrex::Real d_tau = Real(0.3223)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
@@ -414,6 +414,7 @@ void main_main ()
                 momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
                 // --------------------------- MOMENTUM SOLVER ---------------------------
                 explicit_time_marching(momentum_rhs, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                normError = momentum_tolerance-Real(.1);
             } else {
             
                 for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
@@ -430,9 +431,9 @@ void main_main ()
                     viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
                     momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
 
-                // --------------------------- MOMENTUM SOLVER ---------------------------
-                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
-                //break; // Tactical breakpoint
+                    // --------------------------- MOMENTUM SOLVER ---------------------------
+                    runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                    //break; // Tactical breakpoint
                 } // RUNGE-KUTTA | END
                 normError = Error_Computation(velCont, velStar, velStarDiff, geom);
                 amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
@@ -440,6 +441,11 @@ void main_main ()
                 for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
                 {
                     MultiFab::Copy(velCont[comp], velStar[comp], 0, 0, 1, 0);
+                }
+                if ( normError > 1.e2 )
+                {
+                    amrex::Print() << "WARNING| Error Norm diverges, exiting loop\n";
+                    break;
                 }
             }
             poisson_righthand_side_calc(poisson_rhs, velCont, geom, dt);
@@ -449,11 +455,6 @@ void main_main ()
             if (countIter > IterNum) {
                 amrex::Print() << "WARNING| Exceeded number of momenum iterations; exiting loop\n";
                 //amrex::Print() << "Forced break at pseudo step " << countIter << "\n";
-                break;
-            }
-            if ( normError > 1.e2 )
-            {
-                amrex::Print() << "WARNING| Error Norm diverges, exiting loop\n";
                 break;
             }
             //break; // Tactical breakpoint

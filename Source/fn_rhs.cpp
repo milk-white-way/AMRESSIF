@@ -69,10 +69,11 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
         });
 #endif
     }
-    const std::string &rhs_x_export = amrex::Concatenate("pltMomentumRHS_X", 0, 1);
-    WriteSingleLevelPlotfile(rhs_x_export, rhs[0], {"momentum-rhs-x"}, geom, 0, 0);
-    const std::string &rhs_y_export = amrex::Concatenate("pltMomentumRHS_Y", 0, 1);
-    WriteSingleLevelPlotfile(rhs_y_export, rhs[1], {"momentum-rhs-y"}, geom, 0, 0);
+    
+    //const std::string &rhs_x_export = amrex::Concatenate("pltMomentumRHS_X", 0, 1);
+    //WriteSingleLevelPlotfile(rhs_x_export, rhs[0], {"momentum-rhs-x"}, geom, 0, 0);
+    //const std::string &rhs_y_export = amrex::Concatenate("pltMomentumRHS_Y", 0, 1);
+    //WriteSingleLevelPlotfile(rhs_y_export, rhs[1], {"momentum-rhs-y"}, geom, 0, 0);
 }
 
 // ==================================== MODULE | POISSON ====================================

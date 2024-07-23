@@ -63,24 +63,36 @@ void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
         auto const &vel_cont_prev_z = velContPrev[2].array(mfi);
 #endif
 
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0)+1;
         amrex::ParallelFor(xbx, 
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
             xrhs(i, j, k) = xrhs(i, j, k) - ( Real(1.5)/dt )*( vel_star_x(i, j, k) - vel_cont_prev_x(i, j, k) ) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
-
+            if ( i == lo || i == hi ) {
+                xrhs(i, j, k) = Real(0.0);
+            }
             vel_star_x(i, j, k) = vel_cont_x(i, j, k) + ( rk[sub] * xrhs(i, j, k) );
         });
         
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1)+1;
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
             yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*( vel_star_y(i, j, k) - vel_cont_prev_y(i, j, k) ) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
-                        
+            if ( j == lo || j == hi ) {
+                yrhs(i, j, k) = Real(0.0);
+            }
             vel_star_y(i, j, k) = vel_cont_y(i, j, k) + ( rk[sub] * yrhs(i, j, k) );
         });
 #if (AMREX_SPACEDIM > 2)
+        lo = dom.smallEnd(2);
+        hi = dom.bigEnd(2)+1;
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
             zrhs(i, j, k) = zrhs(i, j, k) - ( Real(1.5)/dt )*( vel_star_z(i, j, k) - vel_cont_prev_z(i, j, k) ) + ( Real(0.5)/dt )*vel_cont_diff_z(i, j, k);
-
+            if ( i == lo || i == hi ) {
+                zrhs(i, j, k) = Real(0.0);
+            }
             vel_star_z(i, j, k) = vel_cont_z(i, j, k) + ( rk[sub] * zrhs(i, j, k) );
         });
 #endif

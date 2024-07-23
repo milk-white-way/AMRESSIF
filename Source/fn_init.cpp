@@ -79,10 +79,10 @@ void staggered_grid_init (MultiFab& userCtx,
             amrex::Real x = prob_lo[0] + (i + Real(0.0)) * dx[0];
             amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
             
-            //vel_cont_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
-            //vel_cont_prev_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
-            vel_cont_x(i, j, k) = amrex::Real(0.0);
-            vel_cont_prev_x(i, j, k) = amrex::Real(0.0);
+            vel_cont_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y);
+            vel_cont_prev_x(i, j, k) = std::sin(amrex::Real(2.0) * M_PI * x) * std::cos(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
+            //vel_cont_x(i, j, k) = amrex::Real(0.0);
+            //vel_cont_prev_x(i, j, k) = amrex::Real(0.0);
 
             vel_cont_diff_x(i, j, k) = vel_cont_x(i, j, k) - vel_cont_prev_x(i, j, k);
         });
@@ -91,10 +91,10 @@ void staggered_grid_init (MultiFab& userCtx,
             amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
             amrex::Real y = prob_lo[1] + (j + Real(0.0)) * dx[1];
 
-            //vel_cont_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
-            //vel_cont_prev_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
-            vel_cont_y(i, j, k) = amrex::Real(0.0);
-            vel_cont_prev_y(i, j, k) = amrex::Real(0.0);
+            vel_cont_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y);
+            vel_cont_prev_y(i, j, k) = - std::cos(amrex::Real(2.0) * M_PI * x) * std::sin(amrex::Real(2.0) * M_PI * y) * std::exp(-Real(8.0) * M_PI * M_PI * (time - dt));
+            //vel_cont_y(i, j, k) = amrex::Real(0.0);
+            //vel_cont_prev_y(i, j, k) = amrex::Real(0.0);
 
             vel_cont_diff_y(i, j, k) = vel_cont_y(i, j, k) - vel_cont_prev_y(i, j, k);
         });
@@ -114,11 +114,11 @@ void staggered_grid_init (MultiFab& userCtx,
      * @brief After all contravariant velocity components are initialized, their cartesian velocity counterparts are interpolated.
      * 
      */
-    cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    const std::string &cont2cart_x_export = amrex::Concatenate("pltCont2Cart_X", 0, 1);
-    WriteSingleLevelPlotfile(cont2cart_x_export, velCont[0], {"ucont"}, geom, time, 0);
-    const std::string &cont2cart_y_export = amrex::Concatenate("pltCont2Cart_Y", 0, 1);
-    WriteSingleLevelPlotfile(cont2cart_y_export, velCont[1], {"vcont"}, geom, time, 0);
+    //cont2cart(velCart, velCont, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
+    //const std::string &cont2cart_x_export = amrex::Concatenate("pltCont2Cart_X", 0, 1);
+    //WriteSingleLevelPlotfile(cont2cart_x_export, velCont[0], {"ucont"}, geom, time, 0);
+    //const std::string &cont2cart_y_export = amrex::Concatenate("pltCont2Cart_Y", 0, 1);
+    //WriteSingleLevelPlotfile(cont2cart_y_export, velCont[1], {"vcont"}, geom, time, 0);
     //amrex::Print() << "=================================================================== \n";
     cont2cart(velCartPrev, velContPrev, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     //amrex::Print() << "=================================================================== \n";
