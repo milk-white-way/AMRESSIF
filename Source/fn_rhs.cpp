@@ -12,7 +12,7 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
                                     Vector<int> const& phy_bc_hi,
                                     const Geometry& geom )
 {
-    fluxTotal.FillBoundary(geom.periodicity());
+    Box dom(geom.Domain());
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -41,26 +41,39 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
 
         //int const& box_id = mfi.LocalIndex();
         //print_box(box_id);
-
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0)+1;
         amrex::ParallelFor(xbx,
-                           [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            xrhs(i, j, k) = - grad_p_x(i, j, k) + amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
+                           [=] AMREX_GPU_DEVICE (int i, int j, int k){
+            if ( i > lo && i < hi ) {
+                xrhs(i, j, k) = - grad_p_x(i, j, k) + amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
+            } 
         });
 
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1)+1;
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            yrhs(i, j, k) = - grad_p_y(i, j, k) + amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
+            if ( j > lo && j < hi ) {
+                yrhs(i, j, k) = - grad_p_y(i, j, k) + amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
+            }
         });
 #if (AMREX_SPACEDIM > 2)
+        lo = dom.smallEnd(2);
+        hi = dom.bigEnd(2)+1;
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
-            zrhs(i, j, k) = - grad_p_z(i, j, k) + amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
+            if ( k > lo && k < hi ) {
+                zrhs(i, j, k) = - grad_p_z(i, j, k) + amrex::Real(0.5)*( total_flux(i, j, k-1, 2) + total_flux(i, j, k, 2) );
+            }
         });
 #endif
     }
-
-    //shift_face_to_center(fluxTotal, rhs);
-    //WriteSingleLevelPlotfile("pltMomentumRHS", fluxTotal, {"rhs-x", "rhs-y"}, geom, 0, 0);
+    
+    //const std::string &rhs_x_export = amrex::Concatenate("pltMomentumRHS_X", 0, 1);
+    //WriteSingleLevelPlotfile(rhs_x_export, rhs[0], {"momentum-rhs-x"}, geom, 0, 0);
+    //const std::string &rhs_y_export = amrex::Concatenate("pltMomentumRHS_Y", 0, 1);
+    //WriteSingleLevelPlotfile(rhs_y_export, rhs[1], {"momentum-rhs-y"}, geom, 0, 0);
 }
 
 // ==================================== MODULE | POISSON ====================================

@@ -282,7 +282,7 @@ void main_main ()
             if (phy_bc_lo[idim] == 0) {
                 bc[n].setLo(idim, BCType::int_dir);
             }
-            else if (std::abs(phy_bc_lo[idim]) == 1) {
+            else if (std::abs(phy_bc_lo[idim]) != 0) {
                 bc[n].setLo(idim, BCType::foextrap);
             }
             else {
@@ -292,7 +292,7 @@ void main_main ()
             if (phy_bc_hi[idim] == 0) {
                 bc[n].setHi(idim, BCType::int_dir);
             }
-            else if (std::abs(phy_bc_hi[idim]) == 1) {
+            else if (std::abs(phy_bc_hi[idim]) != 0) {
                 bc[n].setHi(idim, BCType::foextrap);
             }
             else {
@@ -318,7 +318,7 @@ void main_main ()
         dt = fixed_dt;
         amrex::Print() << "INFO| dt overridden with fixed_dt: " << dt << "\n";
     }
-    amrex::Real d_tau = Real(0.9889)*dt;
+    amrex::Real d_tau = Real(0.09889)*dt;
     //amrex::Real d_tau = Real(0.3223)*dt;
 
     //ren = ren*Real(2.0)*M_PI;
@@ -402,25 +402,27 @@ void main_main ()
         //-----------------------------------------------
         while ( normError > momentum_tolerance )
         {
-            amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
-                           << " => latest error norm = " << normError << "\n";
-            
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
-            {
-                // Assign the initial guess as the previous flow field
-                MultiFab::Copy(velStar[comp], velCont[comp], 0, 0, 1, 0);
-                velStarDiff[comp].setVal(0.0);
-            }
+            //amrex::Print() << "SOLVING| Momentum | performing Runge-Kutta at pseudo step: " << countIter
+            //               << " => latest error norm = " << normError << "\n";
 
             if ( PSEUDO_TIMESTEPPING == 0 ) {
                 // EXPLICIT TIME MARCHING
+                amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching\n";
                 // ------------------------- FLUX CALCULATION -------------------------
-                convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velStar, phy_bc_lo, phy_bc_hi, geom, n_cell);
+                convective_flux_calc(fluxTotal, fluxConvect, fluxHalfN1, fluxHalfN2, fluxHalfN3, velCart, velCont, phy_bc_lo, phy_bc_hi, geom, n_cell);
                 viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
                 momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
                 // --------------------------- MOMENTUM SOLVER ---------------------------
-                explicit_time_marching(momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                explicit_time_marching(momentum_rhs, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                normError = momentum_tolerance-Real(.1);
             } else {
+            
+                for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
+                {
+                // Assign the initial guess as the previous flow field
+                    MultiFab::Copy(velStar[comp], velCont[comp], 0, 0, 1, 0);
+                    velStarDiff[comp].setVal(0.0);
+                }
                 // 4 sub-iterations of one RK4 iteration
                 for (int sub = 0; sub < RungeKuttaOrder; ++sub )
                 {
@@ -429,29 +431,30 @@ void main_main ()
                     viscous_flux_calc(fluxTotal, fluxViscous, velCart, geom, ren);
                     momentum_righthand_side_calc(fluxTotal, array_grad_p, momentum_rhs, phy_bc_lo, phy_bc_hi, geom);
 
-                // --------------------------- MOMENTUM SOLVER ---------------------------
-                runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
-                //break; // Tactical breakpoint
+                    // --------------------------- MOMENTUM SOLVER ---------------------------
+                    runge_kutta4_pseudo_time_stepping(rk, sub, momentum_rhs, velStar, velCont, velContDiff, velContPrev, velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell, dt);
+                    //break; // Tactical breakpoint
                 } // RUNGE-KUTTA | END
                 normError = Error_Computation(velCont, velStar, velStarDiff, geom);
+                amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
+                // Re-assign guess for the next iteration
+                for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
+                {
+                    MultiFab::Copy(velCont[comp], velStar[comp], 0, 0, 1, 0);
+                }
+                if ( normError > 1.e2 )
+                {
+                    amrex::Print() << "WARNING| Error Norm diverges, exiting loop\n";
+                    break;
+                }
             }
-            //amrex::Print() << "SOLVING| Momentum | performing Explicit Time Marching => latest error norm = " << normError << "\n";
-            // Re-assign guess for the next iteration
-            for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
-            {
-                MultiFab::Copy(velCont[comp], velStar[comp], 0, 0, 1, 0);
-            }
+            poisson_righthand_side_calc(poisson_rhs, velCont, geom, dt);
             countIter++;
             // Handler for blowing-up situation
             //if (countIter == 2) {
             if (countIter > IterNum) {
                 amrex::Print() << "WARNING| Exceeded number of momenum iterations; exiting loop\n";
                 //amrex::Print() << "Forced break at pseudo step " << countIter << "\n";
-                break;
-            }
-            if ( normError > 1.e2 )
-            {
-                amrex::Print() << "WARNING| Error Norm diverges, exiting loop\n";
                 break;
             }
             //break; // Tactical breakpoint
