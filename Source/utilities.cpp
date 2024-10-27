@@ -40,215 +40,208 @@ void cont2cart (MultiFab& velCart,
         });
     }
 
-    // Periodic BCs
+    // Fill Ghost cells according to physical boundary conditions
+    // Step 1: Periodic BCs
+    // -- periodic: 111
     velCart.FillBoundary(geom.periodicity());
-    // Non-periodic BCs
-    // -- wall: -1, 1
-    // -- inlet: -2
-    // -- outlet: 2
-    if ( phy_bc_lo[0] == -1 || phy_bc_lo[0] == 1 || phy_bc_hi[0] == -1 || phy_bc_hi[0] == 1 ) {
-        Print() << "INFO| Applying wall conditions on the x-physical boundaries (west-east)\n";
+    // Step 2: Physical BCs
+    // -- wall: 135 (no-slip), -135 (slip)
+    // -- inlet: 165 (constant velocity), -165 (time-dependent velocity)
+    // -- outlet: 195 (constant velocity), -195 (time-dependent velocity)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-        for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
-        {
+    for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
+    {
+        const Box &vbx = mfi.growntilebox(Nghost);
+        auto const &vel_cart = velCart.array(mfi);
 
-            const Box& vbx = mfi.growntilebox(Nghost);
-            auto const& vel_cart = velCart.array(mfi);
+        auto const &west_wall_bcs = phy_bc_lo[0]; // west wall
+        auto const &east_wall_bcs = phy_bc_hi[0]; // east wall
+        auto const &south_wall_bcs = phy_bc_lo[1];// south wall
+        auto const &north_wall_bcs = phy_bc_hi[1];// north wall
 
-            auto const& west_wall_bcs = phy_bc_lo[0]; // west wall
-            auto const& east_wall_bcs = phy_bc_hi[0]; // east wall
+        int lo = dom.smallEnd(0);
+        int hi = dom.bigEnd(0);
 
-            int lo = dom.smallEnd(0);
-            int hi = dom.bigEnd(0);
-
-            if (vbx.smallEnd(0) < lo) {
-                if ( west_wall_bcs == -1 ) {
-                    amrex::ParallelFor(vbx, 
-                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        if ( i < lo ) {
-                            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                                vel_cart(i, j, k, dir) = - vel_cart(-i-1, j, k, dir);
-                            }
-                        }
-                    });
-                } else if ( west_wall_bcs == 1 ) {
-                    amrex::ParallelFor(vbx, 
-                                       [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        if ( i < lo ) {
-                            vel_cart(i, j, k, 0) = - vel_cart(-i-1, j, k, 0);
-                            vel_cart(i, j, k, 1) = vel_cart(-i-1, j, k, 1);
+        // Ghost cells to the left (of the West wall)
+        if (vbx.smallEnd(0) < lo) {
+            if (west_wall_bcs == 135) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (i < lo) {
+                                           for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+                                               vel_cart(i, j, k, dir) = -vel_cart(-i - 1, j, k, dir);
+                                           }
+                                       }
+                                   });
+            } else if (west_wall_bcs == -135) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (i < lo) {
+                                           vel_cart(i, j, k, 0) = -vel_cart(-i - 1, j, k, 0);
+                                           vel_cart(i, j, k, 1) = vel_cart(-i - 1, j, k, 1);
 #if (AMREX_SPACEDIM > 2)
-                            vel_cart(i, j, k, 2) = vel_cart(-i-1, j, k, 2);
+                                           vel_cart(i, j, k, 2) = vel_cart(-i - 1, j, k, 2);
 #endif
-                        }
-                    });
-                }
-            }
-            if (vbx.bigEnd(0) > hi) {
-                if ( east_wall_bcs == -1 ) {
-                    amrex::ParallelFor(vbx, 
-                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        if ( i > hi ) {
-                            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                                vel_cart(i, j, k, dir) = - vel_cart(( (n_cell-i) + (n_cell-1) ), j, k, dir);
-                            }
-                        }
-                    });
-
-                } else if ( east_wall_bcs == 1 ) {
-                    amrex::ParallelFor(vbx, 
-                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        if ( i > hi ) {
-                            vel_cart(i, j, k, 0) = - vel_cart(( (n_cell-i) + (n_cell-1) ), j, k, 0);
-                            vel_cart(i, j, k, 1) = vel_cart(( (n_cell-i) + (n_cell-1) ), j, k, 1);
-        #if (AMREX_SPACEDIM > 2)
-                            vel_cart(i, j, k, 2) = vel_cart(( (n_cell-i) + (n_cell-1) ), j, k, 2);
-        #endif
-                        }
-                    });
-                }
-            }
-        }
-
-        for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
-        {
-            int const& box_id = mfi.LocalIndex();
-
-            const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-            auto const& vel_cont_x = velCont[0].array(mfi);
-
-            auto const& vel_cart = velCart.array(mfi);
-
-            int lo = dom.smallEnd(0);
-            int hi = dom.bigEnd(0)+1;
-
-            amrex::ParallelFor(xbx,
-                              [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-                if ( i == lo ) {
-                    vel_cont_x(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
-                }
-            });
-
-            amrex::ParallelFor(xbx,
-                               [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-                if ( i == hi ) {
-                    vel_cont_x(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
-                }
-            });
-        }
-        //enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    } else if ( phy_bc_lo[0] == -2 || phy_bc_hi[0] == -2 ) {
-        Print() << "INFO| Applying inlet boundary conditions on the x-physical boundaries\n";
-    } else if ( phy_bc_lo[0] == 2 || phy_bc_hi[0] == 2 ) {
-        Print() << "INFO| Applying outlet boundary conditions on the x-physical boundaries\n";
-    }
-    
-    if ( phy_bc_lo[1] == -1 || phy_bc_lo[1] == 1 || phy_bc_hi[1] == -1 || phy_bc_hi[1] == 1 ) {
-        Print() << "INFO| Applying wall boundary conditions on the y-physical boundaries\n";
-        for ( MFIter mfi(velCart); mfi.isValid(); ++mfi )
-        {
-
-            const Box& vbx = mfi.growntilebox(Nghost);
-            auto const& vel_cart = velCart.array(mfi);
-
-            auto const& south_wall_bcs = phy_bc_lo[1]; // west wall
-            auto const& north_wall_bcs = phy_bc_hi[1]; // east wall
-
-            int lo = dom.smallEnd(1);
-            int hi = dom.bigEnd(1);
-
-            if (vbx.smallEnd(1) < lo) {
-                if ( south_wall_bcs == -1 ) {
-                    amrex::ParallelFor(vbx, 
-                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        if ( j < lo ) {
-                            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                                vel_cart(i, j, k, dir) = - vel_cart(i, -j-1, k, dir);
-                            }
-                        }
-                    });
-                } else if ( south_wall_bcs == 1 ) {
-                    amrex::ParallelFor(vbx, 
-                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        if ( j < lo ) {
-                            vel_cart(i, j, k, 0) = vel_cart(i, -j-1, k, 0);
-                            vel_cart(i, j, k, 1) = - vel_cart(i, -j-1, k, 1);
-        #if (AMREX_SPACEDIM > 2)
-                            vel_cart(i, j, k, 2) = vel_cart(i, -j-1, k, 2);
-        #endif
-                        }
-                    });
-                }
-            }
-
-            if (vbx.bigEnd(1) > hi) {
-                if ( north_wall_bcs == -1 ) {
-                    amrex::ParallelFor(vbx, 
-                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        if ( j > hi ) {
-                            for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-                                vel_cart(i, j, k, dir) = - vel_cart(i, ( (n_cell-j) + (n_cell-1) ), k, dir);
-                            }
-                        }
-                    });
-                } else if ( north_wall_bcs == 1 ) {
-                    amrex::ParallelFor(vbx, 
-                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                        if ( j > hi ) {
-                            vel_cart(i, j, k, 0) = vel_cart(i, ( (n_cell-j) + (n_cell-1) ), k, 0);
-                            vel_cart(i, j, k, 1) = - vel_cart(i, ( (n_cell-j) + (n_cell-1) ), k, 1);
-        #if (AMREX_SPACEDIM > 2)
-                            vel_cart(i, j, k, 2) = vel_cart(i, ( (n_cell-j) + (n_cell-1) ), k, 2);
-        #endif
-                        }
-                    });
-                }
-            }
-        }
-
-        for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
-        {
-            const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-            auto const& vel_cont_y = velCont[1].array(mfi);
-            auto const& vel_cart = velCart.array(mfi);
-
-            int lo = dom.smallEnd(1);
-            int hi = dom.bigEnd(1)+1;
-
-            amrex::ParallelFor(ybx,
-                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-                if ( j == lo ) {
-                    vel_cont_y(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
-                }
-            });
-
-            amrex::ParallelFor(ybx,
-                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
-                if ( j == hi ) {
-                    vel_cont_y(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
-                }
-            });
-        }
-        //enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    } else if ( phy_bc_lo[1] == -2 || phy_bc_hi[1] == -2 ) {
-        Print() << "INFO| Applying inlet boundary conditions on the y-physical boundaries\n";
-    } else if ( phy_bc_lo[1] == 2 || phy_bc_hi[1] == 2 ) {
-        Print() << "INFO| Applying outlet boundary conditions on the y-physical boundaries\n";
-    }
-
+                                       }
+                                   });
+            } else if (west_wall_bcs == 165) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (i < lo) {
+                                           vel_cart(i, j, k, 0) = 2 - vel_cart(-i - 1, j, k, 0);
+                                           vel_cart(i, j, k, 1) = 2 - vel_cart(-i - 1, j, k, 1);
 #if (AMREX_SPACEDIM > 2)
-    if ( phy_bc_lo[2] == -1 || phy_bc_lo[2] == 1 || phy_bc_hi[2] == -1 || phy_bc_hi[2] == 1 ) {
-        Print() << "INFO| Applying wall boundary conditions on the z-physical boundaries\n";
-        enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells(velCart, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
-    } else if ( phy_bc_lo[2] == -2 || phy_bc_hi[2] == -2 ) {
-        Print() << "INFO| Applying inlet boundary conditions on the z-physical boundaries\n";
-    } else if ( phy_bc_lo[2] == 2 || phy_bc_hi[2] == 2 ) {
-        Print() << "INFO| Applying outlet boundary conditions on the z-physical boundaries\n";
-    }
+                                           vel_cart(i, j, k, 2) = 2 - vel_cart(-i - 1, j, k, 2);
 #endif
+                                       }
+                                   });
+            } else if (west_wall_bcs == -165) {
+                amrex::Abort("Not yet unlocked");
+            } else if (west_wall_bcs == 195) {
+                amrex::Abort("Not yet unlocked");
+            } else if (west_wall_bcs == -195) {
+                amrex::Abort("Not yet unlocked");
+            }
+        }
 
+        // Ghost cells to the right (of the East wall)
+        if (vbx.bigEnd(0) > hi) {
+            if (east_wall_bcs == 135) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (i > hi) {
+                                           for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+                                               vel_cart(i, j, k, dir) = -vel_cart(((n_cell - i) + (n_cell - 1)), j, k, dir);
+                                           }
+                                       }
+                                   });
+
+            } else if (east_wall_bcs == 1) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (i > hi) {
+                                           vel_cart(i, j, k, 0) = -vel_cart(((n_cell - i) + (n_cell - 1)), j, k, 0);
+                                           vel_cart(i, j, k, 1) = vel_cart(((n_cell - i) + (n_cell - 1)), j, k, 1);
+#if (AMREX_SPACEDIM > 2)
+                                           vel_cart(i, j, k, 2) = vel_cart(((n_cell - i) + (n_cell - 1)), j, k, 2);
+#endif
+                                       }
+                                   });
+            } else if (east_wall_bcs == 165) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (i > hi) {
+                                           vel_cart(i, j, k, 0) = 2 - vel_cart(((n_cell - i) + (n_cell - 1)), j, k, 0);
+                                           vel_cart(i, j, k, 1) = 2 - vel_cart(((n_cell - i) + (n_cell - 1)), j, k, 1);
+#if (AMREX_SPACEDIM > 2)
+                                           vel_cart(i, j, k, 2) = 2 - vel_cart(((n_cell - i) + (n_cell - 1)), j, k, 2);
+#endif
+                                       }
+                                   });
+            } else if (east_wall_bcs == -165) {
+                amrex::Abort("Not yet unlocked");
+            } else if (east_wall_bcs == 195) {
+                amrex::Abort("Not yet unlocked");
+            } else if (east_wall_bcs == -195) {
+                amrex::Abort("Not yet unlocked");
+            }
+        }
+
+        lo = dom.smallEnd(1);
+        hi = dom.bigEnd(1);
+
+        // Ghost cells to the bottom (of the South wall)
+        if (vbx.smallEnd(1) < lo) {
+            if (south_wall_bcs == 135) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (j < lo) {
+                                           for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+                                               vel_cart(i, j, k, dir) = -vel_cart(i, -j - 1, k, dir);
+                                           }
+                                       }
+                                   });
+            } else if (south_wall_bcs == -135) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (j < lo) {
+                                           vel_cart(i, j, k, 0) = vel_cart(i, -j - 1, k, 0);
+                                           vel_cart(i, j, k, 1) = -vel_cart(i, -j - 1, k, 1);
+#if (AMREX_SPACEDIM > 2)
+                                           vel_cart(i, j, k, 2) = vel_cart(i, -j - 1, k, 2);
+#endif
+                                       }
+                                   });
+            } else if (south_wall_bcs == 165) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (j < lo) {
+                                           vel_cart(i, j, k, 0) = 2 - vel_cart(i, -j - 1, k, 0);
+                                           vel_cart(i, j, k, 1) = 2 - vel_cart(i, -j - 1, k, 1);
+#if (AMREX_SPACEDIM > 2)
+                                           vel_cart(i, j, k, 2) = 2 - vel_cart(i, -j - 1, k, 2);
+#endif
+                                       }
+                                   });
+            } else if (south_wall_bcs == -165) {
+                amrex::Abort("Not yet unlocked");
+            } else if (south_wall_bcs == 195) {
+                amrex::Abort("Not yet unlocked");
+            } else if (south_wall_bcs == -195) {
+                amrex::Abort("Not yet unlocked");
+            }
+        }
+
+        // Ghost cells to the top (of the North wall)
+        // IMPORTANT: CURRENTLY SET TO LID-DRIVEN CAVITY
+        if (vbx.bigEnd(1) > hi) {
+            if (north_wall_bcs == 135) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (j > hi) {
+                                           for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+                                               vel_cart(i, j, k, dir) = -vel_cart(i, ((n_cell - j) + (n_cell - 1)), k, dir);
+                                           }
+                                       }
+                                   });
+            } else if (north_wall_bcs == -135) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (j > hi) {
+                                           vel_cart(i, j, k, 0) = vel_cart(i, ((n_cell - j) + (n_cell - 1)), k, 0);
+                                           vel_cart(i, j, k, 1) = -vel_cart(i, ((n_cell - j) + (n_cell - 1)), k, 1);
+#if (AMREX_SPACEDIM > 2)
+                                           vel_cart(i, j, k, 2) = vel_cart(i, ((n_cell - j) + (n_cell - 1)), k, 2);
+#endif
+                                       }
+                                   });
+            } else if (north_wall_bcs == 165) {
+                amrex::ParallelFor(vbx,
+                                   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                                       if (j > hi) {
+                                           vel_cart(i, j, k, 0) = 2 - vel_cart(i, ((n_cell - j) + (n_cell - 1)), k, 0);
+                                           vel_cart(i, j, k, 1) = - vel_cart(i, ((n_cell - j) + (n_cell - 1)), k, 1);
+#if (AMREX_SPACEDIM > 2)
+                                           vel_cart(i, j, k, 2) = amrex::Real(0.0);
+#endif
+                                       }
+                                   });
+            } else if (north_wall_bcs == -165) {
+                amrex::Abort("Not yet unlocked");
+            } else if (north_wall_bcs == 195) {
+                amrex::Abort("Not yet unlocked");
+            } else if (north_wall_bcs == -195) {
+                amrex::Abort("Not yet unlocked");
+            }
+        }
+    }
+
+    // Interpolate boundary conditions on contravariant velocity components on the wall
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
     for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
     {
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
@@ -270,8 +263,8 @@ void cont2cart (MultiFab& velCart,
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
             if ( i == lo || i == hi ) {
-                //amrex::Print() << "FILLING | X-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
-                vel_cont_x(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
+                //amrex::Print() << "DEBUG | X-Contravariant velocity at i=" << i << " ; j=" << j << "\n";
+                vel_cont_x(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
             }
         });
 
@@ -281,8 +274,8 @@ void cont2cart (MultiFab& velCart,
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k) {
             if ( j == lo || j == hi ) {
-                //amrex::Print() << "FILLING | Y-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
-                vel_cont_y(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
+                //amrex::Print() << "DEBUG | Y-Contravariant velocity at i=" << i << " ; j=" << j << "\n";
+                vel_cont_y(i, j, k) = amrex::Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
             }
         });
 
@@ -354,7 +347,6 @@ void write_interp_line_solution (Real const& interp_sol,
 void write_exact_line_solution (Real const& x,
                                 Real const& y,
                                 Real const& numerical_sol,
-                                Real const& analytical_sol,
                                 std::string const& filename)
 {
     // Open a file for writing
@@ -367,7 +359,7 @@ void write_exact_line_solution (Real const& x,
     }
 
     // Write data to the file
-    outfile << x << " " << y << " " << numerical_sol << " " << analytical_sol << "\n";
+    outfile << x << "," << y << "," << numerical_sol << "" << "\n";
 
     // Close the file
     outfile.close();

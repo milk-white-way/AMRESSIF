@@ -25,7 +25,6 @@ void write_interp_line_solution (amrex::Real const& interp_sol,
 void write_exact_line_solution (amrex::Real const& x,
                                 amrex::Real const& y,
                                 amrex::Real const& num_sol,
-                                amrex::Real const& ana_sol,
                                 std::string const& filename);
 
 // ===================== UTILITY | EXPORT  =====================
