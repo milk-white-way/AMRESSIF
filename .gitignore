@@ -19,13 +19,13 @@ Exec/Backtrace.*
 Exec/*.png
 Exec/*.log
 Exec/*.ex
-Tests/*.ex
+Tests/tke_test/*.ex
 Exec/*.sh
 Exec/*.txt
 Exec/tmp_build_dir
 Exec/ncell*
 Exec/plt*
-Tests/plt*
+Tests/tke_test/plt*
 Exec/log*
 Exec/inputs
 Exec/outputs
