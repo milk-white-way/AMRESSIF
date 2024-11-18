@@ -10,8 +10,8 @@ set xlabel "x"
 set ylabel "ucont-y"
 
 # Plot the second column from the file with a red line
-plot "./book2.csv" using 1:3 with points pt 7 ps 3 title "Ghia et al", \
-    "./ren400_horizontal_numel40000.csv" using 1:3 with lines lw 3 title "AMRESSIF 128x128"
+plot "./book2.csv" using 1:8 with points pt 7 ps 3 title "Ghia et al", \
+    "./ren10000_horizontal_numel40000.csv" using 1:3 with lines lw 3 title "AMRESSIF 128x128"
 
 #plot "./book1.csv" using 1:3 with points pt 7 ps 3 title "Ghia et al", \
 #    "./ren400_vertical_numel40000.csv" using 2:3 with lines lw 3 title "AMRESSIF 128x128"

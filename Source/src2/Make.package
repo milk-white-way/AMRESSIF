@@ -1,0 +1,28 @@
+CEXE_sources += main.cpp
+CEXE_headers += main.H
+
+CEXE_sources += fn_init.cpp
+CEXE_headers += fn_init.H
+CEXE_headers += kn_init.H
+
+CEXE_sources += fn_enforce_wall_bcs.cpp
+CEXE_headers += fn_enforce_wall_bcs.H
+CEXE_headers += kn_enforce_wall_bcs.H
+
+CEXE_sources += fn_flux_calc.cpp
+CEXE_headers += fn_flux_calc.H
+CEXE_headers += kn_flux_calc.H
+
+CEXE_sources += fn_rhs.cpp
+CEXE_headers += fn_rhs.H
+
+CEXE_sources += momentum.cpp
+CEXE_headers += momentum.H
+
+CEXE_sources += poisson.cpp
+CEXE_headers += poisson.H
+CEXE_headers += kn_poisson.H
+
+CEXE_sources += utilities.cpp
+CEXE_headers += utilities.H
+

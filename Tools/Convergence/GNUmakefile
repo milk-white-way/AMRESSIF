@@ -1,25 +1,26 @@
 AMREX_HOME ?= ../../..
 
 TOP = $(AMREX_HOME)
-USE_EB = FALSE
+USE_EB =FALSE
 #
 # Variables for the user to set ...
 #
 PRECISION     = DOUBLE
-DEBUG	      	= TRUE
-DEBUG	      	= FALSE
+#DEBUG	      = TRUE
+DEBUG	      = FALSE
 #DIM	      = 3
-DIM	       		= 2
-#DIM           = 1
-COMP          = g++
-USE_MPI       = TRUE 
-#USE_MPI       = FALSE
+DIM	      = 2
+#DIM          = 1
+COMP          = llvm
+#USE_MPI      = TRUE 
+USE_MPI       = FALSE
 #
 # Base name of the executable.
 #
 #EBASE = Add
 ### this has no main EBASE = ComputeAmrDataNorms
-EBASE = ComparePlotfiles
+EBASE = CalculateTotalKinetic
+#EBASE = ComparePlotfiles
 #EBASE = DiffFab
 #EBASE = DiffSameDomainRefined
 #EBASE = DiffSameDomainRefinedComposite
@@ -31,7 +32,7 @@ EBASE = ComparePlotfiles
 #EBASE = PltFileNormB
 #EBASE = PltFileNorm
 #EBASE = PltFileScalConvRate
-#EBASE  = RichardsonConvergenceTest
+#EBASE = RichardsonConvergenceTest
 
 CEXE_sources += $(EBASE).cpp
 
