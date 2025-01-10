@@ -133,7 +133,81 @@ void main_main ()
 	}
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-= Defining System's Variables =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    // make BoxArray and Geometry
+	// FLOW VARIABLES
+	// Note: hybrid staggerred/non-staggered grid
+	/*
+	 * -----------------------
+	 *   Volume center
+	 *  ----------------------
+    *  |                   |
+    *  |                   |
+    *  |         0         |
+    *  |                   |
+    *  |                   |
+    *  ----------------------
+	*/
+
+	MultiFab userCtx; 	 // store the pressure and phi
+	MultiFab velCart; 	 // store the Cartesian velocity components living in the cell center;
+	MultiFab velCartPrev;
+
+	MultiFab fluxConvect; // store the convective fluxes used in solving for contravariant velocities, 		 hence lives in the cell center
+	MultiFab fluxViscous; // store the viscous fluxes used in solving for contravariant velocities, 			 hence lives in the cell center
+	MultiFab fluxPrsGrad; // store the pressure gradient fluxes used in solving for contravariant velocities, hence lives in the cell center
+	MultiFab fluxTotal;   // store the total fluxes used in solving for contravariant velocities, 				 hence lives in the cell center
+
+	MultiFab poisson_rhs; // store the right-hand-side of the Poisson equation for phi, lives in the cell center
+	MultiFab poisson_sol; // store the solution of the Poisson equation, which is phi,  lives in the cell center
+
+	MultiFab cc_grad_phi; // store the gradient of phi used to update the Cartesian velocity, lives at the cell center
+
+	MultiFab cc_analytical_diff; // store the analytical solution (if present) of the non-staggered grid
+	// Comp 0 is velocity field along x-axis
+	// Comp 1 is velocity field along y-axis
+	// Comp 2 is pressure field
+
+	/* --------------------------------------
+	 * Face center variables - FLUXES -------
+	 * and Variables ------------------------
+	 *---------------------------------------
+	 *              ______________________
+	 *             |                      |
+	 *             |                      |
+	 *             |                      |
+	 *             |----> velCont[1]      |
+	 *             |                      |
+	 *             |                      |
+	 *             |________----> ________|
+	 *                      velCont[2]
+	 *
+	*/
+
+	Array<MultiFab, AMREX_SPACEDIM> velCont; // store the contravariant velocity components living in the face center
+	Array<MultiFab, AMREX_SPACEDIM> velContPrev;
+	Array<MultiFab, AMREX_SPACEDIM> velContDiff;
+
+	Array<MultiFab, AMREX_SPACEDIM> momentum_rhs; // store the right-hand-side of the momentum equation
+
+	Array<MultiFab, AMREX_SPACEDIM> fluxHalfN1; // these are half-node fluxed used in the QUICK scheme
+	Array<MultiFab, AMREX_SPACEDIM> fluxHalfN2;
+	Array<MultiFab, AMREX_SPACEDIM> fluxHalfN3;
+
+	Array<MultiFab, AMREX_SPACEDIM> velStar; // store the intermediate velocity field in the Fractional Step Method
+	Array<MultiFab, AMREX_SPACEDIM> velStarDiff;
+
+	Array<MultiFab, AMREX_SPACEDIM> array_grad_p; 	// store the gradient of pressure
+	Array<MultiFab, AMREX_SPACEDIM> array_grad_phi; // store the gradient of phi
+
+	Array<MultiFab, AMREX_SPACEDIM> array_analytical_vel; // store the analytical velocity (if present) of the staggered grid
+
+	// Variables at check-out time 
+	MultiFab pressure;
+	MultiFab vel_xCont;
+	MultiFab vel_yCont;
+	MultiFab vel_xContPrev;
+	MultiFab vel_yContPrev;
+
+   // make BoxArray and Geometry
 	BoxArray ba;
 	Geometry geom;
 	{
@@ -172,87 +246,29 @@ void main_main ()
 
 	// How Boxes are distrubuted among MPI processes
 	// Distribution mapping between the processors
+	//dm.define(ba, ParallelDescriptor::NProcs());
 	DistributionMapping dm(ba);
+	// Cell-centered variables
+	userCtx.define(ba, dm, Ncomp, 1);
+	velCart.define(ba, dm, AMREX_SPACEDIM, Nghost);
+	velCartPrev.define(ba, dm, AMREX_SPACEDIM, Nghost);
 
-	/*
-     * -----------------------
-     *   Volume center
-     *  ----------------------
-     *  |                   |
-     *  |                   |
-     *  |         0         |
-     *  |                   |
-     *  |                   |
-     *  ----------------------
-	*/
+	fluxConvect.define(ba, dm, AMREX_SPACEDIM, 0);
+	fluxViscous.define(ba, dm, AMREX_SPACEDIM, 0);
+	fluxPrsGrad.define(ba, dm, AMREX_SPACEDIM, 0);
+	fluxTotal.define(ba, dm, AMREX_SPACEDIM, 1);
 
-	// User Contex MultiFab contains 2 components, pressure and Phi, at the cell center
-	MultiFab userCtx(ba, dm, Ncomp, 1);
+	cc_grad_phi.define(ba, dm, AMREX_SPACEDIM, 1);
 
-	// Cartesian velocities have SPACEDIM as number of components, live in the cell center
-	MultiFab velCart(ba, dm, AMREX_SPACEDIM, Nghost);
-	MultiFab velCartPrev(ba, dm, AMREX_SPACEDIM, Nghost);
+	poisson_rhs.define(ba, dm, 1, 1);
+	poisson_sol.define(ba, dm, 1, 1);
+	cc_analytical_diff.define(ba, dm, 3, 0);
 
-	// Three type of fluxes contributing the the total flux live in the cell center
-	MultiFab fluxConvect(ba, dm, AMREX_SPACEDIM, 0);
-	MultiFab fluxViscous(ba, dm, AMREX_SPACEDIM, 0);
-	MultiFab fluxPrsGrad(ba, dm, AMREX_SPACEDIM, 0);
-	MultiFab fluxTotal(ba, dm, AMREX_SPACEDIM, 1);
-
-	MultiFab cc_grad_phi(ba, dm, AMREX_SPACEDIM, 1);
-
-	MultiFab poisson_rhs(ba, dm, 1, 1);
-	MultiFab poisson_sol(ba, dm, 1, 1);
-
-	MultiFab cc_analytical_diff(ba, dm, 3, 0);
-	// Comp 0 is velocity field along x-axis
-	// Comp 1 is velocity field along y-axis
-	// Comp 2 is pressure field
-
-	/* --------------------------------------
-     * Face center variables - FLUXES -------
-     * and Variables ------------------------
-     *---------------------------------------
-     *              ______________________
-     *             |                      |
-     *             |                      |
-     *             |                      |
-     *             |----> velCont[1]      |
-     *             |                      |
-     *             |                      |
-     *             |________----> ________|
-     *                      velCont[2]
-     *
-	*/
-
-	// Contravariant velocities live in the face center
-	Array<MultiFab, AMREX_SPACEDIM> velCont;
-	Array<MultiFab, AMREX_SPACEDIM> velContPrev;
-	Array<MultiFab, AMREX_SPACEDIM> velContDiff;
-
-	// Right-Hand-Side terms of the Momentum equation have SPACEDIM as number of components, live in the face center
-	Array<MultiFab, AMREX_SPACEDIM> momentum_rhs;
-
-	// Half-node fluxes contribute to implementation of QUICK scheme in calculating the convective flux
-	Array<MultiFab, AMREX_SPACEDIM> fluxHalfN1;
-	Array<MultiFab, AMREX_SPACEDIM> fluxHalfN2;
-	Array<MultiFab, AMREX_SPACEDIM> fluxHalfN3;
-
-	// Extra velocity components for Fractional-Step Method
-	Array<MultiFab, AMREX_SPACEDIM> velStar;
-	Array<MultiFab, AMREX_SPACEDIM> velStarDiff;
-
-	// gradient variables
-	Array<MultiFab, AMREX_SPACEDIM> array_grad_p;
-	Array<MultiFab, AMREX_SPACEDIM> array_grad_phi;
-
-	Array<MultiFab, AMREX_SPACEDIM> array_analytical_vel;
-
-	// Due to the mismatch between the volume-center and face-center variables
-	// The physical quantities living at the face center need to be blowed out one once in the respective direction
+	pressure.define(ba, dm, 1, 0);
+					
+	// Face-centered variables
 	for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
 	{
-		// flux(dir) has one component, zero ghost cells, and is nodal in direction dir
 		BoxArray edge_ba = ba;
 		edge_ba.surroundingNodes(dir);
 
@@ -273,6 +289,14 @@ void main_main ()
 		array_grad_phi[dir].define(edge_ba, dm, 1, 0);
 
 		array_analytical_vel[dir].define(edge_ba, dm, 1, 0);
+
+		if (dir == 0) {
+			vel_xCont.define(edge_ba, dm, 1, 0);
+			vel_xContPrev.define(edge_ba, dm, 1, 0);
+		} else if (dir == 1) {
+			vel_yCont.define(edge_ba, dm, 1, 0);
+			vel_yContPrev.define(edge_ba, dm, 1, 0);
+		}
 	}
 
 	//---------------------------------------------------------------
@@ -497,9 +521,8 @@ void main_main ()
 		{
 			Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
 
+			// Write the exact solution at the line x = 0.5 and y = 0.5
 			if (txt_out > 0) {
-
-				// Write the exact solution at the line x = 0.5 and y = 0.5
 				std::string vertical_line_filename = "ren" + std::to_string(static_cast<int>(ren)) + "_vertical_numel" + std::to_string(n) + ".txt";
 				std::string horizontal_line_filename = "ren" + std::to_string(static_cast<int>(ren)) + "_horizontal_numel" + std::to_string(n) + ".txt";
 				GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
