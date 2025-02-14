@@ -223,7 +223,7 @@ void convective_flux_calc ( MultiFab& fluxTotal,
 #endif
             
 #if (AMREX_SPACEDIM > 2)
-            wcart_yface(i, j, k) = - vcart_UU/8 + 3*vcart_U/4 + 3*vcart_D/8;
+            wcart_yface(i, j, k) = - wcart_UU/8 + 3*wcart_U/4 + 3*wcart_D/8;
 #if (UMIST == 1)
             if ( wcart_D != wcart_U ) {
                 flux_limited_ratio = ( wcart_U - wcart_UU ) / ( wcart_D - wcart_U );

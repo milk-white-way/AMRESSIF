@@ -68,6 +68,7 @@ void cont2cart(MultiFab &velCart,
 #if (AMREX_SPACEDIM > 2)
 		auto const &bakward_wall_bcs = phy_bc_lo[2]; // z- wall
 		auto const &forward_wall_bcs = phy_bc_hi[2]; // z+ wall
+#endif
 
       int lo = dom.smallEnd(0);
       int hi = dom.bigEnd(0);

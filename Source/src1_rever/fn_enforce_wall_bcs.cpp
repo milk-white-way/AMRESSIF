@@ -31,8 +31,8 @@ void enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells (MultiFab& fluxTotal
         auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
         auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
 #if (AMREX_SPACEDIM > 2)
-        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
-        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
+        auto const& bakward_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& forward_wall_bcs = phy_bc_hi[2]; // back wall
 #endif
 
         int lo = dom.smallEnd(0);
@@ -98,7 +98,7 @@ void enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells (MultiFab& fluxTotal
         hi = dom.bigEnd(2);
 
         if (vbx.smallEnd(2) < lo) {
-            if ( front_wall_bcs != 0 ) {
+            if ( bakward_wall_bcs != 0 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {
@@ -111,7 +111,7 @@ void enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells (MultiFab& fluxTotal
         }
 
         if (vbx.bigEnd(2) > hi) {
-            if ( back_wall_bcs != 0 ) {
+            if ( forward_wall_bcs != 0 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k > hi ) {
@@ -151,8 +151,8 @@ void enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells (MultiFab& userCt
         auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
         auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
 #if (AMREX_SPACEDIM > 2)
-        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
-        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
+        auto const& bakward_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& forward_wall_bcs = phy_bc_hi[2]; // back wall
 #endif
 
         int lo = dom.smallEnd(0);
@@ -210,7 +210,7 @@ void enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells (MultiFab& userCt
         hi = dom.bigEnd(2);
 
         if (vbx.smallEnd(2) < lo) {
-            if ( front_wall_bcs != 0 ) {
+            if ( bakward_wall_bcs != 0 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {
@@ -221,7 +221,7 @@ void enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells (MultiFab& userCt
         }
 
         if (vbx.bigEnd(2) > hi) {
-            if ( back_wall_bcs != 0 ) {
+            if ( forward_wall_bcs != 0 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k > hi ) {
@@ -258,8 +258,8 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCa
         auto const& south_wall_bcs = phy_bc_lo[1]; // south wall
         auto const& north_wall_bcs = phy_bc_hi[1]; // north wall
 #if (AMREX_SPACEDIM > 2)
-        auto const& fron_wall_bcs = phy_bc_lo[2]; // front wall
-        auto const& back_wall_bcs = phy_bc_hi[2]; // back wall
+        auto const& bakward_wall_bcs = phy_bc_lo[2]; // front wall
+        auto const& forward_wall_bcs = phy_bc_hi[2]; // back wall
 #endif
 
         int lo = dom.smallEnd(0);
@@ -432,7 +432,7 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCa
         hi = dom.bigEnd(2);
 
         if (vbx.smallEnd(2) < lo) {
-            if ( front_wall_bcs == -1 ) {
+            if ( bakward_wall_bcs == -1 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {
@@ -447,7 +447,7 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCa
                         //amrex::Print() << "\n";
                     }
                 });
-            } else if ( front_wall_bcs == 1 ) {
+            } else if ( bakward_wall_bcs == 1 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {
@@ -466,7 +466,7 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCa
         }
 
         if (vbx.bigEnd(2) > hi) {
-            if ( back_wall_bcs == -1 ) {
+            if ( forward_wall_bcs == -1 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k > hi ) {
@@ -481,7 +481,7 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCa
                         //amrex::Print() << "\n";
                     }
                 });
-            } else if ( back_wall_bcs == 1 ) {
+            } else if ( forward_wall_bcs == 1 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k > hi ) {
