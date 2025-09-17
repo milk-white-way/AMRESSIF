@@ -17,11 +17,6 @@ void compute_pressure_gradient_periodic (int i, int j, int k,
 #if (AMREX_SPACEDIM > 2)
     presgrad_flux(i, j, k, 2) = (pressurefield(i, j, k+1, 0) - pressurefield(i, j, k-1, 0))/(Real(2.0)*dx[2]); // partial p / partial z
 #endif
-
-    //amrex::Real x = (i + Real(0.5)) * dx[0];
-    //amrex::Real y = (j + Real(0.5)) * dx[1];
-
-    //amrex::Print() << x << ";" << y << ";" << presgrad_flux(i, j, k, 0) << "\n";
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE

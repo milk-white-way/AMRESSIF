@@ -18,10 +18,9 @@ void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
                                         int const& Nghost,
                                         Vector<int> const& phy_bc_lo,
                                         Vector<int> const& phy_bc_hi,
-                                        Vector<amrex::Real> const& inflow_waveform,
                                         int const& n_cell,
-                                        Real& time,
-                                        Real const& dt)
+                                        Real const& dt,
+													 Real const& time)
 {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -89,65 +88,27 @@ void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
     // ------------------ CONVERT Ucont^{*,l} => Ucart^{*,l} ------------------
     //shift_face_to_center(velCart, velStar);
     //WriteSingleLevelPlotfile("pltIntermediateVel", velCart, {"u-star", "v-star"}, geom, 0, 0);
-    cont2cart(velCart, velStar, geom, Nghost, phy_bc_lo, phy_bc_hi, inflow_waveform, time, n_cell);
+    cont2cart(velCart, velStar, geom, Nghost, phy_bc_lo, phy_bc_hi, time, n_cell);
 }
 
 void explicit_time_marching (Array<MultiFab, AMREX_SPACEDIM>& momentum_rhs,
                              Array<MultiFab, AMREX_SPACEDIM>& velStar,
+                             Array<MultiFab, AMREX_SPACEDIM>& velCont,
                              Array<MultiFab, AMREX_SPACEDIM>& velContDiff,
+                             Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
+                             MultiFab& velCart,
                              Geometry const& geom,
+                             int const& Nghost,
                              Vector<int> const& phy_bc_lo,
                              Vector<int> const& phy_bc_hi,
-                             Real const& dt)
+                             int const& n_cell,
+                             Real const& dt,
+									  Real const& time)
 {
-	GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-	GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(momentum_rhs[0]); mfi.isValid(); ++mfi)
-    {
-        const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
-        const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
-#if (AMREX_SPACEDIM > 2)
-        const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
-#endif
-
-        auto const& xrhs = momentum_rhs[0].array(mfi);
-        auto const& yrhs = momentum_rhs[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const& zrhs = momentum_rhs[2].array(mfi);
-#endif
-
-        auto const& vel_cont_diff_x = velContDiff[0].array(mfi);
-        auto const& vel_cont_diff_y = velContDiff[1].array(mfi);
-#if (AMREX_SPACEDIM > 2)
-        auto const& vel_cont_diff_z = velContDiff[2].array(mfi);
-#endif
-
-        amrex::ParallelFor(xbx, 
-                           [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            xrhs(i, j, k) = xrhs(i, j, k) + ( Real(1.0)/( Real(2.0)*dt ) )*vel_cont_diff_x(i, j, k);
-        });
-
-        amrex::ParallelFor(ybx,
-                           [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            yrhs(i, j, k) = yrhs(i, j, k) + ( Real(1.0)/( Real(2.0)*dt ) )*vel_cont_diff_y(i, j, k);
-        });
-
-#if (AMREX_SPACEDIM > 2)
-        amrex::ParallelFor(zbx,
-                           [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            zrhs(i, j, k) = zrhs(i, j, k) + ( Real(1.0)/( Real(2.0)*dt ) )*vel_cont_diff_z(i, j, k);
-        });
-#endif
-    }
-
-    //amrex::Print() << "DEBUGGING| Intermediate Velocity: \n";
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (MFIter mfi(velStar[0]); mfi.isValid(); ++mfi)
+    for (MFIter mfi(velCont[0]); mfi.isValid(); ++mfi)
     {
         const Box &xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
         const Box &ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
@@ -167,25 +128,46 @@ void explicit_time_marching (Array<MultiFab, AMREX_SPACEDIM>& momentum_rhs,
         auto const &vel_star_z = velStar[2].array(mfi);
 #endif
 
+        auto const &vel_cont_x = velCont[0].array(mfi);
+        auto const &vel_cont_y = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const &vel_cont_z = velCont[2].array(mfi);
+#endif
+
+        auto const &vel_cont_diff_x = velContDiff[0].array(mfi);
+        auto const &vel_cont_diff_y = velContDiff[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const &vel_cont_diff_z = velContDiff[2].array(mfi);
+#endif
+
+        auto const &vel_cont_prev_x = velContPrev[0].array(mfi);
+        auto const &vel_cont_prev_y = velContPrev[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+        auto const &vel_cont_prev_z = velContPrev[2].array(mfi);
+#endif
+
         amrex::ParallelFor(xbx, 
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            vel_star_x(i, j, k) = vel_star_x(i, j, k) + ( ( dt/Real(1.5) )*xrhs(i, j, k) );
+            xrhs(i, j, k) = xrhs(i, j, k) + ( Real(1.5)/dt )*vel_cont_prev_x(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_x(i, j, k);
 
-			//amrex::Real x = prob_lo[0] + (i + Real(0.0)) * dx[0];
-			//amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
-			//amrex::Print() << x << ";" << y << ";" << vel_star_x(i, j, k) << "\n";
-            //amrex::Print() << "DEBUG | (i, j) = (" << i << ", " << j << ") | vel_star_x = " << vel_star_x(i, j, k) << "\n";
+            vel_star_x(i, j, k) = ( dt*xrhs(i, j, k) )/Real(1.5);
         });
         
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            vel_star_y(i, j, k) = vel_star_y(i, j, k) + ( ( dt/Real(1.5) )*yrhs(i, j, k) );
+            yrhs(i, j, k) = yrhs(i, j, k) - ( Real(1.5)/dt )*vel_cont_prev_y(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_y(i, j, k);
+                        
+            vel_star_y(i, j, k) = ( dt*yrhs(i, j, k) )/Real(1.5);
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
                            [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-            vel_star_z(i, j, k) = vel_star_z(i, j, k) + ( ( dt/Real(1.5) )*zrhs(i, j, k) );
+            zrhs(i, j, k) = zrhs(i, j, k) - ( Real(1.5)/dt )*vel_cont_prev_z(i, j, k) + ( Real(0.5)/dt )*vel_cont_diff_z(i, j, k);
+                        
+            vel_star_z(i, j, k) = ( dt*zrhs(i, j, k) )/Real(1.5);
         });
 #endif
     }
+    // ------------------ CONVERT Ucont^{*,l} => Ucart^{*,l} ------------------
+    cont2cart(velCart, velStar, geom, Nghost, phy_bc_lo, phy_bc_hi, time, n_cell);
 }

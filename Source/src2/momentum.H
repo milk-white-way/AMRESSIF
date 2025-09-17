@@ -27,15 +27,20 @@ void runge_kutta4_pseudo_time_stepping (const amrex::GpuArray<amrex::Real,MAX_RK
                                         int const& Nghost,
                                         amrex::Vector<int> const& phy_bc_lo,
                                         amrex::Vector<int> const& phy_bc_hi,
-                                        amrex::Vector<amrex::Real> const& inflow_waveform,
                                         int const& n_cell,
-										amrex::Real& time,
-                                        amrex::Real const& dt);
+                                        amrex::Real const& dt,
+                								 amrex::Real const& time);
 
 void explicit_time_marching (amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& rhs,
                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velStar,
+                             amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velCont,
                              amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContDiff,
+                             amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& velContPrev,
+                             amrex::MultiFab& velCart,
                              amrex::Geometry const& geom,
+                             int const& Nghost,
                              amrex::Vector<int> const& phy_bc_lo,
                              amrex::Vector<int> const& phy_bc_hi,
-                             amrex::Real const& dt);
+                             int const& n_cell,
+                             amrex::Real const& dt,
+									  amrex::Real const& time);	

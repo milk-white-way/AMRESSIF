@@ -1,14 +1,13 @@
-nsteps = 0
+nsteps = 10
+n_cell = 64
+max_grid_size = 8
+fixed_dt = 1.0e-3
 
-n_cell = 16
-max_grid_size = 16
+plot_int = 2
+chk_int = 2
+chk_out = -100
 
-fixed_dt = 1.e-3
-
-plot_int = 5
-txt_int = -1
-chk_int = 10
-chk_out = -1
+PSEUDO_TIMESTEPPING = 1
 
 target_resolution = 4
 momentum_tolerance = 1.e-14
@@ -27,6 +26,8 @@ vis = 1
 # -- outlet: 192 (constant velocity) ; -195 (time-dependent velocity)
 phy_bc_lo = 135 135 135
 phy_bc_hi = 135 165 135
+
+inflow_waveform = 1.0 0.0 0.0
 
 amrex.v = 1
 amrex.async_out = 0  # If we use more than 64 processes, async_out will require MPI_THREAD_MULTIPLE

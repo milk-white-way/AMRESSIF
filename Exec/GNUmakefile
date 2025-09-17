@@ -1,7 +1,7 @@
 # AMREX_HOME defines the directory in which we will find all the AMReX code.
 AMREX_HOME ?= ../../../../../amrex
 
-DEBUG        = TRUE
+DEBUG        = FALSE
 USE_MPI      = TRUE
 MPI_THREAD_MULTIPLE = FALSE  # amrex.async_out=1 with more than 64 processes requires MPI_THREAD_MULTIPLE
 USE_OMP      = FALSE
@@ -18,7 +18,7 @@ include ../Source/src1_rever/Make.package
 VPATH_LOCATIONS  += ../Source/src1_rever
 INCLUDE_LOCATIONS += ../Source/src1_rever
 
-Pdirs 	:= Base Boundary LinearSolvers/MLMG
+Pdirs 	:= Base Boundary LinearSolvers
 Ppack	+= $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
 
 include $(Ppack)

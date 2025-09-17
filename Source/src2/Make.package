@@ -26,5 +26,3 @@ CEXE_headers += kn_poisson.H
 CEXE_sources += utilities.cpp
 CEXE_headers += utilities.H
 
-CEXE_sources += GMRES_Poisson.cpp
-CEXE_headers += GMRES_Poisson.H

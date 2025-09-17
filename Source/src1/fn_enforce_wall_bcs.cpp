@@ -98,7 +98,7 @@ void enforce_wall_bcs_for_cell_centered_flux_on_ghost_cells (MultiFab& fluxTotal
         hi = dom.bigEnd(2);
 
         if (vbx.smallEnd(2) < lo) {
-            if ( fron_wall_bcs != 0 ) {
+            if ( front_wall_bcs != 0 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {
@@ -210,7 +210,7 @@ void enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells (MultiFab& userCt
         hi = dom.bigEnd(2);
 
         if (vbx.smallEnd(2) < lo) {
-            if ( fron_wall_bcs != 0 ) {
+            if ( front_wall_bcs != 0 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {
@@ -432,7 +432,7 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCa
         hi = dom.bigEnd(2);
 
         if (vbx.smallEnd(2) < lo) {
-            if ( fron_wall_bcs == -1 ) {
+            if ( front_wall_bcs == -1 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {
@@ -447,7 +447,7 @@ void enforce_wall_bcs_for_cell_centered_velocity_on_ghost_cells (MultiFab& velCa
                         //amrex::Print() << "\n";
                     }
                 });
-            } else if ( fron_wall_bcs == 1 ) {
+            } else if ( front_wall_bcs == 1 ) {
                 amrex::ParallelFor(vbx, 
                                    [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                     if ( k < lo ) {

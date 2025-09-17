@@ -12,6 +12,7 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
                                     Vector<int> const& phy_bc_hi,
                                     const Geometry& geom )
 {
+    fluxTotal.FillBoundary(geom.periodicity());
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -20,6 +21,7 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
         const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
         const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
 #if (AMREX_SPACEDIM > 2)
+
         const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
 #endif
 
@@ -43,17 +45,11 @@ void momentum_righthand_side_calc ( MultiFab& fluxTotal,
         amrex::ParallelFor(xbx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
             xrhs(i, j, k) = - grad_p_x(i, j, k) + amrex::Real(0.5)*( total_flux(i-1, j, k, 0) + total_flux(i, j, k, 0) );
-            /*
-            amrex::Print() << "DEBUG| (i, j) = (" << i << ", " << j 
-                           << ") | grad_p_x = " << grad_p_x(i, j, k) << " ; "
-                           << "total_flux = " << total_flux(i-1, j, k, 0) << " ; " << total_flux(i, j, k, 0) << "\n";
-            */
         });
 
         amrex::ParallelFor(ybx,
                            [=] AMREX_GPU_DEVICE (int i, int j, int k){ 
             yrhs(i, j, k) = - grad_p_y(i, j, k) + amrex::Real(0.5)*( total_flux(i, j-1, k, 1) + total_flux(i, j, k, 1) );
-            //amrex::Print() << "DEBUG | (i, j) = (" << i << ", " << j << ") | yrhs = " << yrhs(i, j, k) << "\n";
         });
 #if (AMREX_SPACEDIM > 2)
         amrex::ParallelFor(zbx,
@@ -74,8 +70,8 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
                                    Real const& dt )
 {
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
-    GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
 
+    // Calculting the Divergence of V* << velImRK
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -98,28 +94,8 @@ void poisson_righthand_side_calc ( MultiFab& poisson_rhs,
 #else
             ;
 #endif
-        });
-    } // End of all box loops
-    amrex::Print() << "INFO| Inf Norm of Divergence of velocity = " 
-                   << poisson_rhs.norm0(0) << '\n';
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for ( MFIter mfi(poisson_rhs); mfi.isValid(); ++mfi )
-    {
-        const Box& vbx = mfi.validbox();
-        auto const& rhs = poisson_rhs.array(mfi);
-
-        amrex::ParallelFor(vbx,
-                           [=] AMREX_GPU_DEVICE (int i, int j, int k) {
             rhs(i, j, k, 0) = (Real(1.5)/dt) * rhs(i, j, k, 0);
-
-            //amrex::Real x = prob_lo[0] + (i + Real(0.5)) * dx[0];
-            //amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
-            //amrex::Print() << x << ";" << y << ";" << rhs(i, j, k, 0) << "\n";
         });
     } // End of all box loops
-    Print() << "SOLVING| Poisson  | sum of components of RHS = " 
-            << poisson_rhs.sum(0) << '\n';
+    Print() << "SOLVING| Poisson  | sum of components of RHS = " << poisson_rhs.sum(0) << '\n';
 }
