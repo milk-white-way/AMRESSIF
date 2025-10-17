@@ -4,6 +4,11 @@
 #include <AMReX_BCUtil.H>
 #include <AMReX_MLMG.H>
 #include <AMReX_MLABecLaplacian.H>
+
+#ifdef AMREX_USE_HYPRE
+#include <AMReX_Hypre.H>
+#endif
+
 #include <AMReX_MultiFabUtil.H>
 
 #include <fn_flux_calc.H>

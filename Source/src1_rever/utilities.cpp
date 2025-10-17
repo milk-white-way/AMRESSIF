@@ -397,8 +397,8 @@ void write_interp_line_solution(Real const &interp_sol,
 void write_exact_line_solution(Real const& time,
                                Real const& x,
                                Real const& y,
+							   Real const& z,
                                Real const& numerical_sol,
-                               Real const& analytical_sol,
                                std::string const& filename) {
     // Open a file for writing
 	 std::string full_filename = filename + ".txt";
@@ -410,7 +410,7 @@ void write_exact_line_solution(Real const& time,
     }
 
     // Write data to the file
-    outfile << time << "," << x << "," << y << "," << numerical_sol << "," << analytical_sol << "\n";
+    outfile << time << "," << x << "," << y << "," << z << "," << numerical_sol << "\n";
 
     // Close the file
     outfile.close();

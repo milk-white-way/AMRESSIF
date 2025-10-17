@@ -51,20 +51,29 @@ void poisson_advance( MultiFab& poisson_sol,
  * for an implicit discretization of the heat equation
  * (I - div dt grad) phi^{n+1} = phi^n
 */
+    bool semicoarsening = true;
+    int semicoarsening_direction = 1;
+    int semicoarsening_level = 2;
+    int max_coarsening_level = 0;
+
+    bool use_hypre = false;
 
     // initialize valid and ghost region to zero
     poisson_sol.setVal(0.0);
-    amrex::Print() << "\n" << poisson_rhs.sum(0) << "\n";
 
     // assorment of solver and parallization options and parameters
     // see AMReX_MLLinOp.H for the defaults, accessors, and mutators
     LPInfo info;
+    info.setSemicoarsening(semicoarsening);
+    info.setSemicoarseningDirection(semicoarsening_direction);
+    info.setMaxSemicoarseningLevel(semicoarsening_level);
+    info.setMaxCoarseningLevel(max_coarsening_level);
 
     // Implicit solve using MLABecLaplacian class
     MLABecLaplacian mlabec({geom}, {grids}, {dmap}, info);
 
     // order of stencil
-    int linop_maxorder = 2;
+    int linop_maxorder = 3;
     mlabec.setMaxOrder(linop_maxorder);
 
     // build array of boundary conditions needed by MLABecLaplacian
@@ -152,11 +161,20 @@ void poisson_advance( MultiFab& poisson_sol,
     int max_fmg_iter = 0;
     mlmg.setMaxFmgIter(max_fmg_iter);
 
-    int verbose = 2;
+    int verbose = 10;
     mlmg.setVerbose(verbose);
 
-    int bottom_verbose = 0;
+    int bottom_verbose = 10;
     mlmg.setBottomVerbose(bottom_verbose);
+#ifdef AMREX_USE_HYPRE
+    if (use_hypre) {
+        amrex::Print() << "INFO| Using Hypre as bottom solver\n";
+        mlmg.setBottomSolver(MLMG::BottomSolver::hypre);
+        mlmg.setHypreInterface(Hypre::Interface::structed);
+        //mlmg.setHypreInterface(hypre_interface);
+    }
+#endif
+
     // relative and absolute tolerances for linear solve
     const Real tol_rel = 1.0e-10;
     const Real tol_abs = 0.0;
