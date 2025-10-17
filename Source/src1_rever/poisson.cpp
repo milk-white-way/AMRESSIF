@@ -161,10 +161,10 @@ void poisson_advance( MultiFab& poisson_sol,
     int max_fmg_iter = 0;
     mlmg.setMaxFmgIter(max_fmg_iter);
 
-    int verbose = 10;
+    int verbose = 2;
     mlmg.setVerbose(verbose);
 
-    int bottom_verbose = 10;
+    int bottom_verbose = 2;
     mlmg.setBottomVerbose(bottom_verbose);
 #ifdef AMREX_USE_HYPRE
     if (use_hypre) {

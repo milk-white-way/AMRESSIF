@@ -25,11 +25,11 @@ void write_interp_line_solution (amrex::Real const& interp_sol,
                                  std::string const& filename);
 
 void write_exact_line_solution ( amrex::Real const& time,
-											amrex::Real const& x,
-                                	amrex::Real const& y,
-                                	amrex::Real const& numerical_sol,
-										  	amrex::Real const& analytical_sol,
-                                	std::string const& filename );
+								 amrex::Real const& x,
+								 amrex::Real const& y,
+								 amrex::Real const& z,
+								 amrex::Real const& numerical_sol,
+                                 std::string const& filename );
 
 // ===================== UTILITY | EXPORT  =====================
 void Export_Fluxes (amrex::MultiFab& fluxConvect,

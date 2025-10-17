@@ -255,8 +255,8 @@ void main_main ()
 	//				 {AMREX_D_DECL( Real(2.0)*M_PI, Real(2.0)*M_PI, Real(2.0)*M_PI)}); 
 
 	// CASE: Lid-driven cavity
-	RealBox real_box({AMREX_D_DECL( Real(0.0), Real(0.0), Real(0.0))},
-					 {AMREX_D_DECL( Real(0.0), Real(2.0), Real(1.0))}); 
+	RealBox real_box({AMREX_D_DECL( Real(0.0), Real(0.0), Real(0.0) )},
+					 {AMREX_D_DECL( Real(1.0), Real(2.0), Real(1.0) )}); 
 	// This defines a Geometry object
 	// NOTE: the coordinate system is Cartesian
 	geom.define(domain, &real_box, CoordSys::cartesian, is_periodic.data());
@@ -869,7 +869,7 @@ void main_main ()
 		// Extract horizontal velocity at the line (0.5, y, 0.5)
 		if ( plot_int > 0 && n%plot_int == 0 )
 		{
-			std::string vertical_line_filename = "ren" + std::to_string(static_cast<int>(ren)) + "_vertical_numel" + std::to_string(n);
+			std::string vertical_line_filename = "ren" + std::to_string(static_cast<int>(ren)) + "_vertical_numel_positive" + std::to_string(n);
 
 			for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
 			{
@@ -890,7 +890,34 @@ void main_main ()
 #if (AMREX_SPACEDIM > 2)
 					amrex::Real z = prob_lo[2] + (k + Real(0.5)) * dx[2];
 #endif
-					if ( i == n_cell/2 && k == n_cell/2 ) {
+					if ( i == n_cell/2 && k == (n_cell/2) ) {
+						write_exact_line_solution(time, x, y, z, vel_cont_x(i, j, k), vertical_line_filename);
+					}
+				});
+			}
+
+			vertical_line_filename = "ren" + std::to_string(static_cast<int>(ren)) + "_vertical_numel_negative" + std::to_string(n);
+
+			for ( MFIter mfi(velCont[0]); mfi.isValid(); ++mfi )
+			{
+				const Box& xbx = mfi.tilebox(IntVect(AMREX_D_DECL(1,0,0)));
+				const Box& ybx = mfi.tilebox(IntVect(AMREX_D_DECL(0,1,0)));
+#if (AMREX_SPACEDIM > 2)
+				const Box& zbx = mfi.tilebox(IntVect(AMREX_D_DECL(0,0,1)));
+#endif
+				auto const& vel_cont_x = velCont[0].array(mfi);
+				auto const& vel_cont_y = velCont[1].array(mfi);
+#if (AMREX_SPACEDIM > 2)
+				auto const& vel_cont_z = velCont[2].array(mfi);
+#endif
+				amrex::ParallelFor(xbx,
+								   [=] AMREX_GPU_DEVICE(int i, int j, int k){
+					amrex::Real x = prob_lo[0] + (i + Real(0.0)) * dx[0];
+					amrex::Real y = prob_lo[1] + (j + Real(0.5)) * dx[1];
+#if (AMREX_SPACEDIM > 2)
+					amrex::Real z = prob_lo[2] + (k + Real(0.5)) * dx[2];
+#endif
+					if ( i == (n_cell/2) && k == (n_cell/2 - 1) ) {
 						write_exact_line_solution(time, x, y, z, vel_cont_x(i, j, k), vertical_line_filename);
 					}
 				});
