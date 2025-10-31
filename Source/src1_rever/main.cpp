@@ -891,7 +891,7 @@ void main_main ()
 					amrex::Real z = prob_lo[2] + (k + Real(0.5)) * dx[2];
 #endif
 					if ( i == n_cell/2 && k == (n_cell/2) ) {
-						write_exact_line_solution(time, x, y, z, vel_cont_x(i, j, k), vertical_line_filename);
+//						write_exact_line_solution(time, x, y, z, vel_cont_x(i, j, k), vertical_line_filename);
 					}
 				});
 			}
@@ -918,7 +918,7 @@ void main_main ()
 					amrex::Real z = prob_lo[2] + (k + Real(0.5)) * dx[2];
 #endif
 					if ( i == (n_cell/2) && k == (n_cell/2 - 1) ) {
-						write_exact_line_solution(time, x, y, z, vel_cont_x(i, j, k), vertical_line_filename);
+//						write_exact_line_solution(time, x, y, z, vel_cont_x(i, j, k), vertical_line_filename);
 					}
 				});
 			}

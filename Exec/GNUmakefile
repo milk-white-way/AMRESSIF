@@ -5,8 +5,8 @@ DEBUG        = FALSE
 USE_MPI      = TRUE
 MPI_THREAD_MULTIPLE = FALSE  # amrex.async_out=1 with more than 64 processes requires MPI_THREAD_MULTIPLE
 USE_OMP      = FALSE
-USE_HYPRE    = TRUE
-COMP         = llvm
+USE_HYPRE    = FALSE
+COMP         = gnu
 DIM          = 3
 
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs

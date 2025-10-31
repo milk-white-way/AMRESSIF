@@ -1,11 +1,11 @@
-nsteps = 60001
+nsteps = 1
 n_cell = 96
 max_grid_size = 32
 fixed_dt = 1.0e-3
 
 plot_int = 10000
 chk_int = =20000
-chk_out = 60000
+#chk_out = 60000
 
 PSEUDO_TIMESTEPPING = 1
 
