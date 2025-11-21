@@ -320,7 +320,7 @@ void hybrid_grid_init ( MultiFab& userCtx,
 						}
 					}
 				});
-			} else if (east_wall_bcs == 1) {
+			} else if (east_wall_bcs == -135) {
 				amrex::ParallelFor(vbx,
 								   [=] AMREX_GPU_DEVICE(int i, int j, int k) {
 					if (i > hi) {

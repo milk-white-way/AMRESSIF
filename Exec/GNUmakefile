@@ -3,9 +3,10 @@ AMREX_HOME ?= ../../../../../amrex
 
 DEBUG        = FALSE
 USE_MPI      = TRUE
+USE_CUDA     = TRUE
 MPI_THREAD_MULTIPLE = FALSE  # amrex.async_out=1 with more than 64 processes requires MPI_THREAD_MULTIPLE
 USE_OMP      = FALSE
-USE_HYPRE    = TRUE
+USE_HYPRE    = FALSE
 COMP         = llvm
 DIM          = 3
 

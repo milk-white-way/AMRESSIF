@@ -549,7 +549,7 @@ void enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries (MultiFa
             amrex::ParallelFor(xbx,
                             [=] AMREX_GPU_DEVICE (int i, int j, int k) {
                 if ( i == lo ) {
-                    amrex::Print() << "FILLING | X-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                    //amrex::Print() << "FILLING | X-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
                     vel_cont_x(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
                 }
             });
@@ -559,7 +559,7 @@ void enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries (MultiFa
             amrex::ParallelFor(xbx,
                             [=] AMREX_GPU_DEVICE (int i, int j, int k) {
                 if ( i == hi ) {
-                    amrex::Print() << "FILLING | X-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                    //amrex::Print() << "FILLING | X-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
                     vel_cont_x(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 0) + vel_cart(i-1, j, k, 0) );
                 }
             });
@@ -572,7 +572,7 @@ void enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries (MultiFa
             amrex::ParallelFor(ybx,
                             [=] AMREX_GPU_DEVICE (int i, int j, int k) {
                 if ( j == lo ) {
-                    amrex::Print() << "FILLING | Y-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                    //amrex::Print() << "FILLING | Y-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
                     vel_cont_y(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
                 }
             });
@@ -582,7 +582,7 @@ void enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries (MultiFa
             amrex::ParallelFor(ybx,
                             [=] AMREX_GPU_DEVICE (int i, int j, int k) {
                 if ( j == hi ) {
-                    amrex::Print() << "FILLING | Y-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                    //amrex::Print() << "FILLING | Y-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
                     vel_cont_y(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 1) + vel_cart(i, j-1, k, 1) );
                 }
             });
@@ -596,7 +596,7 @@ void enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries (MultiFa
             amrex::ParallelFor(zbx,
                             [=] AMREX_GPU_DEVICE (int i, int j, int k) {
                 if ( k == lo ) {
-                    amrex::Print() << "FILLING | Z-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                    //amrex::Print() << "FILLING | Z-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
                     vel_cont_z(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 2) + vel_cart(i, j, k-1, 2) );
                 }
             });
@@ -606,7 +606,7 @@ void enforce_wall_bcs_for_face_centered_velocity_on_physical_boundaries (MultiFa
             amrex::ParallelFor(zbx,
                             [=] AMREX_GPU_DEVICE (int i, int j, int k) {
                 if ( k == hi ) {
-                    amrex::Print() << "FILLING | Z-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
+                    //amrex::Print() << "FILLING | Z-Contravariant velocity at i=" << i << " ; j=" << j << " ; k=" << k << "\n";
                     vel_cont_z(i, j, k) = Real(0.5)*( vel_cart(i, j, k, 2) + vel_cart(i, j, k-1, 2) );
                 }
             });

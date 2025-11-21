@@ -446,15 +446,31 @@ void Export_Fluxes(MultiFab &fluxConvect,
 
     MultiFab plt(ba, dm, 3 * AMREX_SPACEDIM, 0);
 
+#if (AMREX_SPACEDIM > 2)
+    MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
+    MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
+    MultiFab::Copy(plt, fluxConvect, 2, 2, 1, 0);
+    MultiFab::Copy(plt, fluxViscous, 0, 3, 1, 0);
+    MultiFab::Copy(plt, fluxViscous, 1, 4, 1, 0);
+    MultiFab::Copy(plt, fluxViscous, 2, 5, 1, 0);
+    MultiFab::Copy(plt, fluxPrsGrad, 0, 6, 1, 0);
+    MultiFab::Copy(plt, fluxPrsGrad, 1, 7, 1, 0);
+    MultiFab::Copy(plt, fluxPrsGrad, 2, 8, 1, 0);
+#else
     MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
     MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
     MultiFab::Copy(plt, fluxViscous, 0, 2, 1, 0);
     MultiFab::Copy(plt, fluxViscous, 1, 3, 1, 0);
     MultiFab::Copy(plt, fluxPrsGrad, 0, 4, 1, 0);
     MultiFab::Copy(plt, fluxPrsGrad, 1, 5, 1, 0);
+#endif
 
     const std::string &plt_flux = amrex::Concatenate("pltFlux", timestep, 5);
-    WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, timestep);
+#if (AMREX_SPACEDIM > 2)
+    WriteSingleLevelPlotfile(plt_flux, plt, {"conv_flux_x", "conv_flux_y", "conv_flux_z", "visc_flux_x", "visc_flux_y", "visc_flux_z", "press_grad_x", "press_grad_y", "press_grad_z"}, geom, time, timestep);
+#else
+    WriteSingleLevelPlotfile(plt_flux, plt, {"conv_flux_x", "conv_flux_y", "visc_flux_x", "visc_flux_y", "press_grad_x", "press_grad_y"}, geom, time, timestep);
+#endif
 }
 
 void Export_Flow_Field(std::string const &nameofFile,

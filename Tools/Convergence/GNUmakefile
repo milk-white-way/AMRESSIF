@@ -1,17 +1,17 @@
 AMREX_HOME ?= ../../..
 
 TOP = $(AMREX_HOME)
-USE_EB =FALSE
+USE_EB = FALSE
 #
 # Variables for the user to set ...
 #
 PRECISION     = DOUBLE
-DEBUG	      = TRUE
+#DEBUG	      = TRUE
 DEBUG	      = FALSE
-#DIM	      = 3
-DIM	       = 2
+DIM	      = 3
+#DIM	       = 2
 #DIM           = 1
-COMP          = g++
+COMP          = llvm
 USE_MPI       = TRUE 
 #USE_MPI       = FALSE
 #

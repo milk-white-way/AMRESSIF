@@ -401,7 +401,7 @@ void write_exact_line_solution(Real const& time,
                                Real const& numerical_sol,
                                std::string const& filename) {
     // Open a file for writing
-	 std::string full_filename = filename + ".txt";
+	std::string full_filename = filename + ".txt";
     std::ofstream outfile(full_filename, std::ios::app);
 
     // Check if the file was opened successfully
@@ -503,15 +503,31 @@ void Export_Fluxes(MultiFab &fluxConvect,
 
     MultiFab plt(ba, dm, 3 * AMREX_SPACEDIM, 0);
 
+#if (AMREX_SPACEDIM > 2)
+    MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
+    MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
+    MultiFab::Copy(plt, fluxConvect, 2, 2, 1, 0);
+    MultiFab::Copy(plt, fluxViscous, 0, 3, 1, 0);
+    MultiFab::Copy(plt, fluxViscous, 1, 4, 1, 0);
+    MultiFab::Copy(plt, fluxViscous, 2, 5, 1, 0);
+    MultiFab::Copy(plt, fluxPrsGrad, 0, 6, 1, 0);
+    MultiFab::Copy(plt, fluxPrsGrad, 1, 7, 1, 0);
+    MultiFab::Copy(plt, fluxPrsGrad, 2, 8, 1, 0);
+#else
     MultiFab::Copy(plt, fluxConvect, 0, 0, 1, 0);
     MultiFab::Copy(plt, fluxConvect, 1, 1, 1, 0);
     MultiFab::Copy(plt, fluxViscous, 0, 2, 1, 0);
     MultiFab::Copy(plt, fluxViscous, 1, 3, 1, 0);
     MultiFab::Copy(plt, fluxPrsGrad, 0, 4, 1, 0);
     MultiFab::Copy(plt, fluxPrsGrad, 1, 5, 1, 0);
+#endif
 
     const std::string &plt_flux = amrex::Concatenate("pltFlux", timestep, 5);
-    WriteSingleLevelPlotfile(plt_flux, plt, {"conv_fluxx", "conv_fluxy", "visc_fluxx", "visc_fluxy", "press_gradx", "press_grady"}, geom, time, timestep);
+#if (AMREX_SPACEDIM > 2)
+    WriteSingleLevelPlotfile(plt_flux, plt, {"conv_flux_x", "conv_flux_y", "conv_flux_z", "visc_flux_x", "visc_flux_y", "visc_flux_z", "press_grad_x", "press_grad_y", "press_grad_z"}, geom, time, timestep);
+#else
+    WriteSingleLevelPlotfile(plt_flux, plt, {"conv_flux_x", "conv_flux_y", "visc_flux_x", "visc_flux_y", "press_grad_x", "press_grad_y"}, geom, time, timestep);
+#endif
 }
 
 void Export_Flow_Field(std::string const &nameofFile,
@@ -773,12 +789,12 @@ void SaveCheckpoint(MultiFab const& pressure,
 						  int const& step) {
 */
 void SaveCheckpoint(BoxArray const& ba,
-						  DistributionMapping const& dm,
-						  MultiFab const& userCtx,
-						  Array<MultiFab, AMREX_SPACEDIM> const& velCont,
-						  Array<MultiFab, AMREX_SPACEDIM> const& velContPrev,
-						  Real const& time,
-						  int const& chk_in) {
+					DistributionMapping const& dm,
+					MultiFab const& userCtx,
+					Array<MultiFab, AMREX_SPACEDIM> const& velCont,
+					Array<MultiFab, AMREX_SPACEDIM> const& velContPrev,
+					Real const& time,
+					int const& chk_in) {
 	// define flow fields to be saved in checkpoint file
 	// Nghost = number of ghost cells for each array
 	int Nghost = 0;
@@ -798,12 +814,23 @@ void SaveCheckpoint(BoxArray const& ba,
 	MultiFab vel_yCont(edge_ba, dm, Ncomp, Nghost);
 	MultiFab vel_yContPrev(edge_ba, dm, Ncomp, Nghost);
 
+#if (AMREX_SPACEDIM > 2)
+	edge_ba = ba;
+	edge_ba.surroundingNodes(2);
+	MultiFab vel_zCont(edge_ba, dm, Ncomp, Nghost);
+	MultiFab vel_zContPrev(edge_ba, dm, Ncomp, Nghost);
+#endif
+
 	// transfer data from solver flow fields to checkpoint flow fields
 	MultiFab::Copy(pressure, userCtx, 0, 0, 1, 0);
 	MultiFab::Copy(vel_xCont, velCont[0], 0, 0, 1, 0);
 	MultiFab::Copy(vel_yCont, velCont[1], 0, 0, 1, 0);
 	MultiFab::Copy(vel_xContPrev, velContPrev[0], 0, 0, 1, 0);
 	MultiFab::Copy(vel_yContPrev, velContPrev[1], 0, 0, 1, 0);
+#if (AMREX_SPACEDIM > 2)
+	MultiFab::Copy(vel_zCont, velCont[2], 0, 0, 1, 0);
+	MultiFab::Copy(vel_zContPrev, velContPrev[2], 0, 0, 1, 0);
+#endif
 	
 	// checkpoint file name, e.g., chk00010
 	const std::string& checkpointname = Concatenate("checkpoint", chk_in, 5);
@@ -853,33 +880,25 @@ void SaveCheckpoint(BoxArray const& ba,
 	// write the MultiFab data to, e.g., chk00010/Level_0/
 	VisMF::Write(pressure, MultiFabFileFullPrefix(0, checkpointname, "Level_", "pressure"));
 	VisMF::Write(vel_xCont, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_xCont"));
-	//VisMF::Write(velCont[0], MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_xCont"));
 	VisMF::Write(vel_yCont, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_yCont"));
 	VisMF::Write(vel_xContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_xContPrev"));
 	VisMF::Write(vel_yContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_yContPrev"));
+#if (AMREX_SPACEDIM > 2)
+	VisMF::Write(vel_zCont, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_zCont"));
+	VisMF::Write(vel_zContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_zContPrev"));
+#endif
 
 }
 
 // read in the time and BoxArray, then create a DistributionMapping
 // Define phi and fill it with data from the checkpoint file
-/*
 void LoadCheckpoint(BoxArray& ba,
-						  DistributionMapping& dm,
-						  MultiFab& pressure,
-						  MultiFab& vel_xCont,
-						  MultiFab& vel_yCont,
-						  MultiFab& vel_xContPrev,
-						  MultiFab& vel_yContPrev,
-						  Real& time,
-						  int const& step) {
-*/
-void LoadCheckpoint(BoxArray& ba,
-						  DistributionMapping& dm,
-						  MultiFab& userCtx,
-						  Array<MultiFab, AMREX_SPACEDIM>& velCont,
-						  Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
-						  Real& time,
-						  int const& chk_out) {
+					DistributionMapping& dm,
+					MultiFab& userCtx,
+					Array<MultiFab, AMREX_SPACEDIM>& velCont,
+					Array<MultiFab, AMREX_SPACEDIM>& velContPrev,
+					Real& time,
+					int const& chk_out) {
 	// declare flow fields to be read in checkpoint file
 	// NOTE: input fields are from the solver and are undefined
 	// Nghost = number of ghost cells for each array
@@ -895,6 +914,10 @@ void LoadCheckpoint(BoxArray& ba,
 	MultiFab vel_xContPrev;
 	MultiFab vel_yCont;
 	MultiFab vel_yContPrev;
+#if (AMREX_SPACEDIM > 2)
+	MultiFab vel_zCont;
+	MultiFab vel_zContPrev;
+#endif
 
 	// checkpoint file name, e.g., chk00010
 	const std::string& checkpointname = Concatenate("checkpoint", chk_out, 5);
@@ -939,6 +962,13 @@ void LoadCheckpoint(BoxArray& ba,
 		edge_ba.surroundingNodes(1);
 		vel_yCont.define(edge_ba, dm, Ncomp, Nghost);
 		vel_yContPrev.define(edge_ba, dm, Ncomp, Nghost);
+
+#if (AMREX_SPACEDIM > 2)
+		edge_ba = ba;
+		edge_ba.surroundingNodes(2);
+		vel_zCont.define(edge_ba, dm, Ncomp, Nghost);
+		vel_zContPrev.define(edge_ba, dm, Ncomp, Nghost);
+#endif
 	}
 
 	// read in the MultiFab data
@@ -947,6 +977,10 @@ void LoadCheckpoint(BoxArray& ba,
 	VisMF::Read(vel_yCont, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_yCont"));
 	VisMF::Read(vel_xContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_xContPrev"));
 	VisMF::Read(vel_yContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_yContPrev"));
+#if (AMREX_SPACEDIM > 2)
+	VisMF::Read(vel_zCont, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_zCont"));
+	VisMF::Read(vel_zContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_zContPrev"));
+#endif
 
 	// print debugging MultiFab content	
 	/*
@@ -978,5 +1012,9 @@ void LoadCheckpoint(BoxArray& ba,
 	MultiFab::Copy(velCont[1], vel_yCont, 0, 0, 1, 0);
 	MultiFab::Copy(velContPrev[0], vel_xContPrev, 0, 0, 1, 0);
 	MultiFab::Copy(velContPrev[1], vel_yContPrev, 0, 0, 1, 0);
+#if (AMREX_SPACEDIM > 2)
+	MultiFab::Copy(velCont[2], vel_zCont, 0, 0, 1, 0);
+	MultiFab::Copy(velContPrev[2], vel_zContPrev, 0, 0, 1, 0);
+#endif
 
 }

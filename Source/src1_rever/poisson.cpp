@@ -51,9 +51,9 @@ void poisson_advance( MultiFab& poisson_sol,
  * for an implicit discretization of the heat equation
  * (I - div dt grad) phi^{n+1} = phi^n
 */
-    bool semicoarsening = true;
+    bool semicoarsening = false;
     int semicoarsening_direction = 1;
-    int semicoarsening_level = 2;
+    int semicoarsening_level = 1;
     int max_coarsening_level = 0;
 
     bool use_hypre = false;
@@ -161,7 +161,7 @@ void poisson_advance( MultiFab& poisson_sol,
     int max_fmg_iter = 0;
     mlmg.setMaxFmgIter(max_fmg_iter);
 
-    int verbose = 2;
+    int verbose = 1;
     mlmg.setVerbose(verbose);
 
     int bottom_verbose = 2;
