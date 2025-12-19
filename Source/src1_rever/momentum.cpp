@@ -23,6 +23,7 @@ void runge_kutta4_pseudo_time_stepping (const GpuArray<Real,MAX_RK_ORDER>& rk,
                                         Real& time,
                                         Real const& dt)
 {
+	BL_PROFILE_VAR("runge_kutta4_pseudo_time_stepping()", runge_kutta4_pseudo_time_stepping);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif

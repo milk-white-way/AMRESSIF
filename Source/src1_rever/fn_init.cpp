@@ -41,6 +41,8 @@ void hybrid_grid_init ( MultiFab& userCtx,
                         Real const& dt,
                         int const& n_cell )
 {
+	BL_PROFILE_VAR("hybrid_grid_init()", hybrid_grid_init);
+
     Box dom(geom.Domain());
     GpuArray<Real,AMREX_SPACEDIM> dx = geom.CellSizeArray();
 	amrex::Print() << "INFO| dx = " << dx[0] << " dy = " << dx[1];

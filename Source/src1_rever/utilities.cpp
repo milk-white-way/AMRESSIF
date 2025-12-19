@@ -22,6 +22,7 @@ void cont2cart(MultiFab &velCart,
 			   Vector<amrex::Real> const& inflow_waveform,
 			   Real &time,
                int const &n_cell) {
+	BL_PROFILE_VAR("cont2cart()", cont2cart);
 
     Box dom(geom.Domain());
 	// Interpolate boundary conditions on contravariant velocity components on the wall

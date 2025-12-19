@@ -19,11 +19,14 @@ void convective_flux_calc_new_quick ( MultiFab& fluxTotal,
                                       Vector<int> const& phy_bc_hi,
                                       Geometry const& geom)
 {
+    BL_PROFILE_VAR("convective_flux_calc_new_quick()", convective_flux_calc_new_quick);
+
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
     GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
     Box dom(geom.Domain());
 
     //amrex::Print() << "DEBUGGING| Start Convective Flux: \n";
+    BL_PROFILE_VAR("half_flux_x_face_calc()", half_flux_x_face_calc);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -124,7 +127,9 @@ void convective_flux_calc_new_quick ( MultiFab& fluxTotal,
 
 #endif
     }
+    BL_PROFILE_VAR_STOP(half_flux_x_face_calc);
 
+    BL_PROFILE_VAR("half_flux_y_face_calc()", half_flux_y_face_calc);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -174,8 +179,10 @@ void convective_flux_calc_new_quick ( MultiFab& fluxTotal,
 #endif
         });
     }
+    BL_PROFILE_VAR_STOP(half_flux_y_face_calc);
     //amrex::Print() << "DEBUGGING| End Convective Flux: \n";
 
+    BL_PROFILE_VAR("convective_update_total_flux()", convective_update_total_flux);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -191,6 +198,7 @@ void convective_flux_calc_new_quick ( MultiFab& fluxTotal,
             }
         });
     }
+    BL_PROFILE_VAR_STOP(convective_update_total_flux);
 }
 
 void convective_flux_calc_quick ( MultiFab& fluxTotal,
@@ -690,6 +698,8 @@ void viscous_flux_calc ( MultiFab& fluxTotal,
                          Real const& ren,
                          Geometry const& geom)
 {
+    BL_PROFILE_VAR("viscous_flux_calc()", viscous_flux_calc);
+
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
     GpuArray<Real, AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
 
@@ -766,6 +776,8 @@ void gradient_calc_approach1 ( MultiFab& fluxTotal,
                                Vector<int> const& phy_bc_hi,
                                int const& n_cell )
 {
+    BL_PROFILE_VAR("gradient_calc_approach1()", gradient_calc_approach1);
+
     //enforce_wall_bcs_for_cell_centered_userCtx_on_ghost_cells(userCtx, geom, Nghost, phy_bc_lo, phy_bc_hi, n_cell);
     GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 
@@ -819,6 +831,8 @@ void gradient_calc_approach2 ( Array<MultiFab, AMREX_SPACEDIM>& array_grad_p,
                                Vector<int> const& phy_bc_hi,
                                int const& n_cell )
 {
+    BL_PROFILE_VAR("gradient_calc_approach2()", gradient_calc_approach2);
+
 	GpuArray<Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
 	Box dom(geom.Domain());
 

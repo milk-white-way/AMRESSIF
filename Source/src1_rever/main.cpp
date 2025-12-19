@@ -258,7 +258,7 @@ void main_main ()
 
 	// CASE: Lid-driven cavity
 	RealBox real_box({AMREX_D_DECL( Real(0.0), Real(0.0), Real(0.0) )},
-					 {AMREX_D_DECL( Real(8.0), Real(8.0), Real(8.0) )}); 
+					 {AMREX_D_DECL( Real(1.0), Real(1.0), Real(1.0) )}); 
 	// This defines a Geometry object
 	// NOTE: the coordinate system is Cartesian
 	geom.define(domain, &real_box, CoordSys::cartesian, is_periodic.data());

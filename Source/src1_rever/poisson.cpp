@@ -45,6 +45,7 @@ void poisson_advance( MultiFab& poisson_sol,
                       DistributionMapping const& dmap,
                       Vector<BCRec> const& bc )
 {
+	BL_PROFILE_VAR("poisson_advance()", poisson_advance);
 /*
  * We use an MLABecLaplacian operator:
  * (ascalar*acoef - bscalar div bcoef grad) phi = RHS
@@ -54,7 +55,7 @@ void poisson_advance( MultiFab& poisson_sol,
     bool semicoarsening = false;
     int semicoarsening_direction = 1;
     int semicoarsening_level = 1;
-    int max_coarsening_level = 0;
+    // int max_coarsening_level = 0;
 
     bool use_hypre = false;
 
@@ -67,7 +68,7 @@ void poisson_advance( MultiFab& poisson_sol,
     info.setSemicoarsening(semicoarsening);
     info.setSemicoarseningDirection(semicoarsening_direction);
     info.setMaxSemicoarseningLevel(semicoarsening_level);
-    info.setMaxCoarseningLevel(max_coarsening_level);
+    //info.setMaxCoarseningLevel(max_coarsening_level);
 
     // Implicit solve using MLABecLaplacian class
     MLABecLaplacian mlabec({geom}, {grids}, {dmap}, info);
@@ -166,6 +167,7 @@ void poisson_advance( MultiFab& poisson_sol,
 
     int bottom_verbose = 2;
     mlmg.setBottomVerbose(bottom_verbose);
+
 #ifdef AMREX_USE_HYPRE
     if (use_hypre) {
         amrex::Print() << "INFO| Using Hypre as bottom solver\n";
