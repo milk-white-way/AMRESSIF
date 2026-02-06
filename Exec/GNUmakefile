@@ -1,14 +1,17 @@
 # AMREX_HOME defines the directory in which we will find all the AMReX code.
 AMREX_HOME ?= ../../../../../amrex
 
-DEBUG        = FALSE
 USE_MPI      = TRUE
-USE_CUDA     = TRUE
-MPI_THREAD_MULTIPLE = FALSE  # amrex.async_out=1 with more than 64 processes requires MPI_THREAD_MULTIPLE
+MPI_THREAD_MULTIPLE = TRUE  # amrex.async_out=1 with more than 64 processes requires MPI_THREAD_MULTIPLE
 USE_OMP      = FALSE
 USE_HYPRE    = FALSE
-COMP         = llvm
+USE_CUDA     = TRUE
+COMP         = gnu
 DIM          = 3
+
+DEBUG        = FALSE
+TINY_PROFILE = TRUE
+PROFILE      = FALSE
 
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 

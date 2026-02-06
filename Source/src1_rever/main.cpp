@@ -55,7 +55,9 @@ void main_main ()
 
 	// AMREX_SPACEDIM: number of dimensions
 	int n_cell; 		// number of cells on each side of a square (or cubic) domain 
-	int max_grid_size; 	// The domain is broken into boxes of size max_grid_size
+	int max_grid_size_x; 	// The domain is broken into boxes of size max_grid_size
+	int max_grid_size_y;
+	int max_grid_size_z;
 	int nsteps; 		// Steps to run in the simulation  
 
 	int plot_int; 		// How often to write plot files			; input <=0 to turn off
@@ -91,7 +93,9 @@ void main_main ()
 		amrex::Print() << "INFO| number of cells in each side of the domain: " << n_cell << "\n";
 
 		// The domain is broken into boxes of size max_grid_size
-		pp.get("max_grid_size", max_grid_size);
+		pp.get("max_grid_size_x", max_grid_size_x);
+		pp.get("max_grid_size_y", max_grid_size_y);
+		pp.get("max_grid_size_z", max_grid_size_z);
 
 		pp.get("IterNum", IterNum);
 
@@ -148,6 +152,8 @@ void main_main ()
 		}
 		amrex::Print() << "INFO| periodicity in " << idim+1 << "th dimension: " << is_periodic[idim] << "\n";
 	}
+
+	IntVect max_grid_size(AMREX_D_DECL(max_grid_size_x, max_grid_size_y, max_grid_size_z));
 
 	// Calculating number of step to reach the targeted resolution
 	int nsteps_target = target_resolution == -1 ? 0 : n_cell/target_resolution - 1;
@@ -216,7 +222,7 @@ void main_main ()
 	*/
 
 	Array<MultiFab, AMREX_SPACEDIM> velCont; // store the contravariant velocity components living in the face center
-	Array<MultiFab, AMREX_SPACEDIM> velCont_singleGrid; // store the contravariant velocity components living in the face center
+	//Array<MultiFab, AMREX_SPACEDIM> velCont_singleGrid; // store the contravariant velocity components living in the face center
 
 	Array<MultiFab, AMREX_SPACEDIM> velContPrev;
 	Array<MultiFab, AMREX_SPACEDIM> velContDiff;
@@ -290,10 +296,10 @@ void main_main ()
 	amrex::Print() << "DEBUG| Extract contravariant solution at (x ; y) = (" << x_cont_target << " ; " << y_target << ") \n";
 
 	BoxArray ba, edge_ba;
-	BoxArray ba_singleGrid, edge_ba_singleGrid;
+	//BoxArray ba_singleGrid, edge_ba_singleGrid;
 	// make BoxArray
 	DistributionMapping dm;
-	DistributionMapping dm_singleGrid;
+	//DistributionMapping dm_singleGrid;
 
 	if (chk_out > 0) {
 		amrex::Print() << "INFO| REQUEST FROM USER TO START FROM CHECKPOINT " << chk_out << "\n";
@@ -301,14 +307,14 @@ void main_main ()
 	} else {
 		// Initialize the boxarray "ba" from the single box "bx"
 		ba.define(domain);
-		ba_singleGrid.define(domain);
+		//ba_singleGrid.define(domain);
 		// Break up boxarray "ba" into chunks no larger than "max_grid_size" along a direction
 		ba.maxSize(max_grid_size);
 		
 		// How Boxes are distrubuted among MPI processes
 		// Distribution mapping between the processors
 		dm.define(ba, ParallelDescriptor::NProcs());
-		dm_singleGrid.define(ba_singleGrid, ParallelDescriptor::NProcs());
+		//dm_singleGrid.define(ba_singleGrid, ParallelDescriptor::NProcs());
 
 		userCtx.define(ba, dm, Ncomp, 1);
 		
@@ -320,9 +326,9 @@ void main_main ()
 			velCont[dir].define(edge_ba, dm, 1, 0);
 			velContPrev[dir].define(edge_ba, dm, 1, 0);
 
-			edge_ba_singleGrid = ba_singleGrid;
-			edge_ba_singleGrid.surroundingNodes(dir);
-			velCont_singleGrid[dir].define(edge_ba_singleGrid, dm_singleGrid, 1, 0);
+			//edge_ba_singleGrid = ba_singleGrid;
+			//edge_ba_singleGrid.surroundingNodes(dir);
+			//velCont_singleGrid[dir].define(edge_ba_singleGrid, dm_singleGrid, 1, 0);
 		}
 	}
 		
@@ -1173,10 +1179,12 @@ void main_main ()
 			Export_Flow_Field("pltResults", userCtx, velCart, ba, dm, geom, time, n);
 		}
 
+		/*
 		for ( int comp=0; comp < AMREX_SPACEDIM; ++comp)
 		{
 			velCont_singleGrid[comp].ParallelCopy(velCont[comp], 0, 0, 1);
 		}
+		*/
 
 		amrex::Print() << "========================== FINISH TIME: " << time << " ========================== \n";
 

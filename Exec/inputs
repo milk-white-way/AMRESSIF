@@ -1,6 +1,6 @@
-nsteps = 100
-n_cell = 300
-max_grid_size = 10
+nsteps = 10
+n_cell = 64
+max_grid_size = 64
 fixed_dt = 1.0e-3
 
 plot_int = 100

@@ -53,6 +53,7 @@ void hybrid_grid_init ( MultiFab& userCtx,
 #endif
     GpuArray<Real,AMREX_SPACEDIM> prob_lo = geom.ProbLoArray();
 
+	BL_PROFILE_VAR("init_velocity_contravariant_components()", init_velocity_contravariant_components);
 // Initialize velocity components at cells' face centers
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -157,7 +158,9 @@ void hybrid_grid_init ( MultiFab& userCtx,
         });
 #endif
     }
+	BL_PROFILE_VAR_STOP(init_velocity_contravariant_components);
 
+	BL_PROFILE_VAR("init_velocity_cartesian_components()", init_velocity_cartesian_components);
     // Initialize cartesian velocity components at cell centers
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -224,12 +227,17 @@ void hybrid_grid_init ( MultiFab& userCtx,
 			//write_exact_line_solution(time, x, y, ucart_init(i, j, k, 0), ucart_prev(i, j, k, 0), debug_file_2);
 		});
 	}	
+	BL_PROFILE_VAR_STOP(init_velocity_cartesian_components);
 
+	BL_PROFILE_VAR("init_fill_boundary()", init_fill_boundary);
     // Fill ghost cells
     // Periodic boundary conditions
     // -- periodic: 111
     velCart.FillBoundary(geom.periodicity());
     velCartPrev.FillBoundary(geom.periodicity()); // Not used in the calculation, so don't bother
+	BL_PROFILE_VAR_STOP(init_fill_boundary);
+
+	BL_PROFILE_VAR("init_enforce_wall_bcs()", init_enforce_wall_bcs);
     // Physical boundary conditions
     // -- wall: 135 (no-slip), -135 (slip)
     // -- inlet: 165 (constant velocity), -165 (time-dependent velocity)
@@ -521,7 +529,9 @@ void hybrid_grid_init ( MultiFab& userCtx,
 		}
 #endif
 	}
+	BL_PROFILE_VAR_STOP(init_enforce_wall_bcs);
 
+	BL_PROFILE_VAR("init_pressure_components()", init_pressure_components);
 // Initialize pressure components at celll centers
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -617,6 +627,7 @@ void hybrid_grid_init ( MultiFab& userCtx,
 		}
 #endif
 	}
+	BL_PROFILE_VAR_STOP(init_pressure_components);
 }
 
 void init (MultiFab& userCtx,
