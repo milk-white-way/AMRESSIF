@@ -423,13 +423,13 @@ amrex::Real Error_Computation(Array<MultiFab, AMREX_SPACEDIM> &velCont,
                               Array<MultiFab, AMREX_SPACEDIM> &velStarDiff,
                               Geometry const &geom) {
     amrex::Real normError;
-
-    long npts;
+    amrex::Real npts;
     Box my_domain = geom.Domain();
+
 #if (AMREX_SPACEDIM == 2)
-    npts = (my_domain.length(0) * my_domain.length(1));
+    npts = (static_cast<amrex::Real>(my_domain.length(0)) * static_cast<amrex::Real>(my_domain.length(1)));
 #elif (AMREX_SPACEDIM == 3)
-    npts = (my_domain.length(0) * my_domain.length(1) * my_domain.length(2));
+    npts = (static_cast<amrex::Real>(my_domain.length(0)) * static_cast<amrex::Real>(my_domain.length(1)) * static_cast<amrex::Real>(my_domain.length(2)));
 #endif
 	//amrex::Print() << "INFO | Number of points in the domain: " << npts << "\n";
 
@@ -908,6 +908,8 @@ void LoadCheckpoint(BoxArray& ba,
 	// Ncomp = number of components for each array
 	int Ncomp = 1;
 
+	BoxArray ba_from_ckpt;
+	DistributionMapping dm_from_ckpt;
 	BoxArray edge_ba;
 
 	MultiFab pressure;
@@ -945,30 +947,30 @@ void LoadCheckpoint(BoxArray& ba,
 		GotoNextLine(is);
 
 		// read in BoxArray from Header
-		ba.readFrom(is);
+		ba_from_ckpt.readFrom(is);
 		GotoNextLine(is);
 
 		// create a distribution mapping
-		dm.define(ba, ParallelDescriptor::NProcs());
+		dm_from_ckpt.define(ba_from_ckpt, ParallelDescriptor::NProcs());
 
 		// define checkpoint+solver flow fields 
-		pressure.define(ba, dm, Ncomp, Nghost);
+		pressure.define(ba_from_ckpt, dm_from_ckpt, Ncomp, Nghost);
 
-		edge_ba = ba;
+		edge_ba = ba_from_ckpt;
 		edge_ba.surroundingNodes(0);
-		vel_xCont.define(edge_ba, dm, Ncomp, Nghost);
-		vel_xContPrev.define(edge_ba, dm, Ncomp, Nghost);
+		vel_xCont.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
+		vel_xContPrev.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
 		
 		edge_ba = ba;
 		edge_ba.surroundingNodes(1);
-		vel_yCont.define(edge_ba, dm, Ncomp, Nghost);
-		vel_yContPrev.define(edge_ba, dm, Ncomp, Nghost);
+		vel_yCont.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
+		vel_yContPrev.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
 
 #if (AMREX_SPACEDIM > 2)
-		edge_ba = ba;
+		edge_ba = ba_from_ckpt;
 		edge_ba.surroundingNodes(2);
-		vel_zCont.define(edge_ba, dm, Ncomp, Nghost);
-		vel_zContPrev.define(edge_ba, dm, Ncomp, Nghost);
+		vel_zCont.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
+		vel_zContPrev.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
 #endif
 	}
 
@@ -1008,14 +1010,14 @@ void LoadCheckpoint(BoxArray& ba,
 	}
 
 	// transfer data from checkpoint flow fields to solver flow fields
-	MultiFab::Copy(userCtx, pressure, 0, 0, 1, 0);
-	MultiFab::Copy(velCont[0], vel_xCont, 0, 0, 1, 0);
-	MultiFab::Copy(velCont[1], vel_yCont, 0, 0, 1, 0);
-	MultiFab::Copy(velContPrev[0], vel_xContPrev, 0, 0, 1, 0);
-	MultiFab::Copy(velContPrev[1], vel_yContPrev, 0, 0, 1, 0);
+	MultiFab::ParallelCopy(userCtx, pressure, 0, 0, 1, 0);
+	MultiFab::ParallelCopy(velCont[0], vel_xCont, 0, 0, 1, 0);
+	MultiFab::ParallelCopy(velCont[1], vel_yCont, 0, 0, 1, 0);
+	MultiFab::ParallelCopy(velContPrev[0], vel_xContPrev, 0, 0, 1, 0);
+	MultiFab::ParallelCopy(velContPrev[1], vel_yContPrev, 0, 0, 1, 0);
 #if (AMREX_SPACEDIM > 2)
-	MultiFab::Copy(velCont[2], vel_zCont, 0, 0, 1, 0);
-	MultiFab::Copy(velContPrev[2], vel_zContPrev, 0, 0, 1, 0);
+	MultiFab::ParallelCopy(velCont[2], vel_zCont, 0, 0, 1, 0);
+	MultiFab::ParallelCopy(velContPrev[2], vel_zContPrev, 0, 0, 1, 0);
 #endif
 
 }

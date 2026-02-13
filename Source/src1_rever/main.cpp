@@ -76,6 +76,9 @@ void main_main ()
 	Vector<int> phy_bc_lo(AMREX_SPACEDIM, 0);
 	Vector<int> phy_bc_hi(AMREX_SPACEDIM, 0);
 
+	Vector<amrex::Real> lo_phy_dim(AMREX_SPACEDIM, 0);
+	Vector<amrex::Real> hi_phy_dim(AMREX_SPACEDIM, 0);
+
 	Vector<amrex::Real> inflow_waveform(AMREX_SPACEDIM, 0.0);
 
 	int target_resolution;
@@ -96,6 +99,15 @@ void main_main ()
 		pp.get("max_grid_size_x", max_grid_size_x);
 		pp.get("max_grid_size_y", max_grid_size_y);
 		pp.get("max_grid_size_z", max_grid_size_z);
+
+		lo_phy_dim[0] = amrex::Real(0.0);
+		lo_phy_dim[1] = amrex::Real(0.0);
+		lo_phy_dim[2] = amrex::Real(0.0);
+		hi_phy_dim[0] = amrex::Real(1.0);
+		hi_phy_dim[1] = amrex::Real(1.0);
+		hi_phy_dim[2] = amrex::Real(1.0);
+		pp.queryarr("lo_phy_dim", lo_phy_dim);
+		pp.queryarr("hi_phy_dim", hi_phy_dim);
 
 		pp.get("IterNum", IterNum);
 
@@ -263,8 +275,8 @@ void main_main ()
 	//				 {AMREX_D_DECL( Real(2.0)*M_PI, Real(2.0)*M_PI, Real(2.0)*M_PI)}); 
 
 	// CASE: Lid-driven cavity
-	RealBox real_box({AMREX_D_DECL( Real(0.0), Real(0.0), Real(0.0) )},
-					 {AMREX_D_DECL( Real(1.0), Real(1.0), Real(1.0) )}); 
+	RealBox real_box({AMREX_D_DECL( lo_phy_dim[0], lo_phy_dim[1], lo_phy_dim[2] )},
+					 {AMREX_D_DECL( hi_phy_dim[0], hi_phy_dim[1], hi_phy_dim[2] )}); 
 	// This defines a Geometry object
 	// NOTE: the coordinate system is Cartesian
 	geom.define(domain, &real_box, CoordSys::cartesian, is_periodic.data());
@@ -301,16 +313,16 @@ void main_main ()
 	DistributionMapping dm;
 	//DistributionMapping dm_singleGrid;
 
+	// Initialize the boxarray "ba" from the single box "bx"
+	ba.define(domain);
+	//ba_singleGrid.define(domain);
+	// Break up boxarray "ba" into chunks no larger than "max_grid_size" along a direction
+	ba.maxSize(max_grid_size);
+		
 	if (chk_out > 0) {
 		amrex::Print() << "INFO| REQUEST FROM USER TO START FROM CHECKPOINT " << chk_out << "\n";
 		LoadCheckpoint(ba, dm, userCtx, velCont, velContPrev, time, chk_out);
 	} else {
-		// Initialize the boxarray "ba" from the single box "bx"
-		ba.define(domain);
-		//ba_singleGrid.define(domain);
-		// Break up boxarray "ba" into chunks no larger than "max_grid_size" along a direction
-		ba.maxSize(max_grid_size);
-		
 		// How Boxes are distrubuted among MPI processes
 		// Distribution mapping between the processors
 		dm.define(ba, ParallelDescriptor::NProcs());
@@ -914,7 +926,7 @@ void main_main ()
 				break;
 			} else {
 				// 4 sub-iterations of one RK4 iteration
-				amrex::Print() << "SOLVING| Momentum | performing RK4 Pseudo-Time Marching ";
+				amrex::Print() << "SOLVING| Momentum | performing RK4 Pseudo-Time Marching... \n";
 				for (int sub = 0; sub < RungeKuttaOrder; ++sub )
 				{
 					// ------------------------- PRESSURE GRADIENT CALCULATION -------------------------
