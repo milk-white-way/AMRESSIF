@@ -1010,14 +1010,25 @@ void LoadCheckpoint(BoxArray& ba,
 	}
 
 	// transfer data from checkpoint flow fields to solver flow fields
+	/*
 	MultiFab::ParallelCopy(userCtx, pressure, 0, 0, 1, 0);
 	MultiFab::ParallelCopy(velCont[0], vel_xCont, 0, 0, 1, 0);
 	MultiFab::ParallelCopy(velCont[1], vel_yCont, 0, 0, 1, 0);
 	MultiFab::ParallelCopy(velContPrev[0], vel_xContPrev, 0, 0, 1, 0);
 	MultiFab::ParallelCopy(velContPrev[1], vel_yContPrev, 0, 0, 1, 0);
+	*/
+	userCtx.ParallelCopy(pressure, 0, 0, 1);
+	velCont[0].ParallelCopy(vel_xCont, 0, 0, 1);
+	velCont[1].ParallelCopy(vel_yCont, 0, 0, 1);
+	velContPrev[0].ParallelCopy(vel_xContPrev, 0, 0, 1);
+	velContPrev[1].ParallelCopy(vel_yContPrev, 0, 0, 1);
 #if (AMREX_SPACEDIM > 2)
+	/*
 	MultiFab::ParallelCopy(velCont[2], vel_zCont, 0, 0, 1, 0);
 	MultiFab::ParallelCopy(velContPrev[2], vel_zContPrev, 0, 0, 1, 0);
+	*/
+	velCont[2].ParallelCopy(vel_zCont, 0, 0, 1);
+	velContPrev[2].ParallelCopy(vel_zContPrev, 0, 0, 1);
 #endif
 
 }
