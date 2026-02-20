@@ -926,7 +926,7 @@ void main_main ()
 				break;
 			} else {
 				// 4 sub-iterations of one RK4 iteration
-				amrex::Print() << "SOLVING| Momentum | performing RK4 Pseudo-Time Marching... \n";
+				amrex::Print() << "SOLVING| Momentum | performing RK4 Pseudo-Time Marching... ";
 				for (int sub = 0; sub < RungeKuttaOrder; ++sub )
 				{
 					// ------------------------- PRESSURE GRADIENT CALCULATION -------------------------

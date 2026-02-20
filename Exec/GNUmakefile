@@ -10,10 +10,10 @@ COMP         = gnu
 DIM          = 3
 
 DEBUG        = FALSE
-TINY_PROFILE = TRUE
+TINY_PROFILE = FALSE
 PROFILE      = FALSE
 
-EBASE = myDEBUG
+#EBASE = myDEBUG
 
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 
