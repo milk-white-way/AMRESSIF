@@ -961,7 +961,7 @@ void LoadCheckpoint(BoxArray& ba,
 		vel_xCont.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
 		vel_xContPrev.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
 		
-		edge_ba = ba;
+		edge_ba = ba_from_ckpt;
 		edge_ba.surroundingNodes(1);
 		vel_yCont.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
 		vel_yContPrev.define(edge_ba, dm_from_ckpt, Ncomp, Nghost);
@@ -975,13 +975,13 @@ void LoadCheckpoint(BoxArray& ba,
 	}
 
 	// read in the MultiFab data
-	VisMF::Read(pressure, MultiFabFileFullPrefix(0, checkpointname, "Level_", "pressure"));
-	VisMF::Read(vel_xCont, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_xCont"));
-	VisMF::Read(vel_yCont, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_yCont"));
+	VisMF::Read(pressure,      MultiFabFileFullPrefix(0, checkpointname, "Level_", "pressure"));
+	VisMF::Read(vel_xCont,     MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_xCont"));
+	VisMF::Read(vel_yCont,     MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_yCont"));
 	VisMF::Read(vel_xContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_xContPrev"));
 	VisMF::Read(vel_yContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_yContPrev"));
 #if (AMREX_SPACEDIM > 2)
-	VisMF::Read(vel_zCont, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_zCont"));
+	VisMF::Read(vel_zCont,     MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_zCont"));
 	VisMF::Read(vel_zContPrev, MultiFabFileFullPrefix(0, checkpointname, "Level_", "vel_zContPrev"));
 #endif
 
@@ -1010,25 +1010,14 @@ void LoadCheckpoint(BoxArray& ba,
 	}
 
 	// transfer data from checkpoint flow fields to solver flow fields
-	/*
-	MultiFab::ParallelCopy(userCtx, pressure, 0, 0, 1, 0);
-	MultiFab::ParallelCopy(velCont[0], vel_xCont, 0, 0, 1, 0);
-	MultiFab::ParallelCopy(velCont[1], vel_yCont, 0, 0, 1, 0);
-	MultiFab::ParallelCopy(velContPrev[0], vel_xContPrev, 0, 0, 1, 0);
-	MultiFab::ParallelCopy(velContPrev[1], vel_yContPrev, 0, 0, 1, 0);
-	*/
-	userCtx.ParallelCopy(pressure, 0, 0, 1);
-	velCont[0].ParallelCopy(vel_xCont, 0, 0, 1);
-	velCont[1].ParallelCopy(vel_yCont, 0, 0, 1);
-	velContPrev[0].ParallelCopy(vel_xContPrev, 0, 0, 1);
-	velContPrev[1].ParallelCopy(vel_yContPrev, 0, 0, 1);
+	userCtx.ParallelCopy(pressure, 0, 0, 1, 0, 0);
+	velCont[0].ParallelCopy(vel_xCont, 0, 0, 1, 0, 0);
+	velCont[1].ParallelCopy(vel_yCont, 0, 0, 1, 0, 0);
+	velContPrev[0].ParallelCopy(vel_xContPrev, 0, 0, 1, 0, 0);
+	velContPrev[1].ParallelCopy(vel_yContPrev, 0, 0, 1, 0, 0);
 #if (AMREX_SPACEDIM > 2)
-	/*
-	MultiFab::ParallelCopy(velCont[2], vel_zCont, 0, 0, 1, 0);
-	MultiFab::ParallelCopy(velContPrev[2], vel_zContPrev, 0, 0, 1, 0);
-	*/
-	velCont[2].ParallelCopy(vel_zCont, 0, 0, 1);
-	velContPrev[2].ParallelCopy(vel_zContPrev, 0, 0, 1);
+	velCont[2].ParallelCopy(vel_zCont, 0, 0, 1, 0, 0);
+	velContPrev[2].ParallelCopy(vel_zContPrev, 0, 0, 1, 0, 0);
 #endif
 
 }

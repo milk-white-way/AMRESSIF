@@ -318,16 +318,15 @@ void main_main ()
 	//ba_singleGrid.define(domain);
 	// Break up boxarray "ba" into chunks no larger than "max_grid_size" along a direction
 	ba.maxSize(max_grid_size);
-		
+	
+	// How Boxes are distrubuted among MPI processes
+	// Distribution mapping between the processors
+	dm.define(ba, ParallelDescriptor::NProcs());
+	
 	if (chk_out > 0) {
 		amrex::Print() << "INFO| REQUEST FROM USER TO START FROM CHECKPOINT " << chk_out << "\n";
 		LoadCheckpoint(ba, dm, userCtx, velCont, velContPrev, time, chk_out);
 	} else {
-		// How Boxes are distrubuted among MPI processes
-		// Distribution mapping between the processors
-		dm.define(ba, ParallelDescriptor::NProcs());
-		//dm_singleGrid.define(ba_singleGrid, ParallelDescriptor::NProcs());
-
 		userCtx.define(ba, dm, Ncomp, 1);
 		
 		for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
