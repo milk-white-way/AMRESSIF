@@ -728,7 +728,7 @@ void viscous_flux_calc ( MultiFab& fluxTotal,
                 auto const& backMAC   = vel_cart(i  , j  , k+1, dir);
 #endif
 
-                visc_flux(i, j, k, dir) = ( (eastMAC - 2*centerMAC + westMAC)/(dx[0]*dx[0]) + (northMAC - 2*centerMAC + southMAC)/(dx[1]*dx[1]) )/ren; 
+                visc_flux(i, j, k, dir) = ( (eastMAC - 2*centerMAC + westMAC)/(dx[0]*dx[0]) + (northMAC - 2*centerMAC + southMAC)/(dx[1]*dx[1]) )/ren 
 #if (AMREX_SPACEDIM > 2)
                     + ( (backMAC - 2*centerMAC + frontMAC)/(dx[2]*dx[2]) )/ren;
 #else
